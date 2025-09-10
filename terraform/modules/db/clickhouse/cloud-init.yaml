@@ -1,0 +1,38 @@
+#cloud-config
+users:
+  - name: clickhouse
+    system: true
+    shell: /bin/false
+
+write_files:
+  - path: /etc/systemd/system/clickhouse.service
+    content: |
+      [Unit]
+      Description=Start ClickHouse Docker
+
+      [Service]
+      ExecStop=/usr/bin/docker stop ot-ch
+      ExecStartPre=/usr/bin/docker pull clickhouse/clickhouse-server:${CLICKHOUSE_VERSION}
+      ExecStart=/bin/bash -c ' \
+        /usr/bin/docker run \
+          --rm \
+          --name ot-ch \
+          --log-driver=gcplogs \
+          -p 8123:8123 \
+          -p 9000:9000 \
+          -v /mnt/disks/clickhouse/config.d:/etc/clickhouse-server/config.d \
+          -v /mnt/disks/clickhouse/users.d:/etc/clickhouse-server/users.d \
+          -v /mnt/disks/clickhouse/data:/var/lib/clickhouse \
+          --ulimit nofile=262144:262144 \
+          clickhouse/clickhouse-server:${CLICKHOUSE_VERSION} \
+        '
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # https://cloud.google.com/compute/docs/disks/format-mount-disk-linux
+  - mkdir -p /mnt/disks/clickhouse
+  - mount -t ext4 -o discard,defaults /dev/disk/by-id/google-data /mnt/disks/clickhouse
+  - systemctl daemon-reload
+  - systemctl start clickhouse.service

@@ -1,0 +1,54 @@
+{{ define "external.clickhouse" }}
+{{- $root := .root }}
+{{- $color := .color | default "blue" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $prefix := $root.Values.prefix }}
+{{- $product := $root.Values.product }}
+---
+# Service for {{ $namespace }}-{{ $color }} ClickHouse external service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse
+  namespace: {{ $namespace }}
+  labels:
+    app: clickhouse
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ $product }}-{{ $color }}.clickhouse.{{ $prefix }}.internal
+  ports:
+    - port: {{ include "ports.clickhouse" $root }}
+      protocol: TCP
+      name: clickhouse
+{{- end }}
+
+
+{{ define "external.opensearch" }}
+{{- $root := .root }}
+{{- $color := .color | default "blue" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $prefix := $root.Values.prefix }}
+{{- $product := $root.Values.product }}
+---
+# Service for {{ $namespace }}-{{ $color }} OpenSearch external service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $namespace }}-{{ $color }}-opensearch
+  namespace: {{ $namespace }}
+  labels:
+    app: opensearch
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ $product }}-{{ $color }}.opensearch.{{ $prefix }}.internal
+  ports:
+    - port: {{ include "ports.clickhouse" $root }}
+      protocol: TCP
+      name: opensearch
+{{- end }}

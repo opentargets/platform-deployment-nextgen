@@ -1,0 +1,50 @@
+#cloud-config
+users:
+  - name: opensearch
+    system: true
+    shell: /bin/false
+
+write_files:
+  - path: /etc/systemd/system/opensearch.service
+    content: |
+      [Unit]
+      Description=Start OpenSearch Docker
+
+      [Service]
+      ExecStop=/usr/bin/docker stop ot-os
+      ExecStartPre=/usr/bin/docker pull opensearchproject/opensearch:${OPENSEARCH_VERSION}
+      ExecStart=/bin/bash -c ' \
+        HEAP_SIZE=$$(( $$(grep MemTotal /proc/meminfo | awk "{print \\$$2}") / 1024 / 2 ))m; \
+        /usr/bin/docker run \
+          --rm \
+          --name ot-os \
+          --log-driver=gcplogs \
+          -p 9200:9200 \
+          -p 9600:9600 \
+          -e "discovery.type=single-node" \
+          -e "network.host=0.0.0.0" \
+          -e "bootstrap.memory_lock=true" \
+          -e "DISABLE_SECURITY_PLUGIN=true" \
+          -e "OPENSEARCH_JAVA_OPTS=-Xms$$HEAP_SIZE -Xmx$$HEAP_SIZE -XX:+UseTransparentHugePages" \
+          -v /mnt/disks/opensearch/data:/usr/share/opensearch/data \
+          -v /var/log/opensearch:/usr/share/opensearch/logs \
+          --ulimit memlock=-1:-1 \
+          --ulimit nofile=65536:65536 \
+          --shm-size=1gb \
+          opensearchproject/opensearch:${OPENSEARCH_VERSION} \
+        '
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # https://cloud.google.com/compute/docs/disks/format-mount-disk-linux
+  - mkdir -p /mnt/disks/opensearch
+  - mkdir -p /var/log/opensearch
+  - mount -t ext4 -o discard,defaults /dev/disk/by-id/google-data /mnt/disks/opensearch
+  - chown 1000:1000 /mnt/disks/opensearch /var/log/opensearch
+  - chmod 777 /mnt/disks/opensearch /var/log/opensearch
+  - echo 'vm.max_map_count=262144' >> /etc/sysctl.conf
+  - sysctl -w vm.max_map_count=262144
+  - systemctl daemon-reload
+  - systemctl start opensearch.service

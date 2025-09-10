@@ -1,0 +1,30 @@
+# Namespace
+{{ include "common.namespace" . }}
+
+# Blue deployment components
+{{ include "common.networkpolicy" (dict "root" . "color" "blue") }}
+{{ include "external.clickhouse" (dict "root" . "color" "blue") }}
+{{ include "external.opensearch" (dict "root" . "color" "blue") }}
+{{ include "deployment.api" (dict "root" . "color" "blue") }}
+{{ include "deployment.aiapi" (dict "root" . "color" "blue") }}
+{{ include "deployment.webapp" (dict "root" . "color" "blue") }}
+
+# Green deployment components
+{{ include "common.networkpolicy" (dict "root" . "color" "green") }}
+{{ include "external.clickhouse" (dict "root" . "color" "green") }}
+{{ include "external.opensearch" (dict "root" . "color" "green") }}
+{{ include "deployment.api" (dict "root" . "color" "green") }}
+{{ include "deployment.aiapi" (dict "root" . "color" "green") }}
+{{ include "deployment.webapp" (dict "root" . "color" "green") }}
+
+# Production services
+{{ include "service.api" (dict "root" . "env" "prod") }}
+{{ include "service.aiapi" (dict "root" . "env" "prod") }}
+{{ include "service.webapp" (dict "root" . "env" "prod") }}
+{{ include "common.ingress" (dict "root" . "env" "prod") }}
+
+# Staging services
+{{ include "service.api" (dict "root" . "env" "staging") }}
+{{ include "service.aiapi" (dict "root" . "env" "staging") }}
+{{ include "service.webapp" (dict "root" . "env" "staging") }}
+{{ include "common.ingress" (dict "root" . "env" "staging") }}

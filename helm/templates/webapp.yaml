@@ -1,0 +1,155 @@
+{{- define "deployment.webapp" }}
+{{- $root := .root }}
+{{- $color := .color | default "blue" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $image := index .root.Values $color "webapp" "image" }}
+{{- $gtmid := index .root.Values $color "webapp" "googleTagManagerId" }}
+{{- $product := .root.Values.product }}
+{{- $domain := .root.Values.domain }}
+{{- $env := include "env" (dict "root" $root "color" $color ) }}
+{{- $subdomain := include "subdomain" (dict "root" .root "env" $env) }}
+{{- $resources := index .root.Values.resources $env "webapp" }}
+---
+# ServiceAccount for the {{ $namespace }}-{{ $color }} WebApp.
+# We disable kubernetes API completely here, the WebApp does not need it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $namespace }}-{{ $color }}-webapp
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+automountServiceAccountToken: false
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} WebApp deployment.
+# Allows ingress traffic from all sources to the HTTP port.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-webapp-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: webapp
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: webapp
+      color: {{ $color }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from: []
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.http" $root }}
+
+
+---
+# HorizontalPodAutoscaler for {{ $namespace }}-{{ $color }} webapp deployment.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $namespace }}-{{ $color }}-webapp-hpa
+  namespace: {{ $namespace }}
+  labels:
+    app: webapp
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $namespace }}-{{ $color }}-webapp
+  minReplicas: {{ $resources.minReplicas }}
+  maxReplicas: {{ $resources.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+
+
+---
+# Webapp {{ $namespace }}-{{ $color }} deployment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $namespace }}-{{ $color }}-webapp
+  namespace: {{ $namespace }}
+  labels:
+    app: webapp
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: webapp
+      color: {{ $color }}
+  template:
+    metadata:
+      labels:
+        app: webapp
+        color: {{ $color }}
+        {{- $labels | nindent 8 }}
+    spec:
+      serviceAccountName: {{ $namespace }}-{{ $color }}-webapp
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - {{ $env }}
+      containers:
+        - name: webapp
+          image: {{ $image.name }}:{{ $image.tag }}
+          ports:
+            - containerPort: {{ include "ports.http" $root }}
+              name: http
+          env:
+            - name: WEBAPP_API_URL
+              value: https://api.{{ $subdomain }}/api/v4/graphql
+            - name: WEBAPP_OPENAI_URL
+              value: https://ai.{{ $subdomain }}
+            - name: WEBAPP_GOOGLE_TAG_MANAGER_ID
+              value: {{ $gtmid }}
+            - name: WEBAPP_FLAVOR
+              value: {{ $product }}
+          resources:
+            requests:
+              memory: {{ $resources.requests.memory }}
+              cpu: {{ $resources.requests.cpu }}
+            limits:
+              memory: {{ $resources.limits.memory }}
+              cpu: {{ $resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: {{ include "paths.health.webapp" $root }}
+              port: http
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: {{ include "paths.health.webapp" $root }}
+              port: http
+            initialDelaySeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+{{- end }}

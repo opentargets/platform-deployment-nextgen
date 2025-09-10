@@ -1,0 +1,93 @@
+{{ define "service.webapp" }}
+{{- $root := .root }}
+{{- $env := .env | default "prod" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $deploymentColor := include "deploymentColor" (dict "root" .root "env" .env) -}}
+---
+# Service for {{ $namespace }}-{{ $env }} webapp.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $namespace }}-{{ $env }}-webapp
+  namespace: {{ $namespace }}
+  labels:
+    app: webapp
+    environment: {{ $env }}
+    {{- $labels | nindent 4 }}
+  annotations:
+    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-cdn"}'
+spec:
+  selector:
+    app: webapp
+    color: {{ $deploymentColor }}
+  ports:
+    - port: {{ include "ports.http" $root }}
+      targetPort: {{ include "ports.http" $root }}
+      protocol: TCP
+      name: http
+  type: NodePort
+{{- end }}
+
+{{ define "service.api" }}
+{{- $root := .root }}
+{{- $env := .env | default "prod" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $deploymentColor := include "deploymentColor" (dict "root" .root "env" .env) -}}
+---
+# Service for {{ $namespace }}-{{ $env }} API.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $namespace }}-{{ $env }}-api
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    environment: {{ $env }}
+    {{- $labels | nindent 4 }}
+  annotations:
+    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-no-cdn"}'
+spec:
+  selector:
+    app: api
+    color: {{ $deploymentColor }}
+  ports:
+    - port: {{ include "ports.http" $root }}
+      targetPort: {{ include "ports.http" $root }}
+      protocol: TCP
+      name: api
+  type: NodePort
+{{- end }}
+
+
+{{ define "service.aiapi" }}
+{{- $root := .root }}
+{{- $env := .env | default "prod" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $deploymentColor := include "deploymentColor" (dict "root" .root "env" .env) -}}
+---
+# Service for {{ $namespace }}-{{ $env }} AI API.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $namespace }}-{{ $env }}-aiapi
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
+    environment: {{ $env }}
+    {{- $labels | nindent 4 }}
+  annotations:
+    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-no-cdn"}'
+spec:
+  selector:
+    app: aiapi
+    color: {{ $deploymentColor }}
+  ports:
+    - port: {{ include "ports.http" $root }}
+      targetPort: {{ include "ports.http" $root }}
+      protocol: TCP
+      name: aiapi
+  type: NodePort
+{{- end }}

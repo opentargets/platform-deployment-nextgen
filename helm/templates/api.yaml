@@ -1,0 +1,192 @@
+{{ define "deployment.api" }}
+{{- $root := .root }}
+{{- $color := .color | default "blue" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $image := index .root.Values $color "api" "image" }}
+{{- $release := index .root.Values $color "release" }}
+{{- $env := include "env" (dict "root" $root "color" $color ) }}
+{{- $resources := index .root.Values.resources $env "api" }}
+---
+# ServiceAccount for {{ $namespace }}-{{ $color }} API deployment.
+# We disable kubernetes API completely here, the API does not need it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $namespace }}-{{ $color }}-api
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+automountServiceAccountToken: false
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} API deployment.
+# Allows egress traffic to ClickHouse and OpenSearch only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-api-egress
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+      color: {{ $color }}
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.clickhouse" $root }}
+    - to: []
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.opensearch" $root }}
+    - to: []
+      ports:
+        - protocol: UDP
+          port: {{ include "ports.dns" $root }}
+    - to: []
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.dns" $root }}
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} API deployment.
+# Allows ingress traffic from all sources to the HTTP port.
+# API is called from the clients' browsers.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-api-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+      color: {{ $color }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from: []
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.http" $root }}
+
+
+---
+# HorizontalPodAutoscaler for {{ $namespace }}-{{ $color }} API deployment.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $namespace }}-{{ $color }}-api-hpa
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $namespace }}-{{ $color }}-api
+  minReplicas: {{ $resources.minReplicas }}
+  maxReplicas: {{ $resources.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+
+
+---
+# API {{ $namespace }}-{{ $color }} deployment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $namespace }}-{{ $color }}-api
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: api
+      color: {{ $color }}
+  template:
+    metadata:
+      labels:
+        app: api
+        color: {{ $color }}
+        {{- $labels | nindent 8 }}
+    spec:
+      serviceAccountName: {{ $namespace }}-{{ $color }}-api
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - {{ $env }}
+      containers:
+        - name: api
+          image: {{ $image.name }}:{{ $image.tag }}
+          ports:
+            - containerPort: {{ include "ports.http" $root }}
+              name: api
+          env:
+            - name: SLICK_CLICKHOUSE_URL
+              value: jdbc:clickhouse://{{ $namespace }}-{{ $color }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" $root }}
+            - name: ELASTICSEARCH_HOST
+              value: {{ $namespace }}-{{ $color }}-opensearch.{{ $namespace }}.svc.cluster.local
+            {{- $parts := splitList "." $release }}
+            - name: META_DATA_YEAR
+              value: {{ index $parts 0 | toString | quote }}
+            - name: META_DATA_MONTH
+              value: {{ index $parts 1 | toString | quote }}
+          resources:
+            requests:
+              memory: {{ $resources.requests.memory }}
+              cpu: {{ $resources.requests.cpu }}
+            limits:
+              memory: {{ $resources.limits.memory }}
+              cpu: {{ $resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: {{ include "paths.health.api" $root }}
+              port: api
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: {{ include "paths.health.api" $root }}
+              port: api
+            initialDelaySeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+{{- end }}

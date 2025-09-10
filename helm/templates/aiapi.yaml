@@ -1,0 +1,259 @@
+{{ define "deployment.aiapi" }}
+{{- $root := .root }}
+{{- $color := .color | default "blue" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $image := index .root.Values $color "aiapi" "image" }}
+{{- $product := .root.Values.product }}
+{{- $env := include "env" (dict "root" $root "color" $color ) }}
+{{- $domain := .root.Values.domain }}
+{{- $subdomain := include "subdomain" (dict "root" .root "env" $env) }}
+{{- $gcpProject := .root.Values.gcpProject }}
+{{- $openaiSecret := index $root.Values $color "aiapi" "secrets" "openai" }}
+{{- $resources := index .root.Values.resources $env "aiapi" }}
+---
+# SecretProviderClass for {{ $namespace }}-{{ $color }} OpenAI token.
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: {{ $namespace }}-{{ $color }}-aiapi-openai-token
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  provider: gke
+  parameters:
+    secrets: |
+      - resourceName: projects/{{ $gcpProject }}/secrets/{{ $openaiSecret }}/versions/latest
+        fileName: openai_token
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} AI API deployment.
+# Allows ingress traffic from all sources to the HTTP port.
+# AI API is called from the clients' browsers.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-aiapi-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: aiapi
+      color: {{ $color }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from: []
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.http" $root }}
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} AI API deployment.
+# Allows egress traffic for queries to OpenAI and EBI services.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-aiapi-egress
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: aiapi
+      color: {{ $color }}
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+    - to: []
+      ports:
+        - protocol: UDP
+          port: {{ include "ports.dns" $root }}
+    - to: []
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.dns" $root }}
+
+
+---
+# ServiceAccount for {{ $namespace }}-{{ $color }} AI API deployment.
+# The AI API needs to pull the OpenAI token from Secret Manager, so we have to
+# attach this KSA to the GSA with the Secret Manager Accessor role.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $namespace }}-{{ $color }}-aiapi
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $namespace }}-aiapi@{{ $gcpProject }}.iam.gserviceaccount.com
+
+
+---
+# RBAC for {{ $namespace }}-{{ $color }} AI API.
+# The AI API needs to be able to read secrets from Secret Manager.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $namespace }}-{{ $color }}-aiapi-secrets
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+rules:
+- apiGroups: ["secrets-store.csi.x-k8s.io"]
+  resources: ["secretproviderclasses"]
+  verbs: ["get"]
+  resourceNames: ["{{ $namespace }}-{{ $color }}-aiapi-openai-token"]
+
+
+---
+# RBAC RoleBinding for {{ $namespace }}-{{ $color }} AI API.
+# Binds the Role above to the ServiceAccount above.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $namespace }}-{{ $color }}-aiapi-secrets
+  namespace: {{ $namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ $namespace }}-{{ $color }}-aiapi
+  namespace: {{ $namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $namespace }}-{{ $color }}-aiapi-secrets
+
+
+---
+# HorizontalPodAutoscaler for {{ $namespace }}-{{ $color }} AI API deployment.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $namespace }}-{{ $color }}-aiapi-hpa
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $namespace }}-{{ $color }}-aiapi
+  minReplicas: {{ $resources.minReplicas }}
+  maxReplicas: {{ $resources.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+
+
+---
+# AI API {{ $namespace }}-{{ $color }} deployment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $namespace }}-{{ $color }}-aiapi
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: aiapi
+      color: {{ $color }}
+  template:
+    metadata:
+      labels:
+        app: aiapi
+        color: {{ $color }}
+        {{- $labels | nindent 8 }}
+    spec:
+      serviceAccountName: {{ $namespace }}-{{ $color }}-aiapi
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - {{ $env }}
+      containers:
+        - name: aiapi
+          image: {{ $image.name }}:{{ $image.tag }}
+          ports:
+            - containerPort: {{ include "ports.http" $root }}
+              name: aiapi
+          env:
+            - name: OPENAI_TOKEN_FILE
+              value: /mnt/secrets/openai_token
+            - name: CORS_ORIGIN_URLS
+              value: "https://{{ $subdomain }},https://staging.{{ $subdomain }}"
+          resources:
+            requests:
+              memory: {{ $resources.requests.memory }}
+              cpu: {{ $resources.requests.cpu }}
+            limits:
+              memory: {{ $resources.limits.memory }}
+              cpu: {{ $resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: {{ include "paths.health.aiapi" $root }}
+              port: aiapi
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: {{ include "paths.health.aiapi" $root }}
+              port: aiapi
+            initialDelaySeconds: 5
+          volumeMounts:
+            - mountPath: /mnt/secrets
+              name: secrets
+              readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: secrets
+          csi:
+            driver: secrets-store-gke.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ $namespace }}-{{ $color }}-aiapi-openai-token
+{{- end }}

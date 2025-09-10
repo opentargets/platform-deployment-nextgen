@@ -1,0 +1,258 @@
+# Namespace definition.
+{{ define "common.namespace" }}
+{{- $root := . }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
+{{- $gcpProject := .Values.gcpProject }}
+---
+# Namespace {{ $namespace }} for {{ .Values.product }}.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $gcpProject }}
+{{- end }}
+
+
+{{ define "common.networkpolicy" }}
+{{- $root := .root }}
+{{- $color := .color | default "blue" }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }}.
+# Defalt deny all ingress and egress traffic.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-default-deny
+  namespace: {{ $namespace }}
+  labels:
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+{{- end }}
+
+
+{{ define "common.ingress" }}
+{{- $root := .root }}
+{{- $env := .env | default "prod" }}
+{{- $prefix := $root.Values.prefix }}
+{{- $product := .root.Values.product }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
+{{- $domain := .root.Values.domain }}
+{{- $subdomain := include "subdomain" (dict "root" $root "env" .env) }}
+{{- $dnsZone := .root.Values.dnsZone }}
+---
+# Ingress for {{ $namespace }}-{{ $env }} deployment.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $namespace }}-{{ $env }}-ingress
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: {{ $namespace }}-{{ $env }}-computeaddress-global
+    networking.gke.io/managed-certificates: {{ $namespace }}-{{ $env }}-ssl-cert
+    networking.gke.io/v1beta1.FrontendConfig: {{ $namespace }}-{{ $env }}-frontendconfig-http-redirect
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  rules:
+    - host: {{ $subdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-{{ $env }}-webapp
+                port:
+                  number: {{ include "ports.http" $root }}
+    - host: api.{{ $subdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-{{ $env }}-api
+                port:
+                  number: {{ include "ports.http" $root }}
+    - host: ai.{{ $subdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-{{ $env }}-aiapi
+                port:
+                  number: {{ include "ports.http" $root }}
+
+
+---
+# Static IP Address for {{ $namespace }}-{{ $env }} ingress.
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  name: {{ $namespace }}-{{ $env }}-computeaddress-global
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  location: global
+  description: Global IP address for {{ $namespace }}-{{ $env }} deployment
+  resourceID: {{ $namespace }}-{{ $env }}-computeaddress-global
+
+
+---
+# DNS Record Set for {{ $namespace }}-{{ $env }} WebApp.
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $namespace }}-{{ $env }}-dnsrecordset-webapp
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  name: {{ $subdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ $dnsZone }}
+  rrdatasRefs:
+    - kind: ComputeAddress
+      name: {{ $namespace }}-{{ $env }}-computeaddress-global
+      namespace: {{ $namespace }}
+
+
+---
+# DNS Record Set for {{ $namespace }}-{{ $env }} API.
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $namespace }}-{{ $env }}-dnsrecordset-api
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  name: api.{{ $subdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ $dnsZone }}
+  rrdatasRefs:
+    - kind: ComputeAddress
+      name: {{ $namespace }}-{{ $env }}-computeaddress-global
+      namespace: {{ $namespace }}
+
+
+---
+# DNS Record Set for {{ $namespace }}-{{ $env }} AI API.
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $namespace }}-{{ $env }}-dnsrecordset-aiapi
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  name: ai.{{ $subdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ $dnsZone }}
+  rrdatasRefs:
+    - kind: ComputeAddress
+      name: {{ $namespace }}-{{ $env }}-computeaddress-global
+      namespace: {{ $namespace }}
+
+
+---
+# Managed SSL Certificate for {{ $namespace }}-{{ $env }} ingress.
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ $namespace }}-{{ $env }}-ssl-cert
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  domains:
+    - {{ $subdomain }}
+    - api.{{ $subdomain }}
+    - ai.{{ $subdomain }}
+
+
+---
+# BackendConfig for {{ $namespace }}-{{ $env }} WebApp.
+# With CDN enabled and conditional Cloud Armor policy for PPP product.
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: {{ $namespace }}-{{ $env }}-backendconfig-cdn
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: true
+      includeProtocol: true
+      includeQueryString: false
+    negativeCaching: true
+    negativeCachingPolicy:
+    - code: 404
+      ttl: 120
+    - code: 410
+      ttl: 120
+  {{- if eq $product "ppp" }}
+  securityPolicy:
+    name: {{ $prefix }}-ppp
+  {{- end }}
+
+
+---
+# BackendConfig for {{ $namespace }}-{{ $env }} API and AI API.
+# With CDN disabled and conditional Cloud Armor policy for PPP product.
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: {{ $namespace }}-{{ $env }}-backendconfig-no-cdn
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  cdn:
+    enabled: false
+  {{- if eq $product "ppp" }}
+  securityPolicy:
+    name: {{ $prefix }}-ppp
+  {{- end }}
+
+
+---
+# FrontendConfig for {{ $namespace }}-{{ $env }}.
+# With HTTP to HTTPS redirect enabled.
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: {{ $namespace }}-{{ $env }}-frontendconfig-http-redirect
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  redirectToHttps:
+    enabled: true
+    responseCodeName: MOVED_PERMANENTLY_DEFAULT
+{{- end }}

@@ -1,0 +1,102 @@
+gcpProject: open-targets-eu-dev
+prefix: nextgendev
+product: platform
+domain: opentargets.xyz
+dnsZone: opentargets-xyz
+
+production: blue
+
+blue:
+  release: '25.06'
+  webapp:
+    image:
+      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
+      tag: '0.12.8'
+    googleTagManagerId: GTM-WPXWRDV
+  api:
+    image:
+      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
+      tag: '25.0.2'
+  aiapi:
+    image:
+      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
+      tag: '0.0.13'
+    secrets:
+      openai: openai-token
+
+green:
+  release: '25.09'
+  webapp:
+    image:
+      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
+      tag: '0.13.2'
+    googleTagManagerId: GTM-XXXXXXX
+  api:
+    image:
+      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
+      tag: '25.2.2'
+  aiapi:
+    image:
+      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
+      tag: '0.0.13'
+    secrets:
+      openai: openai-token
+
+resources:
+  production:
+    webapp:
+      minReplicas: 1
+      maxReplicas: 5
+      requests:
+        memory: 32Mi
+        cpu: 50m
+      limits:
+        memory: 64Mi
+        cpu: 200m
+    api:
+      minReplicas: 2
+      maxReplicas: 5
+      requests:
+        memory: 16Gi
+        cpu: 4000m
+      limits:
+        memory: 24Gi
+        cpu: 7500m
+    aiapi:
+      minReplicas: 1
+      maxReplicas: 5
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 500m
+
+  staging:
+    webapp:
+      minReplicas: 1
+      maxReplicas: 1
+      requests: # prod / 2
+        memory: 16Mi
+        cpu: 25m
+      limits:
+        memory: 32Mi
+        cpu: 100m
+    api:
+      minReplicas: 1
+      maxReplicas: 1
+      requests: # prod / 4
+        memory: 4Gi
+        cpu: 1000m
+      limits:
+        memory: 6Gi
+        cpu: 1875m
+    aiapi:
+      minReplicas: 1
+      maxReplicas: 1
+      requests: # prod
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 500m
