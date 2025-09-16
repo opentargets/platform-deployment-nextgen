@@ -1,4 +1,4 @@
-.PHONY: deploy-cluster destroy-cluster
+.PHONY: deploy-cluster-dev deploy-cluster-prod deploy-apps-dev-platform deploy-apps-dev-ppp deploy-apps-prod-platform deploy-apps-prod-ppp
 
 deploy-cluster-dev:
 	terraform -chdir=./terraform init -backend-config="prefix=terraform/nextgendev" && terraform -chdir=./terraform apply -var-file="../profiles/nextgendev.tfvars"
