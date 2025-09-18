@@ -107,7 +107,30 @@ spec:
                 name: {{ $namespace }}-{{ $env }}-aiapi
                 port:
                   number: {{ include "ports.http" $root }}
-
+    {{- if and (eq $env "prod") (eq $product "platform") }}
+    # Entries for old genetics app redirection.
+    # Created only in the production platform deployment only.
+    - host: genetics.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-{{ $env }}-webapp
+                port:
+                  number: {{ include "ports.http" $root }}
+    - host: www.genetics.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-{{ $env }}-webapp
+                port:
+                  number: {{ include "ports.http" $root }}
+    {{- end }}
 
 ---
 # Static IP Address for {{ $namespace }}-{{ $env }} ingress.
@@ -125,7 +148,7 @@ spec:
 
 
 ---
-# DNS Record Set for {{ $namespace }}-{{ $env }} WebApp.
+# DNSRecordSet type A for {{ $namespace }}-{{ $env }} WebApp.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
@@ -186,7 +209,7 @@ spec:
 
 
 ---
-# DNS Record Set for {{ $namespace }}-{{ $env }} AI API.
+# DNSRecordSet type A for {{ $namespace }}-{{ $env }} AI API.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
@@ -206,8 +229,51 @@ spec:
       namespace: {{ $namespace }}
 
 
+{{ if and (eq $env "prod") (eq $product "platform") }}
 ---
-# Managed SSL Certificate for {{ $namespace }}-{{ $env }} ingress.
+# DNSRecordSet type A for {{ $namespace }}-{{ $env }} old genetics app.
+# Created only in the production platform deployment.
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $namespace }}-{{ $env }}-dnsrecordset-genetics
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  name: genetics.{{ $domain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ $dnsZone }}
+  rrdatasRefs:
+    - kind: ComputeAddress
+      name: {{ $namespace }}-{{ $env }}-computeaddress-global
+      namespace: {{ $namespace }}
+
+---
+# DNSRecordSet type CNAME for {{ $namespace }}-{{ $env }} old genetics app www prefix.
+# Created only in the production platform deployment.
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $namespace }}-{{ $env }}-dnsrecordset-genetics-www
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  name: www.genetics.{{ $domain }}.
+  type: CNAME
+  ttl: 300
+  managedZoneRef:
+    external: {{ $dnsZone }}
+  rrdatas:
+    - genetics.{{ $domain }}.
+{{- end }}
+
+---
+# ManagedCertificate for {{ $namespace }}-{{ $env }} ingress.
+# Main managed certificate.
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
@@ -221,6 +287,32 @@ spec:
     - www.{{ $subdomain }}
     - api.{{ $subdomain }}
     - ai.{{ $subdomain }}
+    {{- if and (eq $env "prod") (eq $product "platform") }}
+    - genetics.{{ $domain }}
+    - www.genetics.{{ $domain }}
+    {{- end }}
+
+
+---
+# ManagedCertificate for {{ $namespace }}-{{ $env }} ingress.
+# Fallback managed certificate used for renewals
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ $namespace }}-{{ $env }}-ssl-cert-fallback
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  domains:
+    - {{ $subdomain }}
+    - www.{{ $subdomain }}
+    - api.{{ $subdomain }}
+    - ai.{{ $subdomain }}
+    {{- if and (eq $env "prod") (eq $product "platform") }}
+    - genetics.{{ $domain }}
+    - www.genetics.{{ $domain }}
+    {{- end }}
 
 
 ---
