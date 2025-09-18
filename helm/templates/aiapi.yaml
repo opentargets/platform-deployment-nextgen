@@ -222,7 +222,7 @@ spec:
             - name: OPENAI_TOKEN_FILE
               value: /mnt/secrets/openai_token
             - name: CORS_ORIGIN_URLS
-              value: "https://{{ $subdomain }},https://staging.{{ $subdomain }}"
+              value: "https://{{ $subdomain }}"
           resources:
             requests:
               memory: {{ $resources.requests.memory }}

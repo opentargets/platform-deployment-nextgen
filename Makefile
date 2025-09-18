@@ -22,7 +22,7 @@ deploy-apps-prod-platform:
 	helm diff upgrade production-platform ./helm -f ./profiles/production-platform.yaml; \
 	read -p "confirm production platform apps deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
-		helm upgrade nextgenprod ./helm -f ./profiles/production-platform.yaml; \
+		helm upgrade production-platform ./helm -f ./profiles/production-platform.yaml; \
 	else \
 		echo "deploy cancelled"; \
 	fi
@@ -32,7 +32,7 @@ deploy-apps-prod-ppp:
 	helm diff upgrade production-ppp ./helm -f ./profiles/production-ppp.yaml; \
 	read -p "confirm production ppp apps deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
-		helm upgrade nextgenpppprod ./helm -f ./profiles/production-ppp.yaml; \
+		helm upgrade production-ppp ./helm -f ./profiles/production-ppp.yaml; \
 	else \
 		echo "deploy cancelled"; \
 	fi
