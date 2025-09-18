@@ -3,7 +3,8 @@
 resource "google_service_account" "clickhouse" {
   project      = var.project_id
   account_id   = "${var.global_prefix}-clickhouse"
-  display_name = "Service account for ClickHouse nodes"
+  display_name = "${var.global_prefix} clickhouse node service account"
+  description  = "Service account for ClickHouse nodes in ${var.global_prefix}, used for logging and monitoring."
 }
 
 resource "google_project_iam_member" "clickhouse" {

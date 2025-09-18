@@ -11,7 +11,8 @@ resource "google_service_account" "aiapi" {
 
   project      = var.project_id
   account_id   = "${var.global_prefix}-${each.value}-aiapi"
-  display_name = "${var.global_prefix} cluster service account for the ${each.value} deployment ai api"
+  display_name = "${var.global_prefix} cluster ${each.value} ai-api service account"
+  description  = "Service account for ${each.value} ai-api in the ${var.global_prefix} cluster, used to access the secret manager."
 }
 
 # These gives the aiapi service accounts read access to the secret manager.
@@ -38,7 +39,8 @@ resource "google_service_account_iam_member" "aiapi_to_global_gsa_workload_ident
 resource "google_service_account" "config_connector" {
   project      = var.project_id
   account_id   = "${var.global_prefix}-config-connector"
-  display_name = "${var.global_prefix} config connector service account"
+  display_name = "${var.global_prefix} cluster config connector service account"
+  description  = "Service account for config connector in the ${var.global_prefix} cluster, used to add dns records and global ip addresses."
 }
 
 resource "google_project_iam_member" "config_connector_roles" {
@@ -62,7 +64,8 @@ resource "google_service_account_iam_member" "config_connector_workload_identity
 resource "google_service_account" "node" {
   project      = var.project_id
   account_id   = "${var.global_prefix}-node"
-  display_name = "${var.global_prefix} gke node service account"
+  display_name = "${var.global_prefix} cluster node service account"
+  description  = "Service account for cluster nodes in the ${var.global_prefix} cluster, used for node operation and to pull images from artifact registry."
 }
 
 resource "google_project_iam_member" "node" {
