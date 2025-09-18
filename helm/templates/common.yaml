@@ -62,12 +62,22 @@ metadata:
     {{- $labels | nindent 4 }}
   annotations:
     kubernetes.io/ingress.global-static-ip-name: {{ $namespace }}-{{ $env }}-computeaddress-global
-    networking.gke.io/managed-certificates: {{ $namespace }}-{{ $env }}-ssl-cert
+    networking.gke.io/managed-certificates: {{ $namespace }}-{{ $env }}-ssl-cert,{{ $namespace }}-{{ $env }}-ssl-cert-fallback
     networking.gke.io/v1beta1.FrontendConfig: {{ $namespace }}-{{ $env }}-frontendconfig-http-redirect
     cloud.google.com/neg: '{"ingress": true}'
 spec:
   rules:
     - host: {{ $subdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-{{ $env }}-webapp
+                port:
+                  number: {{ include "ports.http" $root }}
+    - host: www.{{ $subdomain }}
       http:
         paths:
           - path: /
@@ -136,7 +146,26 @@ spec:
 
 
 ---
-# DNS Record Set for {{ $namespace }}-{{ $env }} API.
+# DNSRecordSet type CNAME for {{ $namespace }}-{{ $env }} WebApp www prefix.
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $namespace }}-{{ $env }}-dnsrecordset-webapp-www
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  name: www.{{ $subdomain }}.
+  type: CNAME
+  ttl: 300
+  managedZoneRef:
+    external: {{ $dnsZone }}
+  rrdatas:
+    - {{ $subdomain }}.
+
+
+---
+# DNSRecordSet type A for {{ $namespace }}-{{ $env }} API.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
@@ -189,6 +218,7 @@ metadata:
 spec:
   domains:
     - {{ $subdomain }}
+    - www.{{ $subdomain }}
     - api.{{ $subdomain }}
     - ai.{{ $subdomain }}
 
