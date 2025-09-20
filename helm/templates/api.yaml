@@ -122,6 +122,26 @@ spec:
 
 
 ---
+# PodDisruptionBudget for {{ $namespace }}-{{ $color }} API deployment.
+# Ensures at least one pod is always running during voluntary disruptions.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $namespace }}-{{ $color }}-api-pdb
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api
+      color: {{ $color }}
+
+
+---
 # API {{ $namespace }}-{{ $color }} deployment.
 apiVersion: apps/v1
 kind: Deployment
@@ -133,6 +153,11 @@ metadata:
     color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: api

@@ -4,7 +4,7 @@
 {{- end -}}
 
 # labels is a helper that returns the common labels for a whole product.
-{{ define "labels" }}
+{{- define "labels" -}}
 prefix:  {{ .Values.prefix }}
 product: {{ .Values.product }}
 {{- end -}}
