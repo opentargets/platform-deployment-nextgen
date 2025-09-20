@@ -51,7 +51,7 @@ resource "google_container_cluster" "cluster" {
   }
 
   release_channel {
-    channel = "STABLE"
+    channel = "REGULAR"
   }
 
   addons_config {
