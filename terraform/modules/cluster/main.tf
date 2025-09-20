@@ -46,7 +46,7 @@ resource "google_container_cluster" "cluster" {
     recurring_window {
       start_time = "2025-09-06T02:00:00Z"
       end_time   = "2025-09-06T06:00:00Z"
-      recurrence = "FREQ=DAILY"
+      recurrence = "FREQ=WEEKLY;BYDAY=MO,WE,FR"
     }
   }
 
