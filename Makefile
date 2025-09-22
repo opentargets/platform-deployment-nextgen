@@ -1,16 +1,20 @@
 .PHONY: deploy-cluster-dev deploy-cluster-prod deploy-apps-dev-platform deploy-apps-dev-ppp deploy-apps-prod-platform deploy-apps-prod-ppp
 
 deploy-cluster-dev:
-	@terraform -chdir=./terraform init -backend-config="prefix=terraform/nextgendev" && terraform -chdir=./terraform apply -var-file="../profiles/nextgendev.tfvars"
+	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && terraform -chdir=./terraform apply -var-file="../profiles/devcluster.tfvars"
 
 deploy-cluster-prod:
 	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"
 
 deploy-apps-dev-platform:
-	@helm upgrade nextgendev ./helm -f ./profiles/nextgendev-platform.yaml
+	@helm diff upgrade devcluster-platform ./helm -f ./profiles/devcluster-platform.yaml; \
+	read -p "press enter to continue..."; \
+	helm upgrade devcluster-platform ./helm -f ./profiles/devcluster-platform.yaml
 
 deploy-apps-dev-ppp:
-	@helm upgrade nextgenpppdev ./helm -f ./profiles/nextgendev-ppp.yaml
+	@helm diff upgrade devcluster-ppp ./helm -f ./profiles/devcluster-ppp.yaml; \
+	read -p "press enter to continue..."; \
+	helm upgrade devcluster-ppp ./helm -f ./profiles/devcluster-ppp.yaml
 
 deploy-apps-prod-platform:
 	@helm lint ./helm && \
