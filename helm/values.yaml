@@ -1,5 +1,5 @@
 gcpProject: open-targets-eu-dev
-prefix: nextgendev
+prefix: devcluster
 product: platform
 domain: opentargets.xyz
 dnsZone: opentargets-xyz

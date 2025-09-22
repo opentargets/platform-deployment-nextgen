@@ -1,4 +1,4 @@
-global_prefix = "nextgendev"
+global_prefix = "devcluster"
 project_id    = "open-targets-eu-dev"
 region        = "europe-west1"
 zone          = "europe-west1-b"
