@@ -14,7 +14,7 @@ base_labels = {
 # CLUSTER VARIABLES
 cluster_min_node_count          = 1
 cluster_max_node_count          = 5
-cluster_machine_type_production = "n1-standard-16"
+cluster_machine_type_production = "n1-standard-8"
 cluster_machine_type_staging    = "n1-standard-4"
 cluster_disk_size_gb            = 128
 cluster_kubernetes_version      = "latest"
