@@ -13,7 +13,7 @@ resource "google_container_cluster" "cluster" {
   network                  = var.network
   subnetwork               = google_compute_subnetwork.cluster.name
   remove_default_node_pool = true
-  initial_node_count       = var.min_node_count
+  initial_node_count       = 1
 
   ip_allocation_policy {
     cluster_secondary_range_name  = "pods"
@@ -65,6 +65,12 @@ resource "google_container_cluster" "cluster" {
   }
 
   resource_labels = merge(var.base_labels, var.labels)
+
+  lifecycle {
+    ignore_changes = [
+      initial_node_count, # We don't care about changes to this after creation.
+    ]
+  }
 }
 
 locals {
@@ -93,7 +99,7 @@ resource "google_container_node_pool" "pools" {
   project            = var.project_id
   location           = var.zone
   cluster            = google_container_cluster.cluster.name
-  initial_node_count = var.min_node_count
+  initial_node_count = 1
 
   autoscaling {
     min_node_count = var.min_node_count
@@ -128,6 +134,12 @@ resource "google_container_node_pool" "pools" {
     strategy        = "SURGE"
     max_surge       = 1
     max_unavailable = 0
+  }
+
+  lifecycle {
+    ignore_changes = [
+      initial_node_count, # We don't care about changes to this after creation.
+    ]
   }
 }
 
