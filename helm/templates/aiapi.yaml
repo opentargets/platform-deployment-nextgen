@@ -1,11 +1,11 @@
 {{ define "deployment.aiapi" }}
 {{- $root := .root }}
 {{- $color := .color | default "blue" }}
+{{- $env := include "env" (dict "root" $root "color" $color ) }}
+{{- $product := .root.Values.product }}
 {{- $namespace := include "prefix-product" .root }}
 {{- $labels := include "labels" .root }}
 {{- $image := index .root.Values $color "aiapi" "image" }}
-{{- $product := .root.Values.product }}
-{{- $env := include "env" (dict "root" $root "color" $color ) }}
 {{- $domain := .root.Values.domain }}
 {{- $subdomain := include "subdomain" (dict "root" .root "env" $env) }}
 {{- $gcpProject := .root.Values.gcpProject }}
@@ -211,11 +211,6 @@ metadata:
     color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
   selector:
     matchLabels:
       app: aiapi
@@ -229,7 +224,7 @@ spec:
     spec:
       serviceAccountName: {{ $namespace }}-{{ $color }}-aiapi
       affinity:
-        nodeAffinity:
+        nodeAffinity: # ensure pods are scheduled to the right type of node (production/staging)
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
@@ -237,6 +232,16 @@ spec:
                     operator: In
                     values:
                       - {{ $env }}
+        podAntiAffinity: # try to avoid co-locating pods of the same app+color in the same node
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    product: {{ $product }}
+                    app: aiapi
+                    color: {{ $color }}
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: aiapi
           image: {{ $image.name }}:{{ $image.tag }}

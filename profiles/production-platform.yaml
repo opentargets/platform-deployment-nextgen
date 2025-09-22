@@ -45,58 +45,58 @@ green:
 resources:
   production:
     webapp:
-      minReplicas: 1
+      minReplicas: 2
       maxReplicas: 5
       requests:
         memory: 32Mi
         cpu: 50m
       limits:
-        memory: 64Mi
-        cpu: 200m
+        memory: 256Mi
+        cpu: 500m
     api:
       minReplicas: 2
       maxReplicas: 5
       requests:
-        memory: 16Gi
+        memory: 8Gi
         cpu: 4000m
       limits:
-        memory: 24Gi
+        memory: 20Gi
         cpu: 7500m
     aiapi:
-      minReplicas: 1
+      minReplicas: 2
       maxReplicas: 5
       requests:
-        memory: 128Mi
-        cpu: 100m
+        memory: 72Mi
+        cpu: 50m
       limits:
         memory: 256Mi
-        cpu: 250m
+        cpu: 500m
 
   staging:
     webapp:
       minReplicas: 1
       maxReplicas: 1
-      requests: # prod / 2
-        memory: 16Mi
-        cpu: 25m
-      limits:
+      requests:
         memory: 32Mi
-        cpu: 100m
+        cpu: 50m
+      limits:
+        memory: 128Mi
+        cpu: 500m
     api:
       minReplicas: 1
       maxReplicas: 1
-      requests: # prod / 4
-        memory: 4Gi
+      requests:
+        memory: 2Gi
         cpu: 1000m
       limits:
-        memory: 6Gi
-        cpu: 1875m
+        memory: 8Gi
+        cpu: 2000m
     aiapi:
       minReplicas: 1
       maxReplicas: 1
-      requests: # prod
-        memory: 128Mi
-        cpu: 100m
+      requests:
+        memory: 72Mi
+        cpu: 50m
       limits:
         memory: 256Mi
-        cpu: 250m
+        cpu: 500m
