@@ -4,7 +4,8 @@ product: platform
 domain: opentargets.xyz
 dnsZone: opentargets-xyz
 
-production: green
+production: blue
+staging: disabled
 
 blue:
   release: '25.06'

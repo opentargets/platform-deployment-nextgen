@@ -5,6 +5,9 @@ domain: opentargets.org
 dnsZone: opentargets-org
 
 production: green
+staging: disabled
+
+googleTagManagerId: GTM-WPXWRDV
 
 blue:
   release: '25.06'

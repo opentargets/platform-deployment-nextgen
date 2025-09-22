@@ -18,12 +18,18 @@ staging
 {{- end -}}
 {{- end }}
 
-# deploymentColor determines the color for a service based on the environment
-# and the color value. In production env, it will return the value in the config
-# (blue or green). In staging env, it will return the opposite color.
+# deploymentColor determines the color for a service
+#
+# For production services, it will simply return the color defined in the config.
+#
+# For staging services:
+# - If staging is disabled, it will return the production color.
+#     This allows us to tear down staging resources when not needed.
+# - If staging is enabled, it will return the color opposite to production.
+#
 {{- define "deploymentColor" -}}
 {{- $deploymentColor := .root.Values.production }}
-{{- if eq .env "staging" }}
+{{- if and (eq .env "staging") (ne .root.Values.staging "disabled") }}
   {{- if eq $deploymentColor "blue" }}
     {{- $deploymentColor = "green" }}
   {{- else if eq $deploymentColor "green" }}
@@ -31,6 +37,21 @@ staging
   {{- end }}
 {{- end }}
 {{- $deploymentColor -}}
+{{- end }}
+
+# isDeploymentUsed checks if a deployment color is going to be used.
+# If staging is disabled, only the production color is used.
+# If staging is enabled, both colors are used.
+{{- define "isDeploymentUsed" -}}
+{{- $color := .color -}}
+{{- $root := .root -}}
+{{- if eq $root.Values.staging "disabled" -}}
+  {{- if eq $color $root.Values.production -}}
+    true
+  {{- end -}}
+{{- else -}}
+  true
+{{- end -}}
 {{- end }}
 
 # subdomain is a helper that returns the subdomain for a whole product.

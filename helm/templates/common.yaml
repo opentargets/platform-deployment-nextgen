@@ -44,7 +44,7 @@ spec:
 {{ define "common.ingress" }}
 {{- $root := .root }}
 {{- $env := .env | default "prod" }}
-{{- $prefix := $root.Values.prefix }}
+{{- $prefix := .root.Values.prefix }}
 {{- $product := .root.Values.product }}
 {{- $namespace := include "prefix-product" .root }}
 {{- $labels := include "labels" .root }}

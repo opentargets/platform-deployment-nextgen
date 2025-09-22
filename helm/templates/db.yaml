@@ -1,10 +1,10 @@
 {{ define "external.clickhouse" }}
 {{- $root := .root }}
 {{- $color := .color | default "blue" }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
 {{- $prefix := $root.Values.prefix }}
 {{- $product := $root.Values.product }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
 ---
 # Service for {{ $namespace }}-{{ $color }} ClickHouse external service.
 apiVersion: v1
@@ -29,10 +29,10 @@ spec:
 {{ define "external.opensearch" }}
 {{- $root := .root }}
 {{- $color := .color | default "blue" }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
 {{- $prefix := $root.Values.prefix }}
 {{- $product := $root.Values.product }}
+{{- $namespace := include "prefix-product" .root }}
+{{- $labels := include "labels" .root }}
 ---
 # Service for {{ $namespace }}-{{ $color }} OpenSearch external service.
 apiVersion: v1

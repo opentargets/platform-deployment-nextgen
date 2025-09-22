@@ -1,6 +1,7 @@
 # Namespace
 {{ include "common.namespace" . }}
 
+{{- if include "isDeploymentUsed" (dict "root" . "color" "blue") }}
 # Blue deployment components
 {{ include "common.networkpolicy" (dict "root" . "color" "blue") }}
 {{ include "external.clickhouse" (dict "root" . "color" "blue") }}
@@ -8,7 +9,9 @@
 {{ include "deployment.api" (dict "root" . "color" "blue") }}
 {{ include "deployment.aiapi" (dict "root" . "color" "blue") }}
 {{ include "deployment.webapp" (dict "root" . "color" "blue") }}
+{{- end }}
 
+{{- if include "isDeploymentUsed" (dict "root" . "color" "green") }}
 # Green deployment components
 {{ include "common.networkpolicy" (dict "root" . "color" "green") }}
 {{ include "external.clickhouse" (dict "root" . "color" "green") }}
@@ -16,6 +19,7 @@
 {{ include "deployment.api" (dict "root" . "color" "green") }}
 {{ include "deployment.aiapi" (dict "root" . "color" "green") }}
 {{ include "deployment.webapp" (dict "root" . "color" "green") }}
+{{- end }}
 
 # Production services
 {{ include "service.api" (dict "root" . "env" "prod") }}

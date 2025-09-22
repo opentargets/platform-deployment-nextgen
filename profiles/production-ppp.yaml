@@ -4,7 +4,10 @@ product: ppp
 domain: opentargets.org
 dnsZone: opentargets-org
 
-production: blue
+production: green
+staging: disabled
+
+googleTagManagerId: GTM-XXXXXXX
 
 blue:
   release: '25.06'

@@ -117,11 +117,6 @@ metadata:
     color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
   selector:
     matchLabels:
       app: webapp
