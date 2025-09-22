@@ -1,21 +1,16 @@
 .PHONY: deploy-cluster-dev deploy-cluster-prod deploy-apps-dev-platform deploy-apps-dev-ppp deploy-apps-prod-platform deploy-apps-prod-ppp
 
 deploy-cluster-dev:
-	terraform -chdir=./terraform init -backend-config="prefix=terraform/nextgendev" && terraform -chdir=./terraform apply -var-file="../profiles/nextgendev.tfvars"
+	@terraform -chdir=./terraform init -backend-config="prefix=terraform/nextgendev" && terraform -chdir=./terraform apply -var-file="../profiles/nextgendev.tfvars"
 
 deploy-cluster-prod:
-	@read -p "confirm production cluster apply: " confirm; \
-	if [ "$$confirm" = "confirm" ]; then \
-		terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"; \
-	else \
-		echo "apply cancelled"; \
-	fi
+	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"
 
 deploy-apps-dev-platform:
-	helm upgrade nextgendev ./helm -f ./profiles/nextgendev-platform.yaml
+	@helm upgrade nextgendev ./helm -f ./profiles/nextgendev-platform.yaml
 
 deploy-apps-dev-ppp:
-	helm upgrade nextgenpppdev ./helm -f ./profiles/nextgendev-ppp.yaml
+	@helm upgrade nextgenpppdev ./helm -f ./profiles/nextgendev-ppp.yaml
 
 deploy-apps-prod-platform:
 	@helm lint ./helm && \
