@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "type": "object",
+  "title": "Helm Chart Values Schema",
+  "description": "Schema for OpenTargets platform Helm chart values",
+  "properties": {
+    "gcpProject": {
+      "type": "string",
+      "description": "The Google Cloud Project ID where the cluster lives.",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "The prefix for all resource. This should identify the environment (e.g., `dev`, `production`). Keep in mind, for us, `staging` is not an environment itself."
+    },
+    "product": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "ppp"
+      ],
+      "description": "The product name: either `platform` or `ppp`. This will be appended to the prefix for resource names. It will also affect domain names, resource allocation and some configuration values."
+    },
+    "domain": {
+      "type": "string",
+      "description": "The domain name where the application will be exposed",
+      "format": "hostname"
+    },
+    "dnsZone": {
+      "type": "string",
+      "description": "The Google Cloud DNS zone name where the domain is managed"
+    },
+    "production": {
+      "type": "string",
+      "enum": [
+        "blue",
+        "green"
+      ],
+      "description": "The production environment selector (blue/green). CAUTION: This setting controls which environment is live!"
+    },
+    "staging": {
+      "type": "string",
+      "enum": [
+        "enabled",
+        "disabled"
+      ],
+      "description": "Whether the staging environment is enabled or disabled. If disabled, staging services will point to production deployments too."
+    },
+    "googleTagManagerId": {
+      "type": "string",
+      "description": "The Google Tag Manager ID to set in the production Web Application. It should have the format `GTM-XXXXXX`.",
+      "pattern": "^GTM-[A-Z0-9]+$"
+    },
+    "blue": {
+      "$ref": "#/$defs/deployment",
+      "description": "The config for the blue deployment"
+    },
+    "green": {
+      "$ref": "#/$defs/deployment",
+      "description": "The config for the green deployment"
+    },
+    "resources": {
+      "type": "object",
+      "description": "The resource allocations for different environments",
+      "properties": {
+        "production": {
+          "$ref": "#/$defs/resourceConfig",
+          "description": "Production environment resource configuration"
+        },
+        "staging": {
+          "$ref": "#/$defs/resourceConfig",
+          "description": "Staging environment resource configuration"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/resourceConfig"
+      }
+    }
+  },
+  "required": [
+    "gcpProject",
+    "prefix",
+    "product",
+    "domain",
+    "dnsZone",
+    "production",
+    "staging",
+    "googleTagManagerId",
+    "blue",
+    "green",
+    "resources"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "deployment": {
+      "type": "object",
+      "description": "The deployment configuration for a color (blue/green), which will be mapped to an environment (production/staging)",
+      "properties": {
+        "release": {
+          "type": "string",
+          "description": "The data release name (e.g., `25.09`)",
+          "pattern": "^\\d{2}\\.\\d{2}(-.*)?$"
+        },
+        "webapp": {
+          "$ref": "#/$defs/webappService"
+        },
+        "api": {
+          "$ref": "#/$defs/apiService"
+        },
+        "aiapi": {
+          "$ref": "#/$defs/aiapiService"
+        }
+      },
+      "required": [
+        "release",
+        "webapp",
+        "api",
+        "aiapi"
+      ],
+      "additionalProperties": false
+    },
+    "webappService": {
+      "type": "object",
+      "description": "The config for the WebApp service",
+      "properties": {
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        }
+      },
+      "required": [
+        "image"
+      ],
+      "additionalProperties": false
+    },
+    "apiService": {
+      "type": "object",
+      "description": "The config for the API service",
+      "properties": {
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        }
+      },
+      "required": [
+        "image"
+      ],
+      "additionalProperties": false
+    },
+    "aiapiService": {
+      "type": "object",
+      "description": "The config for the AI API service",
+      "properties": {
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        },
+        "secrets": {
+          "type": "object",
+          "description": "The secrets for the AI API service",
+          "properties": {
+            "openai": {
+              "type": "string",
+              "description": "The OpenAI token secret name. This secret must exist in the same project as the GKE cluster."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "image",
+        "secrets"
+      ],
+      "additionalProperties": false
+    },
+    "imageConfig": {
+      "type": "object",
+      "description": "The config for a container image",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The full container image name, including the registry (e.g., `gcr.io/open-targets-dev/platform/webapp`)",
+          "pattern": "^[a-z0-9.-]+(/[a-z0-9._-]+)+$"
+        },
+        "tag": {
+          "type": "string",
+          "description": "The container image tag (e.g., `25.2.2-intervals.3`). Rememever, our tags do not have a prepending `v`.",
+          "pattern": "^[a-zA-Z0-9._-]+$"
+        }
+      },
+      "required": [
+        "name",
+        "tag"
+      ],
+      "additionalProperties": false
+    },
+    "resourceConfig": {
+      "type": "object",
+      "description": "The resource allocations for the deployments serving an environment",
+      "properties": {
+        "webapp": {
+          "$ref": "#/$defs/serviceResources",
+          "description": "The WebApp resource configuration"
+        },
+        "api": {
+          "$ref": "#/$defs/serviceResources",
+          "description": "The API resource configuration"
+        },
+        "aiapi": {
+          "$ref": "#/$defs/serviceResources",
+          "description": "The AI API resource configuration"
+        }
+      },
+      "required": [
+        "webapp",
+        "api",
+        "aiapi"
+      ],
+      "additionalProperties": false
+    },
+    "serviceResources": {
+      "type": "object",
+      "description": "The resource allocation for a deployment",
+      "properties": {
+        "minReplicas": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The minimum number of replicas for the deployment.\nThings to keep in mind:\n * Do not set to 0 for disabling an environment; use the `staging` root property instead.\n * This should be at least 2 for production to allow for rolling updates."
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The maximum number of replicas for the deployment."
+        },
+        "requests": {
+          "$ref": "#/$defs/resourceRequirements",
+          "description": "The resource requests for the deployment. These values decide the scheduling of pods."
+        },
+        "limits": {
+          "$ref": "#/$defs/resourceLimits",
+          "description": "The resource limits for the deployment. These values decide the maximum resources a pod can use."
+        }
+      },
+      "required": [
+        "minReplicas",
+        "maxReplicas",
+        "requests",
+        "limits"
+      ],
+      "additionalProperties": false
+    },
+    "resourceRequirements": {
+      "type": "object",
+      "description": "Kubernetes resource requirements",
+      "properties": {
+        "memory": {
+          "type": "string",
+          "description": "The memory requirement (e.g., 128Mi, 1Gi). A node with at least this available memory will be a candidate for scheduling the pod.",
+          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ki|m)?$"
+        },
+        "cpu": {
+          "type": "string",
+          "description": "The CPU requirement (e.g., 100m, 1000m, 2). A node with at least this available CPU will be a candidate for scheduling the pod.",
+          "pattern": "^\\d+(\\.\\d+)?(m)?$"
+        }
+      },
+      "required": [
+        "memory",
+        "cpu"
+      ],
+      "additionalProperties": false
+    },
+    "resourceLimits": {
+      "type": "object",
+      "description": "Kubernetes resource limits",
+      "properties": {
+        "memory": {
+          "type": "string",
+          "description": "The memory limit (e.g., 256Mi, 2Gi). The pod will be oom-killed if it exceeds this limit.",
+          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ki|m)?$"
+        },
+        "cpu": {
+          "type": "string",
+          "description": "The CPU limit (e.g., 200m, 2000m, 4). The pod will be throttled if it exceeds this limit.",
+          "pattern": "^\\d+(\\.\\d+)?(m)?$"
+        }
+      },
+      "required": [
+        "memory",
+        "cpu"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

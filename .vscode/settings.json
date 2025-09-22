@@ -1,0 +1,8 @@
+{
+  "yaml.schemas": {
+    "./helm/values.schema.json": [
+      "helm/values.yaml",
+      "profiles/*.yaml"
+    ]
+  }
+}
