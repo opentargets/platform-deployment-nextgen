@@ -7,13 +7,15 @@ dnsZone: opentargets-xyz
 production: blue
 staging: disabled
 
+googleTagManagerId: GTM-XXXXXXX
+
 blue:
   release: '25.06'
   webapp:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
       tag: '0.12.8'
-    googleTagManagerId: GTM-WPXWRDV
+
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
@@ -31,7 +33,6 @@ green:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
       tag: '0.13.2'
-    googleTagManagerId: GTM-XXXXXXX
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api

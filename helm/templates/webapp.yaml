@@ -1,13 +1,13 @@
 {{- define "deployment.webapp" }}
 {{- $root := .root }}
 {{- $color := .color | default "blue" }}
+{{- $env := include "env" (dict "root" $root "color" $color ) }}
+{{- $prefix := .root.Values.prefix }}
+{{- $product := .root.Values.product }}
 {{- $namespace := include "prefix-product" .root }}
 {{- $labels := include "labels" .root }}
 {{- $image := index .root.Values $color "webapp" "image" }}
-{{- $gtmid := index .root.Values $color "webapp" "googleTagManagerId" }}
-{{- $product := .root.Values.product }}
 {{- $domain := .root.Values.domain }}
-{{- $env := include "env" (dict "root" $root "color" $color ) }}
 {{- $subdomain := include "subdomain" (dict "root" .root "env" $env) }}
 {{- $resources := index .root.Values.resources $env "webapp" }}
 ---
@@ -159,8 +159,10 @@ spec:
               value: https://api.{{ $subdomain }}/api/v4/graphql
             - name: WEBAPP_OPENAI_URL
               value: https://ai.{{ $subdomain }}
+            {{- if and (eq $prefix "production") (eq $env "production") }}
             - name: WEBAPP_GOOGLE_TAG_MANAGER_ID
-              value: {{ $gtmid }}
+              value: {{ .root.Values.googleTagManagerId }}
+            {{- end }}
             - name: WEBAPP_FLAVOR
               value: {{ $product }}
           resources:
