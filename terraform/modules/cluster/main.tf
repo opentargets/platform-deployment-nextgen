@@ -81,12 +81,20 @@ locals {
       labels = {
         pool = "production"
       }
+      autoscaling = {
+        min_node_count = var.min_node_count
+        max_node_count = var.max_node_count
+      }
     }
     staging = {
       name         = "${var.global_prefix}-staging"
       machine_type = var.machine_type_staging
       labels = {
         pool = "staging"
+      }
+      autoscaling = {
+        min_node_count = 0
+        max_node_count = var.max_node_count
       }
     }
   }
@@ -102,8 +110,8 @@ resource "google_container_node_pool" "pools" {
   initial_node_count = 1
 
   autoscaling {
-    min_node_count = var.min_node_count
-    max_node_count = var.max_node_count
+    min_node_count = each.value.autoscaling.min_node_count
+    max_node_count = each.value.autoscaling.max_node_count
   }
 
   node_config {
