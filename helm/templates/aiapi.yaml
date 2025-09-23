@@ -232,10 +232,9 @@ spec:
                     operator: In
                     values:
                       - {{ $env }}
-        podAntiAffinity: # try to avoid co-locating pods of the same app+color in the same node
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
+        podAntiAffinity: # avoid co-locating pods of the same app+color in the same node
+          requiredDuringSchedulingIgnoredDuringExecution:
+              - podAffinityTerm:
                 labelSelector:
                   matchLabels:
                     product: {{ $product }}
