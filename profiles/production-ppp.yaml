@@ -46,7 +46,7 @@ green:
 resources:
   production:
     webapp:
-      minReplicas: 1
+      minReplicas: 2
       maxReplicas: 5
       requests:
         memory: 32Mi
@@ -55,16 +55,16 @@ resources:
         memory: 256Mi
         cpu: 500m
     api:
-      minReplicas: 1
+      minReplicas: 2
       maxReplicas: 5
       requests:
         memory: 2Gi
-        cpu: 1000m
+        cpu: 500m
       limits:
         memory: 5Gi
         cpu: 2000m
     aiapi:
-      minReplicas: 1
+      minReplicas: 2
       maxReplicas: 5
       requests:
         memory: 72Mi
