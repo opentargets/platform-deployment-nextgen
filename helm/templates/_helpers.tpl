@@ -78,4 +78,4 @@ staging
 
 {{- define "paths.health.api"    -}}/{{- end -}}
 {{- define "paths.health.aiapi"  -}}/health{{- end -}}
-{{- define "paths.health.webapp" -}}/healthz{{- end -}}
+{{- define "paths.health.webapp" -}}/health{{- end -}}
