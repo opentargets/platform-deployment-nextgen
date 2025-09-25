@@ -177,15 +177,12 @@ spec:
                       - {{ $env }}
         podAntiAffinity: # avoid co-locating pods of the same app+color in the same node
           requiredDuringSchedulingIgnoredDuringExecution:
-              - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    product: {{ $product }}
-                    app: api
-                    color: {{ $color }}
-                topologyKey: kubernetes.io/hostname
-
-
+            - labelSelector:
+                matchLabels:
+                  product: {{ $product }}
+                  app: api
+                  color: {{ $color }}
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: api
           image: {{ $image.name }}:{{ $image.tag }}
