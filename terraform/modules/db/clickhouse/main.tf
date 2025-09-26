@@ -99,4 +99,8 @@ resource "google_compute_instance" "clickhouse_node" {
       { CLICKHOUSE_VERSION = var.clickhouse_version },
     )
   }
+
+  lifecycle {
+    replace_triggered_by = [google_compute_disk.clickhouse_data[each.key]]
+  }
 }

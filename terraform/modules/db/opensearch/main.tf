@@ -99,4 +99,8 @@ resource "google_compute_instance" "opensearch_node" {
       { OPENSEARCH_VERSION = var.opensearch_version },
     )
   }
+
+  lifecycle {
+    replace_triggered_by = [google_compute_disk.opensearch_data[each.key]]
+  }
 }
