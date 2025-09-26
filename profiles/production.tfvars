@@ -25,7 +25,7 @@ clickhouse_machine_type            = "n1-standard-8"
 clickhouse_version                 = "25.8.2.29"
 clickhouse_snapshot_platform_blue  = "platform-2509-1-ch"
 clickhouse_snapshot_platform_green = "platform-2509-ch"
-clickhouse_snapshot_ppp_blue       = "ppp-2506-ch"
+clickhouse_snapshot_ppp_blue       = "ppp-2509-ch"
 clickhouse_snapshot_ppp_green      = "ppp-2506-ch"
 clickhouse_labels                  = { "app" = "clickhouse" }
 
@@ -34,6 +34,6 @@ opensearch_machine_type            = "n1-standard-8"
 opensearch_version                 = "3.1.0"
 opensearch_snapshot_platform_blue  = "platform-2509-os"
 opensearch_snapshot_platform_green = "platform-2509-os"
-opensearch_snapshot_ppp_blue       = "ppp-2506-os"
+opensearch_snapshot_ppp_blue       = "ppp-2509-2-os"
 opensearch_snapshot_ppp_green      = "ppp-2506-os"
 opensearch_labels                  = { "app" = "opensearch" }
