@@ -4,8 +4,8 @@ product: ppp
 domain: opentargets.org
 dnsZone: opentargets-org
 
-production: green
-staging: enabled
+production: blue
+staging: disabled
 
 googleTagManagerId: GTM-XXXXXXX
 
