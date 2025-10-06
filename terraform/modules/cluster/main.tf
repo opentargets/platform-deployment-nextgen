@@ -153,25 +153,25 @@ resource "google_container_node_pool" "pools" {
 
 # Config Connector setup.
 # We use it from inside the cluster to create DNS records and global IPs.
-resource "kubernetes_manifest" "config_connector" {
-  manifest = {
-    apiVersion = "core.cnrm.cloud.google.com/v1beta1"
-    kind       = "ConfigConnector"
-    metadata = {
-      name = "configconnector.core.cnrm.cloud.google.com"
-    }
-    spec = {
-      mode                 = "cluster"
-      googleServiceAccount = "${google_service_account.config_connector.email}"
-      stateIntoSpec        = "Absent"
-    }
-  }
+# resource "kubernetes_manifest" "config_connector" {
+#   manifest = {
+#     apiVersion = "core.cnrm.cloud.google.com/v1beta1"
+#     kind       = "ConfigConnector"
+#     metadata = {
+#       name = "configconnector.core.cnrm.cloud.google.com"
+#     }
+#     spec = {
+#       mode                 = "cluster"
+#       googleServiceAccount = "${google_service_account.config_connector.email}"
+#       stateIntoSpec        = "Absent"
+#     }
+#   }
 
-  depends_on = [
-    google_container_cluster.cluster,
-    google_container_node_pool.pools,
-    google_service_account.config_connector,
-    google_project_iam_member.config_connector_roles,
-    google_service_account_iam_member.config_connector_workload_identity,
-  ]
-}
+#   depends_on = [
+#     google_container_cluster.cluster,
+#     google_container_node_pool.pools,
+#     google_service_account.config_connector,
+#     google_project_iam_member.config_connector_roles,
+#     google_service_account_iam_member.config_connector_workload_identity,
+#   ]
+# }
