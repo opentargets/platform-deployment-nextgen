@@ -1,7 +1,7 @@
 {
   "yaml.schemas": {
-    "./helm/values.schema.json": [
-      "helm/values.yaml",
+    "./helm/platform/values.schema.json": [
+      "helm/platform/values.yaml",
       "profiles/*.yaml"
     ],
   },
