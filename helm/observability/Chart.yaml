@@ -1,0 +1,19 @@
+apiVersion: v2
+name: observability
+description: This is the helm chart for the Open Targets Platform kubernetes Observability deployment.
+type: application
+version: '0.1.0'
+icon: https://www.opentargets.org/assets/img/branding/OT_helix_colour_svg.svg
+keywords:
+  - opentargets
+  - embl-ebi
+  - monitoring
+  - prometheus
+  - grafana
+dependencies:
+  - name: prometheus
+    version: 27.39.0
+    repository: https://prometheus-community.github.io/helm-charts
+  - name: grafana
+    version: 10.1.0
+    repository: https://grafana.github.io/helm-charts
