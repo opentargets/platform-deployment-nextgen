@@ -48,6 +48,7 @@ metadata:
     {{- $labels | nindent 4 }}
   annotations:
     cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-no-cdn"}'
+    prometheus.io/scrape: {{ if eq $env "prod" }}"true"{{ else }}"false"{{ end }}
 spec:
   selector:
     app: api
