@@ -1,7 +1,11 @@
 {
   "yaml.schemas": {
-    "./helm/values.schema.json": [
-      "helm/values.yaml",
+    "./helm/app/values.schema.json": [
+      "helm/app/values.yaml",
+      "profiles/*.yaml"
+    ],
+    "./helm/observabily/values.schema.json": [
+      "helm/observabily/values.yaml",
       "profiles/*.yaml"
     ]
   }
