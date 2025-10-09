@@ -4,44 +4,48 @@
 locals {
   instances = {
     platform_blue = {
-      disk_name     = "${var.global_prefix}-data-ch-platform-blue"
-      disk_snapshot = var.snapshot_platform_blue
-      instance_name = "${var.global_prefix}-platform-blue-clickhouse"
-      machine_type  = var.machine_type
-      dns_name      = "platform-blue.clickhouse.${var.global_prefix}.internal."
+      disk_name                 = "${var.global_prefix}-data-ch-platform-blue"
+      disk_snapshot             = var.snapshot_platform_blue
+      instance_name             = "${var.global_prefix}-platform-blue-clickhouse"
+      machine_type              = var.machine_type
+      dns_name                  = "platform-blue.clickhouse.${var.global_prefix}.internal."
+      allow_stopping_for_update = false
       labels = {
         product = "platform"
         color   = "blue"
       }
     }
     platform_green = {
-      disk_name     = "${var.global_prefix}-data-ch-platform-green"
-      disk_snapshot = var.snapshot_platform_green
-      instance_name = "${var.global_prefix}-platform-green-clickhouse"
-      machine_type  = var.machine_type
-      dns_name      = "platform-green.clickhouse.${var.global_prefix}.internal."
+      disk_name                 = "${var.global_prefix}-data-ch-platform-green"
+      disk_snapshot             = var.snapshot_platform_green
+      instance_name             = "${var.global_prefix}-platform-green-clickhouse"
+      machine_type              = var.machine_type
+      dns_name                  = "platform-green.clickhouse.${var.global_prefix}.internal."
+      allow_stopping_for_update = false
       labels = {
         product = "platform"
         color   = "green"
       }
     }
     ppp_blue = {
-      disk_name     = "${var.global_prefix}-data-ch-ppp-blue"
-      disk_snapshot = var.snapshot_ppp_blue
-      instance_name = "${var.global_prefix}-ppp-blue-clickhouse"
-      machine_type  = "n1-standard-2"
-      dns_name      = "ppp-blue.clickhouse.${var.global_prefix}.internal."
+      disk_name                 = "${var.global_prefix}-data-ch-ppp-blue"
+      disk_snapshot             = var.snapshot_ppp_blue
+      instance_name             = "${var.global_prefix}-ppp-blue-clickhouse"
+      machine_type              = "n1-standard-4"
+      dns_name                  = "ppp-blue.clickhouse.${var.global_prefix}.internal."
+      allow_stopping_for_update = true
       labels = {
         product = "ppp"
         color   = "blue"
       }
     }
     ppp_green = {
-      disk_name     = "${var.global_prefix}-data-ch-ppp-green"
-      disk_snapshot = var.snapshot_ppp_green
-      instance_name = "${var.global_prefix}-ppp-green-clickhouse"
-      machine_type  = "n1-standard-2"
-      dns_name      = "ppp-green.clickhouse.${var.global_prefix}.internal."
+      disk_name                 = "${var.global_prefix}-data-ch-ppp-green"
+      disk_snapshot             = var.snapshot_ppp_green
+      instance_name             = "${var.global_prefix}-ppp-green-clickhouse"
+      machine_type              = "n1-standard-4"
+      dns_name                  = "ppp-green.clickhouse.${var.global_prefix}.internal."
+      allow_stopping_for_update = true
       labels = {
         product = "ppp"
         color   = "green"
@@ -103,4 +107,5 @@ resource "google_compute_instance" "clickhouse_node" {
   lifecycle {
     replace_triggered_by = [google_compute_disk.clickhouse_data[each.key]]
   }
+  allow_stopping_for_update = each.value.allow_stopping_for_update
 }

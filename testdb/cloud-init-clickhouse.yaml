@@ -1,0 +1,51 @@
+#cloud-config
+users:
+  - name: clickhouse
+    system: true
+    shell: /bin/false
+
+write_files:
+  - path: /etc/systemd/system/clickhouse.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Start ClickHouse Docker
+
+      [Service]
+      Restart=always
+      RestartSec=10
+      ExecStop=/usr/bin/docker stop ot-ch
+      ExecStartPre=/usr/bin/docker pull clickhouse/clickhouse-server:${CLICKHOUSE_VERSION}
+      ExecStart=/bin/bash -c ' \
+        /usr/bin/docker run \
+          --rm \
+          --name ot-ch \
+          --log-driver=gcplogs \
+          -p 8123:8123 \
+          -p 9000:9000 \
+          -v /mnt/disks/clickhouse/config.d:/etc/clickhouse-server/config.d \
+          -v /mnt/disks/clickhouse/users.d:/etc/clickhouse-server/users.d \
+          -v /mnt/disks/clickhouse/data:/var/lib/clickhouse \
+          --ulimit nofile=262144:262144 \
+          clickhouse/clickhouse-server:${CLICKHOUSE_VERSION} \
+        '
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /tmp/clickhouse-network.xml
+    content: |
+      <clickhouse>
+        <listen_host>0.0.0.0</listen_host>
+      </clickhouse>
+
+runcmd:
+  # https://cloud.google.com/compute/docs/disks/format-mount-disk-linux
+  - mkdir -p /clickhouse
+  - mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/disk/by-id/google-data
+  - mount -t ext4 -o discard,defaults /dev/disk/by-id/google-data /mnt/disks/clickhouse
+  - mkdir -p /mnt/disks/clickhouse/config.d
+  - cp /tmp/clickhouse-network.xml /mnt/disks/clickhouse/config.d/network.xml
+  - systemctl daemon-reload
+  - systemctl enable --now clickhouse.service

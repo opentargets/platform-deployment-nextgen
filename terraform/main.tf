@@ -37,7 +37,7 @@ module "cluster" {
 # This deploys two instances of each database, a and b. This is temporary until we
 # have a unified instance for each database once we implement namespacing.
 module "db_clickhouse" {
-  source                  = "./modules/db/clickhouse"
+  source                  = "./modules/db-old/clickhouse"
   global_prefix           = var.global_prefix
   project_id              = var.project_id
   region                  = var.region
@@ -55,7 +55,7 @@ module "db_clickhouse" {
 }
 
 module "db_opensearch" {
-  source                  = "./modules/db/opensearch"
+  source                  = "./modules/db-old/opensearch"
   global_prefix           = var.global_prefix
   project_id              = var.project_id
   region                  = var.region

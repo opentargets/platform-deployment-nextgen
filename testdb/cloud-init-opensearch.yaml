@@ -1,0 +1,67 @@
+#cloud-config
+users:
+  - name: opensearch
+    system: true
+    shell: /bin/false
+
+write_files:
+  - path: /etc/systemd/system/opensearch.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Start OpenSearch Docker
+
+      [Service]
+      Restart=always
+      RestartSec=10
+      ExecStop=/usr/bin/docker stop ot-os
+      ExecStartPre=/usr/bin/docker build -t opensearch-gcs:${OPENSEARCH_VERSION} /var/lib/opensearch-build
+      ExecStart=/bin/bash -c ' \
+        HEAP_SIZE=$$(( $$(grep MemTotal /proc/meminfo | awk "{print \\$$2}") / 1024 / 2 ))m; \
+        /usr/bin/docker run \
+          --rm \
+          --name ot-os \
+          --log-driver=gcplogs \
+          -p 9200:9200 \
+          -p 9600:9600 \
+          -e "discovery.type=single-node" \
+          -e "network.host=0.0.0.0" \
+          -e "bootstrap.memory_lock=true" \
+          -e "DISABLE_SECURITY_PLUGIN=true" \
+          -e "OPENSEARCH_JAVA_OPTS=-Xms$$HEAP_SIZE -Xmx$$HEAP_SIZE -XX:+UseTransparentHugePages" \
+          -v /mnt/disks/opensearch/data:/usr/share/opensearch/data \
+          -v /var/log/opensearch:/usr/share/opensearch/logs \
+          --ulimit memlock=-1:-1 \
+          --ulimit nofile=65536:65536 \
+          --shm-size=1gb \
+          opensearch-gcs:${OPENSEARCH_VERSION} \
+        '
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /var/lib/opensearch-build/Dockerfile
+    owner: root:root
+    permissions: '0644'
+    content: |
+      ARG OPENSEARCH_VERSION
+      FROM opensearchproject/opensearch:${OPENSEARCH_VERSION}
+
+      USER root
+      RUN /usr/share/opensearch/bin/opensearch-plugin install --batch repository-gcs
+      USER opensearch
+
+runcmd:
+  # https://cloud.google.com/compute/docs/disks/format-mount-disk-linux
+  - mkdir -p /mnt/disks/opensearch
+  - mkdir -p /var/log/opensearch
+  - mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/disk/by-id/google-data
+  - mount -t ext4 -o discard,defaults /dev/disk/by-id/google-data /mnt/disks/opensearch
+  - mkdir -p /mnt/disks/opensearch/data
+  - chown -R 1000:1000 /mnt/disks/opensearch /var/log/opensearch
+  - chmod -R 755 /mnt/disks/opensearch /var/log/opensearch
+  - echo 'vm.max_map_count=262144' >> /etc/sysctl.conf
+  - sysctl -w vm.max_map_count=262144
+  - systemctl daemon-reload
+  - systemctl enable --now opensearch.service
