@@ -43,7 +43,7 @@ deploy-observability-dev-platform:
 		helm repo add prometheus-community https://prometheus-community.github.io/helm-charts; \
 		helm repo update; \
 	fi; \
-	@helm diff upgrade observability ./helm/observability -f ./profiles/devcluster-platform.yaml; \
+	@helm diff upgrade observability ./helm/observability \
 	read -p "press enter to continue..."; \
 	helm upgrade observability ./helm/observability --namespace monitoring
 
