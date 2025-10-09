@@ -1,121 +1,128 @@
 {
   "$schema": "https://json-schema.org/draft/2019-09/schema",
   "type": "object",
-  "title": "Prometheus Helm Chart Values Schema",
-  "description": "Schema for Prometheus Helm chart values configuration",
+  "title": "Observability Helm Chart Values Schema",
+  "description": "Schema for Observability Helm chart values configuration",
   "properties": {
-    "configmapReload": {
-      "type": "object",
-      "description": "Configuration for configmap-reload sidecar",
+    "prometheus": {
+    "type": "object",
+    "description": "Custom configuration for Prometheus Helm chart",
       "properties": {
-        "prometheus": {
+        "configmapReload": {
           "type": "object",
+          "description": "Configuration for configmap-reload sidecar",
+          "properties": {
+            "prometheus": {
+              "type": "object",
+              "properties": {
+                "image": {
+                  "$ref": "#/$defs/imageConfig"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        },
+        "server": {
+          "type": "object",
+          "description": "Setting the container image for Prometheus server",
+          "properties": {
+            "image": {
+              "$ref": "#/$defs/imageConfig"
+            },
+            "persistentVolume": {
+              "type": "object",
+              "description": "Persistent volume configuration",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "If true, Prometheus server will create/use a Persistent Volume Claim"
+                },
+                "size": {
+                  "type": "string",
+                  "description": "Prometheus server data Persistent Volume size",
+                  "pattern": "^\\d+(\\.\\d+)?(Gi|Mi|Ki|Ti|Pi|Ei)$"
+                },
+                "storageClass": {
+                  "type": "string",
+                  "description": "Prometheus server data Persistent Volume Storage Class. If defined, storageClassName: <storageClass> If set to '-', storageClassName: '', which disables dynamic provisioning If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner. (gp2 on AWS, standard on  GKE, AWS & OpenStack)"
+                }
+              },
+              "additionalProperties": true
+            },
+            "retention": {
+              "type": "string",
+              "description": "Prometheus data retention period (default if not specified is 15 days)",
+              "pattern": "^\\d+[dhms]$"
+            }
+          },
+          "additionalProperties": true
+        },
+        "prometheus-node-exporter": {
+          "type": "object",
+          "description": "Node exporter configuration",
+          "properties": {
+            "image": {
+              "$ref": "#/$defs/registryImageConfig"
+            }
+          },
+          "additionalProperties": true
+        },
+        "prometheus-pushgateway": {
+          "type": "object",
+          "description": "Pushgateway configuration",
+          "properties": {
+            "image": {
+              "$ref": "#/$defs/registryImageConfig"
+            }
+          },
+          "additionalProperties": true
+        },
+        "kube-state-metrics": {
+          "type": "object",
+          "description": "Kube-state-metrics configuration",
+          "properties": {
+            "image": {
+              "$ref": "#/$defs/registryImageConfig"
+            }
+          },
+          "additionalProperties": true
+        },
+        "alertmanager": {
+          "type": "object",
+          "description": "Alertmanager configuration",
           "properties": {
             "image": {
               "$ref": "#/$defs/imageConfig"
             }
           },
           "additionalProperties": true
-        }
-      },
-      "additionalProperties": true
-    },
-    "server": {
-      "type": "object",
-      "description": "Prometheus server configuration",
-      "properties": {
-        "image": {
-          "$ref": "#/$defs/imageConfig"
         },
-        "persistentVolume": {
+        "serverFiles": {
           "type": "object",
-          "description": "Persistent volume configuration",
+          "description": "Prometheus server configuration files",
           "properties": {
-            "enabled": {
-              "type": "boolean",
-              "description": "If true, Prometheus server will create/use a Persistent Volume Claim"
-            },
-            "size": {
-              "type": "string",
-              "description": "Prometheus server data Persistent Volume size",
-              "pattern": "^\\d+(\\.\\d+)?(Gi|Mi|Ki|Ti|Pi|Ei)$"
-            },
-            "storageClass": {
-              "type": "string",
-              "description": "Prometheus server data Persistent Volume Storage Class"
-            }
-          },
-          "additionalProperties": true
-        },
-        "retention": {
-          "type": "string",
-          "description": "Prometheus data retention period",
-          "pattern": "^\\d+[dhms]$"
-        }
-      },
-      "additionalProperties": true
-    },
-    "prometheus-node-exporter": {
-      "type": "object",
-      "description": "Node exporter configuration",
-      "properties": {
-        "image": {
-          "$ref": "#/$defs/registryImageConfig"
-        }
-      },
-      "additionalProperties": true
-    },
-    "prometheus-pushgateway": {
-      "type": "object",
-      "description": "Pushgateway configuration",
-      "properties": {
-        "image": {
-          "$ref": "#/$defs/registryImageConfig"
-        }
-      },
-      "additionalProperties": true
-    },
-    "kube-state-metrics": {
-      "type": "object",
-      "description": "Kube-state-metrics configuration",
-      "properties": {
-        "image": {
-          "$ref": "#/$defs/registryImageConfig"
-        }
-      },
-      "additionalProperties": true
-    },
-    "alertmanager": {
-      "type": "object",
-      "description": "Alertmanager configuration",
-      "properties": {
-        "image": {
-          "$ref": "#/$defs/imageConfig"
-        }
-      },
-      "additionalProperties": true
-    },
-    "serverFiles": {
-      "type": "object",
-      "description": "Prometheus server configuration files",
-      "properties": {
-        "prometheus.yml": {
-          "type": "object",
-          "description": "Main Prometheus configuration",
-          "properties": {
-            "scrape_configs": {
-              "type": "array",
-              "description": "Scrape configurations for Prometheus",
-              "items": {
-                "$ref": "#/$defs/scrapeConfig"
-              }
+            "prometheus.yml": {
+              "type": "object",
+              "description": "Main Prometheus configuration",
+              "properties": {
+                "scrape_configs": {
+                  "type": "array",
+                  "description": "Scrape configurations for Prometheus",
+                  "items": {
+                    "$ref": "#/$defs/scrapeConfig"
+                  }
+                }
+              },
+              "additionalProperties": true
             }
           },
           "additionalProperties": true
         }
-      },
-      "additionalProperties": true
-    }
+      }
+    },
+    "additionalProperties": true
   },
   "additionalProperties": true,
   "$defs": {
@@ -130,11 +137,13 @@
         },
         "tag": {
           "type": "string",
-          "description": "Container image tag",
+          "description": "Container image tag. If not set appVersion field from Chart.yaml is used",
           "pattern": "^[a-zA-Z0-9._-]+$"
         }
       },
-      "required": ["repository"],
+      "required": [
+        "repository"
+      ],
       "additionalProperties": false
     },
     "registryImageConfig": {
@@ -156,7 +165,9 @@
           "pattern": "^[a-zA-Z0-9._-]+$"
         }
       },
-      "required": ["repository"],
+      "required": [
+        "repository"
+      ],
       "additionalProperties": false
     },
     "scrapeConfig": {
@@ -173,7 +184,10 @@
         },
         "scheme": {
           "type": "string",
-          "enum": ["http", "https"],
+          "enum": [
+            "http",
+            "https"
+          ],
           "description": "The protocol scheme with which to fetch metrics"
         },
         "scrape_interval": {
@@ -214,7 +228,14 @@
             "properties": {
               "role": {
                 "type": "string",
-                "enum": ["node", "service", "pod", "endpoints", "endpointslice", "ingress"],
+                "enum": [
+                  "node",
+                  "service",
+                  "pod",
+                  "endpoints",
+                  "endpointslice",
+                  "ingress"
+                ],
                 "description": "The role of entities that should be discovered"
               }
             }
@@ -264,7 +285,9 @@
           }
         }
       },
-      "required": ["job_name"],
+      "required": [
+        "job_name"
+      ],
       "additionalProperties": true
     },
     "relabelConfig": {
@@ -287,7 +310,11 @@
           "description": "Label to which the resulting value is written"
         },
         "regex": {
-          "type": ["string", "number", "boolean"],
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
           "description": "Regular expression against which the extracted value is matched"
         },
         "modulus": {
@@ -300,7 +327,15 @@
         },
         "action": {
           "type": "string",
-          "enum": ["replace", "keep", "drop", "hashmod", "labelmap", "labeldrop", "labelkeep"],
+          "enum": [
+            "replace",
+            "keep",
+            "drop",
+            "hashmod",
+            "labelmap",
+            "labeldrop",
+            "labelkeep"
+          ],
           "description": "Action to perform based on the regex matching"
         }
       },
