@@ -37,19 +37,15 @@ deploy-apps-prod-ppp:
 	fi
 
 deploy-observability-dev-platform:
-	@MONITORING_NAMESPACE=$$(kubectl get ns | grep monitoring | awk '{print $1}'); \
-	if [ -z "$$MONITORING_NAMESPACE" ]; then \
-		echo "Creating monitoring namespace"; \
-		kubectl create namespace monitoring; \
-	fi; \
-	@PROMETHEUS_REPO=$$(helm repo list | grep prometheus-community | awk '{print $$1}'); \
+	@PROMETHEUS_REPO=$$(helm repo list | grep prometheus-community.github.io/helm-charts | awk '{print $$1}'); \
 	if [ -z "$$PROMETHEUS_REPO" ]; then \
+		echo "Adding the prometheus-community helm repo."; \
 		helm repo add prometheus-community https://prometheus-community.github.io/helm-charts; \
 		helm repo update; \
 	fi; \
-	@helm diff upgrade -i prometheus prometheus-community/prometheus --namespace monitoring -f ./helm/app/prom.values.yaml; \
+	@helm diff upgrade observability ./helm/observability \
 	read -p "press enter to continue..."; \
-	helm upgrade -i prometheus prometheus-community/prometheus --namespace monitoring -f ./helm/app/prom.values.yaml
+	helm upgrade observability ./helm/observability --namespace monitoring
 
 port-forward-prometheus:
 	@PROMETHEUS_POD=$$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}"); \
