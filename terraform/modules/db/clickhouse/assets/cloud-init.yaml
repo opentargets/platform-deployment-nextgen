@@ -1,0 +1,68 @@
+#cloud-config
+users:
+  - name: clickhouse
+    system: true
+    shell: /bin/false
+
+disk_setup:
+  /dev/disk/by-id/google-data:
+    table_type: gpt
+    layout: true
+    overwrite: false
+
+fs_setup:
+  - device: /dev/disk/by-id/google-data
+    filesystem: ext4
+    partition: auto
+    cmd: 'mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard'
+    overwrite: false
+
+mounts:
+  - ['/dev/disk/by-id/google-data', '/mnt/disks/clickhouse', 'ext4', 'discard,defaults', '0', '2']
+
+write_files:
+  - path: /etc/systemd/system/clickhouse.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Start ClickHouse Docker
+
+      [Service]
+      Restart=always
+      RestartSec=10
+      ExecStop=/usr/bin/docker stop ot-ch
+      ExecStartPre=/usr/bin/docker pull clickhouse/clickhouse-server:${CLICKHOUSE_VERSION}
+      ExecStart=/bin/bash -c ' \
+        /usr/bin/docker run \
+          --rm \
+          --name ot-ch \
+          --log-driver=gcplogs \
+          -p 8123:8123 \
+          -p 9000:9000 \
+          -v /mnt/disks/clickhouse/config.d:/etc/clickhouse-server/config.d \
+          -v /mnt/disks/clickhouse/users.d:/etc/clickhouse-server/users.d \
+          -v /mnt/disks/clickhouse/data:/var/lib/clickhouse \
+          --ulimit nofile=262144:262144 \
+          clickhouse/clickhouse-server:${CLICKHOUSE_VERSION} \
+        '
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /mnt/disks/clickhouse/config.d/config.xml
+    content: |
+      ${config-xml}
+    owner: root:root
+    permissions: '0644'
+
+  - path: /mnt/disks/clickhouse/users.d/users.xml
+    content: |
+      ${users-xml}
+    owner: root:root
+    permissions: '0644'
+
+runcmd:
+  - mkdir -p /mnt/disks/clickhouse/config.d
+  - systemctl daemon-reload
+  - systemctl enable --now clickhouse.service

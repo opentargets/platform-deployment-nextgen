@@ -3,6 +3,8 @@
     "./helm/values.schema.json": [
       "helm/values.yaml",
       "profiles/*.yaml"
-    ]
-  }
+    ],
+    "https://raw.githubusercontent.com/canonical/cloud-init/main/cloudinit/config/schemas/versions.schema.cloud-config.json": "file:///home/javilol/dev/work/platform-deployment-nextgen/terraform/modules/db/cloud-init-opensearch.yaml"
+  },
+  "yaml.format.printWidth": 120
 }
