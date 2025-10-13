@@ -6,43 +6,42 @@ prometheus:
         tag: v0.85.0
 
   server:
-
     image:
       repository: quay.io/prometheus/prometheus
-      tag: "v3.6.0"
-    
+      tag: 'v3.6.0'
+
     persistentVolume:
       enabled: true
 
       size: 30Gi
 
-      storageClass: "standard"
+      storageClass: 'standard'
 
-    retention: "30d"
+    retention: '30d'
 
   prometheus-node-exporter:
     image:
       registry: quay.io
       repository: prometheus/node-exporter
-      
-      tag: "v1.9.1"
+
+      tag: 'v1.9.1'
 
   prometheus-pushgateway:
     image:
-      registry: ""
+      registry: ''
       repository: quay.io/prometheus/pushgateway
-      tag: "v1.11.1"
+      tag: 'v1.11.1'
 
   kube-state-metrics:
     image:
       registry: registry.k8s.io
       repository: kube-state-metrics/kube-state-metrics
-      tag: "v2.17.0"
+      tag: 'v2.17.0'
 
   alertmanager:
     image:
       repository: quay.io/prometheus/alertmanager
-      tag: "v0.28.1"
+      tag: 'v0.28.1'
 
   serverFiles:
     prometheus.yml:
@@ -50,7 +49,7 @@ prometheus:
         - job_name: prometheus
           static_configs:
             - targets:
-              - localhost:9090
+                - localhost:9090
         - job_name: 'kubernetes-apiservers'
 
           kubernetes_sd_configs:
@@ -60,7 +59,8 @@ prometheus:
             ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
           bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
           relabel_configs:
-            - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            - source_labels:
+                [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
               action: keep
               regex: default;kubernetes;https
 
@@ -82,7 +82,6 @@ prometheus:
               regex: (.+)
               target_label: __metrics_path__
               replacement: /api/v1/nodes/$1/proxy/metrics
-
 
         - job_name: 'kubernetes-nodes-cadvisor'
           scheme: https
