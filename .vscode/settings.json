@@ -8,5 +8,7 @@
       "helm/observability/values.yaml",
       "profiles/*.yaml"
     ]
-  }
+  },
+  "yaml.format.printWidth": 120,
+  "yaml.format.singleQuote": true
 }
