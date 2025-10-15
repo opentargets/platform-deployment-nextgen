@@ -4,33 +4,61 @@
   "title": "Observability Helm Chart Values Schema",
   "description": "Schema for Observability Helm chart values configuration",
   "properties": {
-    "prometheus": {
-    "type": "object",
-    "description": "Custom configuration for Prometheus Helm chart",
+    "grafana": {
+      "type": "object",
+      "description": "Custom configuration for Grafana Helm chart",
       "properties": {
-        "configmapReload": {
+        "sidecar": {
           "type": "object",
-          "description": "Configuration for configmap-reload sidecar",
+          "description": "Configuration for Grafana sidecar",
           "properties": {
-            "prometheus": {
+            "dashboards": {
               "type": "object",
+              "description": "Configuration for dashboards sidecar",
               "properties": {
-                "image": {
-                  "$ref": "#/$defs/imageConfig"
+                "enabled": {
+                  "type": "boolean",
+                  "description": "If true, enables the dashboards sidecar"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Label to identify ConfigMaps containing Grafana dashboards"
+                }
+              },
+              "additionalProperties": true
+            },
+            "datasources": {
+              "type": "object",
+              "description": "Configuration for datasources sidecar",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "If true, enables the datasources sidecar"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Label to identify ConfigMaps containing Grafana datasources"
                 }
               },
               "additionalProperties": true
             }
           },
           "additionalProperties": true
+        }
+      }
+    },
+    "prometheus": {
+      "type": "object",
+      "description": "Custom configuration for Prometheus Helm chart",
+      "properties": {
+        "configmapReload": {
+          "type": "object",
+          "description": "Configuration for configmap-reload sidecar"
         },
         "server": {
           "type": "object",
           "description": "Setting the container image for Prometheus server",
           "properties": {
-            "image": {
-              "$ref": "#/$defs/imageConfig"
-            },
             "persistentVolume": {
               "type": "object",
               "description": "Persistent volume configuration",
@@ -55,46 +83,6 @@
               "type": "string",
               "description": "Prometheus data retention period (default if not specified is 15 days)",
               "pattern": "^\\d+[dhms]$"
-            }
-          },
-          "additionalProperties": true
-        },
-        "prometheus-node-exporter": {
-          "type": "object",
-          "description": "Node exporter configuration",
-          "properties": {
-            "image": {
-              "$ref": "#/$defs/registryImageConfig"
-            }
-          },
-          "additionalProperties": true
-        },
-        "prometheus-pushgateway": {
-          "type": "object",
-          "description": "Pushgateway configuration",
-          "properties": {
-            "image": {
-              "$ref": "#/$defs/registryImageConfig"
-            }
-          },
-          "additionalProperties": true
-        },
-        "kube-state-metrics": {
-          "type": "object",
-          "description": "Kube-state-metrics configuration",
-          "properties": {
-            "image": {
-              "$ref": "#/$defs/registryImageConfig"
-            }
-          },
-          "additionalProperties": true
-        },
-        "alertmanager": {
-          "type": "object",
-          "description": "Alertmanager configuration",
-          "properties": {
-            "image": {
-              "$ref": "#/$defs/imageConfig"
             }
           },
           "additionalProperties": true
@@ -126,50 +114,6 @@
   },
   "additionalProperties": true,
   "$defs": {
-    "imageConfig": {
-      "type": "object",
-      "description": "Container image configuration",
-      "properties": {
-        "repository": {
-          "type": "string",
-          "description": "Container image repository",
-          "pattern": "^[a-z0-9.-]+(/[a-z0-9._-]+)*$"
-        },
-        "tag": {
-          "type": "string",
-          "description": "Container image tag. If not set appVersion field from Chart.yaml is used",
-          "pattern": "^[a-zA-Z0-9._-]+$"
-        }
-      },
-      "required": [
-        "repository"
-      ],
-      "additionalProperties": false
-    },
-    "registryImageConfig": {
-      "type": "object",
-      "description": "Container image configuration with registry",
-      "properties": {
-        "registry": {
-          "type": "string",
-          "description": "Container registry hostname"
-        },
-        "repository": {
-          "type": "string",
-          "description": "Container image repository",
-          "pattern": "^[a-z0-9._-]+(/[a-z0-9._-]+)*$"
-        },
-        "tag": {
-          "type": "string",
-          "description": "Container image tag",
-          "pattern": "^[a-zA-Z0-9._-]+$"
-        }
-      },
-      "required": [
-        "repository"
-      ],
-      "additionalProperties": false
-    },
     "scrapeConfig": {
       "type": "object",
       "description": "Prometheus scrape configuration",

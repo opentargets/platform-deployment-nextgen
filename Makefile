@@ -8,12 +8,12 @@ deploy-cluster-prod:
 
 deploy-apps-dev-platform:
 	@helm diff upgrade devcluster-platform ./helm/app -f ./profiles/devcluster-platform.yaml; \
-	read -p "press enter to continue..."; \
+	read -p "press enter to continue..." nothing; \
 	helm upgrade devcluster-platform ./helm/app -f ./profiles/devcluster-platform.yaml
 
 deploy-apps-dev-ppp:
 	@helm diff upgrade devcluster-ppp ./helm/app -f ./profiles/devcluster-ppp.yaml; \
-	read -p "press enter to continue..."; \
+	read -p "press enter to continue..." nothing; \
 	helm upgrade devcluster-ppp ./helm/app -f ./profiles/devcluster-ppp.yaml
 
 deploy-apps-prod-platform:
@@ -43,11 +43,21 @@ deploy-observability-dev-platform:
 		helm repo add prometheus-community https://prometheus-community.github.io/helm-charts; \
 		helm repo update; \
 	fi; \
-	@helm diff upgrade observability ./helm/observability \
+	if [ ! -d "helm/observability/charts" ]; then \
+		helm dependency build ./helm/observability; \
+	fi; \
+	helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability; \
 	read -p "press enter to continue..."; \
-	helm upgrade observability ./helm/observability --namespace monitoring
+	helm upgrade observability ./helm/observability --namespace observability --install --create-namespace
 
 port-forward-prometheus:
-	@PROMETHEUS_POD=$$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}"); \
+	@PROMETHEUS_POD=$$(kubectl get pods --namespace observability -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=observability" -o jsonpath="{.items[0].metadata.name}"); \
 	echo "Port-forwarding to Prometheus pod: $$PROMETHEUS_POD"; \
-	kubectl port-forward --namespace monitoring $$PROMETHEUS_POD 9090:9090
+	kubectl port-forward --namespace observability $$PROMETHEUS_POD 9090:9090
+
+port-forward-grafana:
+	echo "Grafana admin password:"
+	@kubectl get secret --namespace observability observability-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+	@GRAFANA_POD=$$(kubectl get pods --namespace observability -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=observability" -o jsonpath="{.items[0].metadata.name}"); \
+	echo "Port-forwarding to Grafana pod: $$GRAFANA_POD"; \
+	kubectl port-forward --namespace observability $$GRAFANA_POD 3000:3000
