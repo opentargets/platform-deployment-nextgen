@@ -1,54 +1,48 @@
 {{ define "external.clickhouse" }}
-{{- $root := .root }}
-{{- $color := .color | default "blue" }}
-{{- $prefix := $root.Values.prefix }}
-{{- $product := $root.Values.product }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
+{{- $prefix := .Values.prefix }}
+{{- $product := .Values.product }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
 ---
-# Service for {{ $namespace }}-{{ $color }} ClickHouse external service.
+# Service for {{ $prefix }} ClickHouse external service.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse
+  name: {{ $prefix }}-clickhouse
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   type: ExternalName
-  externalName: {{ $product }}-{{ $color }}.clickhouse.{{ $prefix }}.internal
+  externalName: clickhouse.{{ $prefix }}.internal
   ports:
-    - port: {{ include "ports.clickhouse" $root }}
+    - port: {{ include "ports.clickhouse" . }}
       protocol: TCP
       name: clickhouse
 {{- end }}
 
 
 {{ define "external.opensearch" }}
-{{- $root := .root }}
-{{- $color := .color | default "blue" }}
-{{- $prefix := $root.Values.prefix }}
-{{- $product := $root.Values.product }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
+{{- $prefix := .Values.prefix }}
+{{- $product := .Values.product }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
 ---
-# Service for {{ $namespace }}-{{ $color }} OpenSearch external service.
+# Service for {{ $prefix }} OpenSearch external service.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $namespace }}-{{ $color }}-opensearch
+  name: {{ $prefix }}-opensearch
   namespace: {{ $namespace }}
   labels:
     app: opensearch
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   type: ExternalName
-  externalName: {{ $product }}-{{ $color }}.opensearch.{{ $prefix }}.internal
+  externalName: opensearch.{{ $prefix }}.internal
   ports:
-    - port: {{ include "ports.clickhouse" $root }}
+    - port: {{ include "ports.clickhouse" . }}
       protocol: TCP
       name: opensearch
 {{- end }}
