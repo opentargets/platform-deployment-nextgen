@@ -3,6 +3,7 @@
     "./helm/values.schema.json": [
       "helm/values.yaml",
       "profiles/*.yaml"
-    ]
-  }
+    ],
+  },
+  "yaml.format.printWidth": 120
 }
