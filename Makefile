@@ -43,7 +43,7 @@ deploy-observability-dev-platform:
 		helm repo add prometheus-community https://prometheus-community.github.io/helm-charts; \
 		helm repo update; \
 	fi; \
-	@helm diff upgrade observability ./helm/observability \
+	helm diff upgrade observability ./helm/observability --allow-unreleased --namespace monitoring; \
 	read -p "press enter to continue..."; \
 	helm upgrade observability ./helm/observability --namespace monitoring
 
@@ -51,3 +51,10 @@ port-forward-prometheus:
 	@PROMETHEUS_POD=$$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}"); \
 	echo "Port-forwarding to Prometheus pod: $$PROMETHEUS_POD"; \
 	kubectl port-forward --namespace monitoring $$PROMETHEUS_POD 9090:9090
+
+port-forward-grafana:
+	echo "Grafana admin password:"
+	@kubectl get secret --namespace monitoring observability-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+	@GRAFANA_POD=$$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=observability" -o jsonpath="{.items[0].metadata.name}"); \
+	echo "Port-forwarding to Grafana pod: $$GRAFANA_POD"; \
+	kubectl port-forward --namespace monitoring $$GRAFANA_POD 3000:3000

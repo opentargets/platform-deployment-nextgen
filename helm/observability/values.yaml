@@ -1,41 +1,10 @@
 prometheus:
-  configmapReload:
-    prometheus:
-      image:
-        repository: quay.io/prometheus-operator/prometheus-config-reloader
-        tag: v0.85.0
-
   server:
-    image:
-      repository: quay.io/prometheus/prometheus
-      tag: v3.6.0
     persistentVolume:
       enabled: true
       size: 30Gi
       storageClass: standard
     retention: 30d
-
-  prometheus-node-exporter:
-    image:
-      registry: quay.io
-      repository: prometheus/node-exporter
-      tag: v1.9.1
-
-  prometheus-pushgateway:
-    image:
-      repository: quay.io/prometheus/pushgateway
-      tag: v1.11.1
-
-  kube-state-metrics:
-    image:
-      registry: registry.k8s.io
-      repository: kube-state-metrics/kube-state-metrics
-      tag: v2.17.0
-
-  alertmanager:
-    image:
-      repository: quay.io/prometheus/alertmanager
-      tag: v0.28.1
 
   serverFiles:
     prometheus.yml:
@@ -298,3 +267,12 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: node
+
+grafana:
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+    datasources:
+      enabled: true
+      label: grafana_datasource
