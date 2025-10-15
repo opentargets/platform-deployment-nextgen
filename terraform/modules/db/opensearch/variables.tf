@@ -29,11 +29,15 @@ variable "base_labels" {
   type        = map(string)
 }
 
-
 # OPENSEARCH VARIABLES
 variable "machine_type" {
   description = "The machine type to use for the OpenSearch node"
   type        = string
+}
+
+variable "disk_size_gb" {
+  description = "The size of the OpenSearch data disk in GB"
+  type        = number
 }
 
 variable "opensearch_version" {
@@ -41,28 +45,8 @@ variable "opensearch_version" {
   type        = string
 }
 
-variable "snapshot_platform_blue" {
-  description = "The name of the OpenSearch snapshot to use in the platform blue node"
-  type        = string
-}
-
-variable "snapshot_platform_green" {
-  description = "The name of the OpenSearch snapshot to use in the platform green node"
-  type        = string
-}
-
-variable "snapshot_ppp_blue" {
-  description = "The name of the OpenSearch snapshot to use in the ppp blue node"
-  type        = string
-}
-
-variable "snapshot_ppp_green" {
-  description = "The name of the OpenSearch snapshot to use in the ppp green node"
-  type        = string
-}
-
-variable "dns_zone" {
-  description = "The name of the managed DNS zone to expose OpenSearch"
+variable "dns_zone_name" {
+  description = "The name of the managed DNS zone to expose ClickHouse"
   type        = string
 }
 

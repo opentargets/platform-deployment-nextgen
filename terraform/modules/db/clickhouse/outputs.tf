@@ -1,22 +1,11 @@
-# Outputs to expose the internal DNS names of the ClickHouse nodes. This is the
-# only thing that interests us from this module.
+# Output to expose the internal DNS name and IP of the ClickHouse node.
 
-output "platform_blue_internal_name" {
-  description = "The internal DNS name of the ClickHouse platform blue node"
-  value       = google_dns_record_set.internal["platform_blue"].name
+output "internal_name" {
+  description = "The internal DNS name of the ClickHouse node."
+  value       = google_dns_record_set.internal.name
 }
 
-output "platform_green_internal_name" {
-  description = "The internal DNS name of the ClickHouse platform green node"
-  value       = google_dns_record_set.internal["platform_green"].name
-}
-
-output "ppp_blue_internal_name" {
-  description = "The internal DNS name of the ClickHouse ppp blue node"
-  value       = google_dns_record_set.internal["ppp_blue"].name
-}
-
-output "ppp_green_internal_name" {
-  description = "The internal DNS name of the ClickHouse ppp green node"
-  value       = google_dns_record_set.internal["ppp_green"].name
+output "internal_ip" {
+  description = "The internal IP address of the ClickHouse node."
+  value       = google_compute_instance.node.network_interface.0.network_ip
 }

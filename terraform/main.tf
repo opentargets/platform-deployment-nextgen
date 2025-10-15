@@ -33,41 +33,32 @@ module "cluster" {
   labels                  = var.cluster_labels
 }
 
-# The two database modules deploy ClickHouse and OpenSearch outside of the cluster.
-# This deploys two instances of each database, a and b. This is temporary until we
-# have a unified instance for each database once we implement namespacing.
-module "db_clickhouse" {
-  source                  = "./modules/db/clickhouse"
-  global_prefix           = var.global_prefix
-  project_id              = var.project_id
-  region                  = var.region
-  zone                    = var.zone
-  network                 = google_compute_network.main.name
-  base_labels             = var.base_labels
-  machine_type            = var.clickhouse_machine_type
-  clickhouse_version      = var.clickhouse_version
-  snapshot_platform_blue  = var.clickhouse_snapshot_platform_blue
-  snapshot_platform_green = var.clickhouse_snapshot_platform_green
-  snapshot_ppp_blue       = var.clickhouse_snapshot_ppp_blue
-  snapshot_ppp_green      = var.clickhouse_snapshot_ppp_green
-  dns_zone                = google_dns_managed_zone.internal.name
-  labels                  = { "app" = "clickhouse" }
+module "clickhouse" {
+  source             = "./modules/db/clickhouse"
+  global_prefix      = var.global_prefix
+  project_id         = var.project_id
+  region             = var.region
+  zone               = var.zone
+  network            = google_compute_network.main.name
+  base_labels        = var.base_labels
+  machine_type       = "n1-standard-16"
+  disk_size_gb       = 500
+  clickhouse_version = var.clickhouse_version
+  dns_zone_name      = google_dns_managed_zone.internal.name
+  labels             = { "app" = "clickhouse" }
 }
 
-module "db_opensearch" {
-  source                  = "./modules/db/opensearch"
-  global_prefix           = var.global_prefix
-  project_id              = var.project_id
-  region                  = var.region
-  zone                    = var.zone
-  network                 = google_compute_network.main.name
-  base_labels             = var.base_labels
-  machine_type            = var.opensearch_machine_type
-  opensearch_version      = var.opensearch_version
-  snapshot_platform_blue  = var.opensearch_snapshot_platform_blue
-  snapshot_platform_green = var.opensearch_snapshot_platform_green
-  snapshot_ppp_blue       = var.opensearch_snapshot_ppp_blue
-  snapshot_ppp_green      = var.opensearch_snapshot_ppp_green
-  dns_zone                = google_dns_managed_zone.internal.name
-  labels                  = { "app" = "opensearch" }
+module "opensearch" {
+  source             = "./modules/db/opensearch"
+  global_prefix      = var.global_prefix
+  project_id         = var.project_id
+  region             = var.region
+  zone               = var.zone
+  network            = google_compute_network.main.name
+  base_labels        = var.base_labels
+  machine_type       = "n1-standard-16"
+  disk_size_gb       = 1000
+  opensearch_version = var.opensearch_version
+  dns_zone_name      = google_dns_managed_zone.internal.name
+  labels             = { "app" = "opensearch" }
 }
