@@ -1,75 +1,48 @@
-# ClickHouse disks and instances. This is repeated four times for products and
-# colors. In the future, we will have only one, but it will be an instance group
-# with multiple nodes, and a load balancer in front of it.
 locals {
-  instances = {
-    platform_blue = {
-      disk_name     = "${var.global_prefix}-data-ch-platform-blue"
-      disk_snapshot = var.snapshot_platform_blue
-      instance_name = "${var.global_prefix}-platform-blue-clickhouse"
-      machine_type  = var.machine_type
-      dns_name      = "platform-blue.clickhouse.${var.global_prefix}.internal."
-      labels = {
-        product = "platform"
-        color   = "blue"
-      }
-    }
-    platform_green = {
-      disk_name     = "${var.global_prefix}-data-ch-platform-green"
-      disk_snapshot = var.snapshot_platform_green
-      instance_name = "${var.global_prefix}-platform-green-clickhouse"
-      machine_type  = var.machine_type
-      dns_name      = "platform-green.clickhouse.${var.global_prefix}.internal."
-      labels = {
-        product = "platform"
-        color   = "green"
-      }
-    }
-    ppp_blue = {
-      disk_name     = "${var.global_prefix}-data-ch-ppp-blue"
-      disk_snapshot = var.snapshot_ppp_blue
-      instance_name = "${var.global_prefix}-ppp-blue-clickhouse"
-      machine_type  = "n1-standard-2"
-      dns_name      = "ppp-blue.clickhouse.${var.global_prefix}.internal."
-      labels = {
-        product = "ppp"
-        color   = "blue"
-      }
-    }
-    ppp_green = {
-      disk_name     = "${var.global_prefix}-data-ch-ppp-green"
-      disk_snapshot = var.snapshot_ppp_green
-      instance_name = "${var.global_prefix}-ppp-green-clickhouse"
-      machine_type  = "n1-standard-2"
-      dns_name      = "ppp-green.clickhouse.${var.global_prefix}.internal."
-      labels = {
-        product = "ppp"
-        color   = "green"
-      }
-    }
+  cloud_init = templatefile(
+    "${path.module}/assets/cloud-init.yaml",
+    {
+      CLICKHOUSE_VERSION = var.clickhouse_version
+      config-xml         = base64encode(file("${path.module}/assets/config.xml"))
+      users-xml          = base64encode(file("${path.module}/assets/users.xml"))
+      s3-config = base64encode(templatefile(
+        "${path.module}/assets/s3.xml",
+        {
+          ACCESS_KEY_ID     = google_storage_hmac_key.clickhouse.access_id
+          SECRET_ACCESS_KEY = google_storage_hmac_key.clickhouse.secret
+        },
+      ))
+    },
+  )
+  cloud_init_template_hash = md5(file("${path.module}/assets/cloud-init.yaml"))
+}
+
+# Null resource that triggers instance recreation if we change cloud-init.yaml.
+# But not if we change config.xml or users.xml, we can just restart ClickHouse.
+resource "null_resource" "cloud_init" {
+  triggers = {
+    cloud_init_hash = local.cloud_init_template_hash
   }
 }
 
-resource "google_compute_disk" "clickhouse_data" {
-  for_each = local.instances
-
-  name     = each.value.disk_name
-  project  = var.project_id
-  zone     = var.zone
-  type     = "pd-ssd"
-  snapshot = "projects/open-targets-eu-dev/global/snapshots/${each.value.disk_snapshot}"
-  labels   = merge(var.base_labels, var.labels, each.value.labels)
+resource "google_compute_disk" "data" {
+  name        = "${var.global_prefix}-data-clickhouse"
+  description = "The data disk for the ClickHouse node in the ${var.global_prefix} environment."
+  project     = var.project_id
+  zone        = var.zone
+  type        = "pd-ssd"
+  size        = var.disk_size_gb
+  labels      = merge(var.base_labels, var.labels)
 }
 
-resource "google_compute_instance" "clickhouse_node" {
-  for_each = local.instances
-
-  name         = each.value.instance_name
+resource "google_compute_instance" "node" {
+  name         = "${var.global_prefix}-clickhouse"
+  description  = "The ClickHouse node for the ${var.global_prefix} environment."
   project      = var.project_id
   zone         = var.zone
-  machine_type = each.value.machine_type
+  machine_type = var.machine_type
   tags         = [var.global_prefix, "clickhouse"]
-  labels       = merge(var.base_labels, var.labels, each.value.labels)
+  labels       = merge(var.base_labels, var.labels)
 
   boot_disk {
     initialize_params {
@@ -80,12 +53,13 @@ resource "google_compute_instance" "clickhouse_node" {
   }
 
   attached_disk {
-    source      = google_compute_disk.clickhouse_data[each.key].id
+    source      = google_compute_disk.data.id
     device_name = "data"
   }
 
   network_interface {
-    subnetwork = google_compute_subnetwork.clickhouse.name
+    subnetwork         = google_compute_subnetwork.clickhouse.name
+    subnetwork_project = var.project_id
   }
 
   service_account {
@@ -94,13 +68,10 @@ resource "google_compute_instance" "clickhouse_node" {
   }
 
   metadata = {
-    user-data = templatefile(
-      "${path.module}/cloud-init.yaml",
-      { CLICKHOUSE_VERSION = var.clickhouse_version },
-    )
+    user-data = local.cloud_init
   }
 
   lifecycle {
-    replace_triggered_by = [google_compute_disk.clickhouse_data[each.key]]
+    replace_triggered_by = [google_compute_disk.data, null_resource.cloud_init]
   }
 }

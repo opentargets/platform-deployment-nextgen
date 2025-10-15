@@ -4,13 +4,27 @@ users:
     system: true
     shell: /bin/false
 
+fs_setup:
+  - device: /dev/disk/by-id/google-data
+    filesystem: ext4
+    partition: auto
+    cmd: 'mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/disk/by-id/google-data'
+    overwrite: false
+
+mounts:
+  - ['/dev/disk/by-id/google-data', '/mnt/disks/clickhouse', 'ext4', 'discard,defaults', '0', '2']
+
 write_files:
   - path: /etc/systemd/system/clickhouse.service
+    owner: root:root
+    permissions: '0644'
     content: |
       [Unit]
       Description=Start ClickHouse Docker
 
       [Service]
+      Restart=always
+      RestartSec=10
       ExecStop=/usr/bin/docker stop ot-ch
       ExecStartPre=/usr/bin/docker pull clickhouse/clickhouse-server:${CLICKHOUSE_VERSION}
       ExecStart=/bin/bash -c ' \
@@ -31,8 +45,10 @@ write_files:
       WantedBy=multi-user.target
 
 runcmd:
-  # https://cloud.google.com/compute/docs/disks/format-mount-disk-linux
-  - mkdir -p /mnt/disks/clickhouse
-  - mount -t ext4 -o discard,defaults /dev/disk/by-id/google-data /mnt/disks/clickhouse
+  - mkdir -p /mnt/disks/clickhouse/config.d /mnt/disks/clickhouse/users.d /mnt/disks/clickhouse/data
+  # We have to do this here, because write_files runs before the disk is mounted
+  - echo '${config-xml}' | base64 -d > /mnt/disks/clickhouse/config.d/config.xml
+  - echo '${s3-config}' | base64 -d > /mnt/disks/clickhouse/config.d/s3.xml
+  - echo '${users-xml}' | base64 -d > /mnt/disks/clickhouse/users.d/users.xml
   - systemctl daemon-reload
-  - systemctl start clickhouse.service
+  - systemctl enable --now clickhouse.service

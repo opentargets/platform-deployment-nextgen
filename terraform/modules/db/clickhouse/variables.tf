@@ -1,6 +1,6 @@
 # VARIABLES COMING FROM THE MAIN MODULE
 variable "global_prefix" {
-  description = "The global prefix for all resources in a deployment"
+  description = "The global prefix for all resources in an environment"
   type        = string
 }
 
@@ -29,11 +29,15 @@ variable "base_labels" {
   type        = map(string)
 }
 
-
 # CLICKHOUSE VARIABLES
 variable "machine_type" {
   description = "The machine type to use for the ClickHouse node"
   type        = string
+}
+
+variable "disk_size_gb" {
+  description = "The size of the ClickHouse data disk in GB"
+  type        = number
 }
 
 variable "clickhouse_version" {
@@ -41,27 +45,7 @@ variable "clickhouse_version" {
   type        = string
 }
 
-variable "snapshot_platform_blue" {
-  description = "The name of the ClickHouse snapshot to use in the platform blue node"
-  type        = string
-}
-
-variable "snapshot_platform_green" {
-  description = "The name of the ClickHouse snapshot to use in the platform green node"
-  type        = string
-}
-
-variable "snapshot_ppp_blue" {
-  description = "The name of the ClickHouse snapshot to use in the ppp blue node"
-  type        = string
-}
-
-variable "snapshot_ppp_green" {
-  description = "The name of the ClickHouse snapshot to use in the ppp green node"
-  type        = string
-}
-
-variable "dns_zone" {
+variable "dns_zone_name" {
   description = "The name of the managed DNS zone to expose ClickHouse"
   type        = string
 }
