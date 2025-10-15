@@ -2,6 +2,7 @@
 {{- $root := .root }}
 {{- $color := .color | default "blue" }}
 {{- $env := include "env" (dict "root" $root "color" $color ) }}
+{{- $prefix := $root.Values.prefix }}
 {{- $product := .root.Values.product }}
 {{- $namespace := include "prefix-product" .root }}
 {{- $labels := include "labels" .root }}
@@ -191,14 +192,15 @@ spec:
               name: api
           env:
             - name: SLICK_CLICKHOUSE_URL
-              value: jdbc:clickhouse://{{ $namespace }}-{{ $color }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" $root }}
+              value: jdbc:clickhouse://{{ $prefix }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" $root }}
             - name: ELASTICSEARCH_HOST
-              value: {{ $namespace }}-{{ $color }}-opensearch.{{ $namespace }}.svc.cluster.local
-            {{- $parts := splitList "." $release }}
-            - name: META_DATA_YEAR
-              value: {{ index $parts 0 | toString | quote }}
-            - name: META_DATA_MONTH
-              value: {{ index $parts 1 | toString | quote }}
+              value: {{ $prefix }}-opensearch.{{ $namespace }}.svc.cluster.local
+            - name: META_DATA_RELEASE
+              value: {{ $release | quote }}
+            - name: META_API_VERSION
+              value: {{ $image.tag | quote }}
+            - name: META_PRODUCT_NAME
+              value: {{ $product | quote }}
           resources:
             requests:
               memory: {{ $resources.requests.memory }}
