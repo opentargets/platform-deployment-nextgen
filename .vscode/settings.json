@@ -1,8 +1,14 @@
 {
   "yaml.schemas": {
-    "./helm/values.schema.json": [
-      "helm/values.yaml",
+    "./helm/app/values.schema.json": [
+      "helm/app/values.yaml",
+      "profiles/*.yaml"
+    ],
+    "./helm/observability/values.schema.json": [
+      "helm/observability/values.yaml",
       "profiles/*.yaml"
     ]
-  }
+  },
+  "yaml.format.printWidth": 120,
+  "yaml.format.singleQuote": true
 }
