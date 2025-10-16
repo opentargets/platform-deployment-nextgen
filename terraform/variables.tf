@@ -67,28 +67,13 @@ variable "clickhouse_machine_type" {
   type        = string
 }
 
+variable "clickhouse_disk_size_gb" {
+  description = "The disk size in GB for the ClickHouse node"
+  type        = number
+}
+
 variable "clickhouse_version" {
   description = "The ClickHouse version to deploy"
-  type        = string
-}
-
-variable "clickhouse_snapshot_platform_blue" {
-  description = "The name of the ClickHouse snapshot to use in the platform blue node"
-  type        = string
-}
-
-variable "clickhouse_snapshot_platform_green" {
-  description = "The name of the ClickHouse snapshot to use in the platform green node"
-  type        = string
-}
-
-variable "clickhouse_snapshot_ppp_blue" {
-  description = "The name of the ClickHouse snapshot to use in the ppp blue node"
-  type        = string
-}
-
-variable "clickhouse_snapshot_ppp_green" {
-  description = "The name of the ClickHouse snapshot to use in the ppp green node"
   type        = string
 }
 
@@ -104,28 +89,13 @@ variable "opensearch_machine_type" {
   type        = string
 }
 
+variable "opensearch_disk_size_gb" {
+  description = "The disk size in GB for the OpenSearch node"
+  type        = number
+}
+
 variable "opensearch_version" {
   description = "The OpenSearch version to deploy"
-  type        = string
-}
-
-variable "opensearch_snapshot_platform_blue" {
-  description = "The name of the OpenSearch snapshot to use in the platform blue node"
-  type        = string
-}
-
-variable "opensearch_snapshot_platform_green" {
-  description = "The name of the OpenSearch snapshot to use in the platform green node"
-  type        = string
-}
-
-variable "opensearch_snapshot_ppp_blue" {
-  description = "The name of the OpenSearch snapshot to use in the ppp blue node"
-  type        = string
-}
-
-variable "opensearch_snapshot_ppp_green" {
-  description = "The name of the OpenSearch snapshot to use in the ppp green node"
   type        = string
 }
 

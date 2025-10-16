@@ -41,8 +41,8 @@ module "clickhouse" {
   zone               = var.zone
   network            = google_compute_network.main.name
   base_labels        = var.base_labels
-  machine_type       = "n1-standard-16"
-  disk_size_gb       = 500
+  machine_type       = var.clickhouse_machine_type
+  disk_size_gb       = var.clickhouse_disk_size_gb
   clickhouse_version = var.clickhouse_version
   dns_zone_name      = google_dns_managed_zone.internal.name
   labels             = { "app" = "clickhouse" }
