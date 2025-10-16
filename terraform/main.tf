@@ -37,6 +37,7 @@ module "clickhouse" {
   source             = "./modules/db/clickhouse"
   global_prefix      = var.global_prefix
   project_id         = var.project_id
+  data_project_id    = var.clickhouse_data_project_id
   region             = var.region
   zone               = var.zone
   network            = google_compute_network.main.name
@@ -56,8 +57,8 @@ module "opensearch" {
   zone               = var.zone
   network            = google_compute_network.main.name
   base_labels        = var.base_labels
-  machine_type       = "n1-standard-16"
-  disk_size_gb       = 1000
+  machine_type       = var.opensearch_machine_type
+  disk_size_gb       = var.opensearch_disk_size_gb
   opensearch_version = var.opensearch_version
   dns_zone_name      = google_dns_managed_zone.internal.name
   labels             = { "app" = "opensearch" }

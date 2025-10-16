@@ -77,6 +77,11 @@ variable "clickhouse_version" {
   type        = string
 }
 
+variable "clickhouse_data_project_id" {
+  description = "The GCP project id where the backups are stored. Used to create an HMAC key for ClickHouse to access GCS buckets."
+  type        = string
+}
+
 variable "clickhouse_labels" {
   description = "The specific labels for the ClickHouse module"
   type        = map(string)

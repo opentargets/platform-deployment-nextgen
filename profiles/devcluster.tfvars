@@ -21,10 +21,11 @@ cluster_kubernetes_version      = "latest"
 cluster_labels                  = {}
 
 # CLICKHOUSE VARIABLES
-clickhouse_machine_type = "n1-standard-4"
-clickhouse_disk_size_gb = 75
-clickhouse_version      = "25.8.2.29"
-clickhouse_labels       = { "app" = "clickhouse" }
+clickhouse_machine_type    = "n1-standard-4"
+clickhouse_disk_size_gb    = 75
+clickhouse_version         = "25.8.2.29"
+clickhouse_data_project_id = "open-targets-prod"
+clickhouse_labels          = { "app" = "clickhouse" }
 
 # OPENSEARCH VARIABLES
 opensearch_machine_type = "n1-standard-4"

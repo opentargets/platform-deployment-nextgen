@@ -30,6 +30,11 @@ variable "base_labels" {
 }
 
 # CLICKHOUSE VARIABLES
+variable "data_project_id" {
+  description = "The GCP project id where the backups are stored. Used to create an HMAC key for ClickHouse to access GCS buckets."
+  type        = string
+}
+
 variable "machine_type" {
   description = "The machine type to use for the ClickHouse node"
   type        = string
