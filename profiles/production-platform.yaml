@@ -18,7 +18,7 @@ blue:
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
-      tag: '25.3.1'
+      tag: '25.3.2'
   aiapi:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
@@ -35,7 +35,7 @@ green:
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
-      tag: '25.3.1'
+      tag: '25.3.2'
   aiapi:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
