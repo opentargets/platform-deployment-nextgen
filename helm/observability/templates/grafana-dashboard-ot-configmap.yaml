@@ -178,7 +178,7 @@ data:
             {
               "editorMode": "code",
               "exemplar": false,
-              "expr": "(1 - avg by(nodename) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
+              "expr": "(1 - avg by(nodename) (rate(node_cpu_seconds_total{mode=\"idle\"}[$__range])))",
               "instant": true,
               "legendFormat": "{{`{{nodename}}`}}",
               "range": false,
@@ -230,8 +230,8 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 8,
-            "w": 24,
+            "h": 16,
+            "w": 12,
             "x": 0,
             "y": 18
           },
@@ -239,7 +239,7 @@ data:
           "options": {
             "minVizHeight": 75,
             "minVizWidth": 75,
-            "orientation": "auto",
+            "orientation": "horizontal",
             "reduceOptions": {
               "calcs": [
                 "lastNotNull"
@@ -295,10 +295,10 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 0,
-            "y": 26
+            "h": 16,
+            "w": 12,
+            "x": 12,
+            "y": 18
           },
           "id": 25,
           "options": {
@@ -321,7 +321,7 @@ data:
             {
               "editorMode": "code",
               "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}",
-              "legendFormat": "__auto",
+              "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
             }
@@ -409,7 +409,7 @@ data:
             "x": 0,
             "y": 35
           },
-          "id": 22,
+          "id": 24,
           "options": {
             "legend": {
               "calcs": [],
@@ -427,14 +427,75 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum by (database)(rate(platform_api_db_query_total[$__rate_interval]))",
+              "expr": "sum by(nodename)(rate(platform_api_graphql_requests_total[$__range]))",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "DB requests rate",
+          "title": "GraphQL Request Rate",
           "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 35
+          },
+          "id": 26,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "value_and_name",
+            "wideLayout": true
+          },
+          "pluginVersion": "12.2.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "jvm_memory_max_bytes{area=\"heap\"}",
+              "legendFormat": "{{instance}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Max Heap Memory",
+          "type": "stat"
         },
         {
           "datasource": {
@@ -500,10 +561,10 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 35
+            "x": 0,
+            "y": 43
           },
-          "id": 24,
+          "id": 22,
           "options": {
             "legend": {
               "calcs": [],
@@ -521,13 +582,13 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum by(nodename)(rate(platform_api_graphql_requests_total[$__rate_interval]))",
+              "expr": "sum by (database)(rate(platform_api_db_query_total[$__range]))",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "GraphQL Request Rate",
+          "title": "DB requests rate",
           "type": "timeseries"
         },
         {
@@ -598,7 +659,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 43
+            "y": 51
           },
           "id": 28,
           "options": {
@@ -635,67 +696,6 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": 0
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 43
-          },
-          "id": 26,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "value",
-            "wideLayout": true
-          },
-          "pluginVersion": "12.2.0",
-          "targets": [
-            {
-              "editorMode": "code",
-              "expr": "jvm_memory_max_bytes{area=\"heap\"}",
-              "legendFormat": "__auto",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Max Heap Memory",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
                 "mode": "continuous-GrYlRd"
               },
               "mappings": [],
@@ -715,7 +715,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 51
+            "y": 59
           },
           "id": 27,
           "options": {
@@ -767,7 +767,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 59
+            "y": 67
           },
           "id": 3,
           "panels": [],
@@ -842,7 +842,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 60
+            "y": 68
           },
           "id": 1,
           "options": {
@@ -866,7 +866,7 @@ data:
                 "uid": "prometheusdatasource"
               },
               "editorMode": "code",
-              "expr": "(1 - avg by(nodename) (rate(node_cpu_seconds_total{mode=\"idle\", nodename!=\"\"}[5m])))",
+              "expr": "(1 - avg by(nodename) (rate(node_cpu_seconds_total{mode=\"idle\", nodename!=\"\"}[$__range])))",
               "hide": false,
               "instant": false,
               "interval": "",
@@ -946,7 +946,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 60
+            "y": 68
           },
           "id": 2,
           "options": {
@@ -981,7 +981,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 68
+            "y": 76
           },
           "id": 21,
           "panels": [],
@@ -1067,7 +1067,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 69
+            "y": 77
           },
           "id": 18,
           "options": {
@@ -1087,7 +1087,7 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum by (nodename)(rate(node_network_receive_bytes_total{job=\"kubernetes-service-endpoints\"}[5m]))",
+              "expr": "sum by (nodename)(rate(node_network_receive_bytes_total{job=\"kubernetes-service-endpoints\"}[$__range]))",
               "hide": false,
               "legendFormat": "{{`{{nodename}}`}}",
               "range": true,
@@ -1163,7 +1163,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 69
+            "y": 77
           },
           "id": 19,
           "options": {
@@ -1183,7 +1183,7 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum by (nodename)(rate(node_network_transmit_packets_total{job=\"kubernetes-service-endpoints\"}[5m]))",
+              "expr": "sum by (nodename)(rate(node_network_transmit_packets_total{job=\"kubernetes-service-endpoints\"}[$__range]))",
               "legendFormat": "{{`{{nodename}}`}}",
               "range": true,
               "refId": "A"
@@ -1257,7 +1257,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 77
+            "y": 85
           },
           "id": 20,
           "options": {
@@ -1277,7 +1277,7 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum by (nodename) (rate(node_network_receive_drop_total{job=\"kubernetes-service-endpoints\"}[5m]))",
+              "expr": "sum by (nodename) (rate(node_network_receive_drop_total{job=\"kubernetes-service-endpoints\"}[$__range]))",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
