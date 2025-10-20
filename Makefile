@@ -48,7 +48,7 @@ deploy-observability-dev-platform:
 	helm upgrade observability ./helm/observability --namespace monitoring
 
 port-forward-prometheus:
-	@PROMETHEUS_POD=$$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}"); \
+	@PROMETHEUS_POD=$$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=observability" -o jsonpath="{.items[0].metadata.name}"); \
 	echo "Port-forwarding to Prometheus pod: $$PROMETHEUS_POD"; \
 	kubectl port-forward --namespace monitoring $$PROMETHEUS_POD 9090:9090
 
