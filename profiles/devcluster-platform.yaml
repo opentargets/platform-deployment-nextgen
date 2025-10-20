@@ -58,11 +58,11 @@ resources:
       minReplicas: 2
       maxReplicas: 5
       requests:
-        memory: 16Gi
-        cpu: 4000m
+        memory: 4Gi
+        cpu: 1000m
       limits:
-        memory: 24Gi
-        cpu: 7500m
+        memory: 6Gi
+        cpu: 1875m
     aiapi:
       minReplicas: 1
       maxReplicas: 5
