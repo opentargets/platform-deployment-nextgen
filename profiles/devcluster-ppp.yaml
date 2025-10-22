@@ -77,7 +77,7 @@ resources:
     webapp:
       minReplicas: 1
       maxReplicas: 1
-      requests: # prod / 2
+      requests:
         memory: 16Mi
         cpu: 25m
       limits:
@@ -86,7 +86,7 @@ resources:
     api:
       minReplicas: 1
       maxReplicas: 1
-      requests: # prod / 4
+      requests:
         memory: 1Gi
         cpu: 500m
       limits:
@@ -95,7 +95,7 @@ resources:
     aiapi:
       minReplicas: 1
       maxReplicas: 1
-      requests: # prod
+      requests:
         memory: 128Mi
         cpu: 100m
       limits:
