@@ -321,7 +321,7 @@ data:
             {
               "editorMode": "code",
               "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}",
-              "legendFormat": "{{instance}}",
+              "legendFormat": "{{`{{instance}}`}}",
               "range": true,
               "refId": "A"
             }
@@ -489,7 +489,7 @@ data:
             {
               "editorMode": "code",
               "expr": "jvm_memory_max_bytes{area=\"heap\"}",
-              "legendFormat": "{{instance}}",
+              "legendFormat": "{{`{{instance}}`}}",
               "range": true,
               "refId": "A"
             }
