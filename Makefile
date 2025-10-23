@@ -8,12 +8,12 @@ deploy-cluster-prod:
 
 deploy-apps-dev-platform:
 	@helm diff upgrade devcluster-platform ./helm/app -f ./profiles/devcluster-platform.yaml; \
-	read -p "press enter to continue..."; \
+	read -p "press enter to continue..." nothing; \
 	helm upgrade devcluster-platform ./helm/app -f ./profiles/devcluster-platform.yaml
 
 deploy-apps-dev-ppp:
 	@helm diff upgrade devcluster-ppp ./helm/app -f ./profiles/devcluster-ppp.yaml; \
-	read -p "press enter to continue..."; \
+	read -p "press enter to continue..." nothing; \
 	helm upgrade devcluster-ppp ./helm/app -f ./profiles/devcluster-ppp.yaml
 
 deploy-apps-prod-platform:
