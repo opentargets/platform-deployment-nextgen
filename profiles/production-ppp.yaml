@@ -7,7 +7,7 @@ dnsZone: opentargets-org
 production: blue
 staging: disabled
 
-googleTagManagerId: GTM-XXXXXXX
+googleTagManagerId: GTM-WPXWRDV
 
 blue:
   release: '25.09'
