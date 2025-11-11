@@ -11,7 +11,8 @@ locals {
           ACCESS_KEY_ID     = google_storage_hmac_key.clickhouse.access_id
           SECRET_ACCESS_KEY = google_storage_hmac_key.clickhouse.secret
         },
-      ))
+      )),
+      node_exporter_container_image = "${var.node_exporter_image_name}:${var.node_exporter_image_version}"
     },
   )
   cloud_init_template_hash = md5(file("${path.module}/assets/cloud-init.yaml"))

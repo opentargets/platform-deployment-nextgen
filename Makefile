@@ -36,19 +36,30 @@ deploy-apps-prod-ppp:
 		echo "deploy cancelled"; \
 	fi
 
-deploy-observability-dev-platform:
-	@PROMETHEUS_REPO=$$(helm repo list | grep prometheus-community.github.io/helm-charts | awk '{print $$1}'); \
-	if [ -z "$$PROMETHEUS_REPO" ]; then \
+define OBSERVABILITY_HELM_REPO_CHECK
+	@echo "Checking for prometheus-community helm repo..."; \
+	OBSERVABILITY_REPO=$$(helm repo list | grep prometheus-community.github.io/helm-charts | awk '{print $$1}'); \
+	if [ -z "$$OBSERVABILITY_REPO" ]; then \
 		echo "Adding the prometheus-community helm repo."; \
 		helm repo add prometheus-community https://prometheus-community.github.io/helm-charts; \
 		helm repo update; \
-	fi; \
+	fi;
 	if [ ! -d "helm/observability/charts" ]; then \
 		helm dependency build ./helm/observability; \
-	fi; \
-	helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability; \
+	fi
+endef
+
+deploy-observability-dev-platform:
+	$(call OBSERVABILITY_HELM_REPO_CHECK) 
+	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/observability-devcluster-platform.yaml; \
 	read -p "press enter to continue..."; \
-	helm upgrade observability ./helm/observability --namespace observability --install --create-namespace
+	helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/observability-devcluster-platform.yaml
+
+deploy-observability-prod-platform:
+	$(call OBSERVABILITY_HELM_REPO_CHECK)
+	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/observability-production-platform.yaml; \
+	read -p "press enter to continue..."; \
+	helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/observability-production-platform.yaml
 
 port-forward-prometheus:
 	@PROMETHEUS_POD=$$(kubectl get pods --namespace observability -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=observability" -o jsonpath="{.items[0].metadata.name}"); \

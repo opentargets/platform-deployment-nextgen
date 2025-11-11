@@ -271,10 +271,10 @@ prometheus:
         - job_name: databases
           static_configs:
             - targets:
-                - clickhouse.devcluster.internal:9363
-                - clickhouse.devcluster.internal:9100
-                - opensearch.devcluster.internal:9114
-                - opensearch.devcluster.internal:9100
+                - clickhouse.production.internal:9363
+                - clickhouse.production.internal:9100
+                - opensearch.production.internal:9114
+                - opensearch.production.internal:9100
           relabel_configs:
             - source_labels: [__address__]
               regex: '([^:]+):.*'

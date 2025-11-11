@@ -6,7 +6,7 @@
     ],
     "./helm/observability/values.schema.json": [
       "helm/observability/values.yaml",
-      "profiles/*.yaml"
+      "profiles/observability-devcluster-platform.yaml"
     ]
   },
   "yaml.format.printWidth": 120,

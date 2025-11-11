@@ -273,8 +273,17 @@ prometheus:
             - targets:
                 - clickhouse.devcluster.internal:9363
                 - clickhouse.devcluster.internal:9100
-                - opensearch.devcluster.internal:9114
                 - opensearch.devcluster.internal:9100
+          relabel_configs:
+            - source_labels: [__address__]
+              regex: '([^:]+):.*'
+              target_label: nodename
+              action: replace
+        - job_name: opensearch-exporter
+          metrics_path: '/_prometheus/metrics'
+          static_configs:
+            - targets:
+                - opensearch.devcluster.internal:9200
           relabel_configs:
             - source_labels: [__address__]
               regex: '([^:]+):.*'

@@ -15,6 +15,28 @@ mounts:
   - ['/dev/disk/by-id/google-data', '/mnt/disks/opensearch', 'ext4', 'discard,defaults', '0', '2']
 
 write_files:
+  - path: /etc/systemd/system/config-firewall.service
+    permissions: '0644'
+    owner: root
+    content: |
+      [Unit]
+      Description=Configures the host firewall
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=true
+      ExecStart=/sbin/iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+
+  - path: /etc/systemd/system/nodeexporter.service
+    permissions: '0644'
+    owner: root
+    content: |
+      [Unit]
+      Description=Start node exporter from a docker container
+
+      [Service]
+      ExecStart=/usr/bin/docker run --name=nodeexporter -d --net="host" --pid="host" -v "/:/host:ro,rslave" ${node_exporter_container_image} --path.rootfs=/host
+
   - path: /etc/systemd/system/opensearch.service
     owner: root:root
     permissions: '0644'
@@ -57,7 +79,7 @@ write_files:
       ARG OPENSEARCH_VERSION
       FROM opensearchproject/opensearch:${OPENSEARCH_VERSION}
       USER root
-      RUN /usr/share/opensearch/bin/opensearch-plugin install --batch repository-gcs
+      RUN /usr/share/opensearch/bin/opensearch-plugin install --batch repository-gcs https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.1.0.0/prometheus-exporter-3.1.0.0.zip
       USER opensearch
 
 bootcmd:
@@ -69,3 +91,6 @@ runcmd:
   - chmod -R 755 /mnt/disks/opensearch /var/log/opensearch
   - systemctl daemon-reload
   - systemctl enable --now opensearch.service
+  - systemctl enable --now nodeexporter.service
+  - systemctl enable --now esexporter.service
+  - systemctl enable --now config-firewall.service

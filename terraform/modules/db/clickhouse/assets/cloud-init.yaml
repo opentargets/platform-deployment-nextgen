@@ -15,6 +15,28 @@ mounts:
   - ['/dev/disk/by-id/google-data', '/mnt/disks/clickhouse', 'ext4', 'discard,defaults', '0', '2']
 
 write_files:
+  - path: /etc/systemd/system/config-firewall.service
+    permissions: 0644
+    owner: root
+    content: |
+      [Unit]
+      Description=Configures the host firewall
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=true
+      ExecStart=/sbin/iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+
+  - path: /etc/systemd/system/nodeexporter.service
+    permissions: 0644
+    owner: root
+    content: |
+      [Unit]
+      Description=Start node exporter from a docker container
+
+      [Service]
+      ExecStart=/usr/bin/docker run --name=nodeexporter --rm -d --net="host" --pid="host" -v "/:/host:ro,rslave" ${node_exporter_container_image} --path.rootfs=/host
+
   - path: /etc/systemd/system/clickhouse.service
     owner: root:root
     permissions: '0644'
@@ -34,6 +56,7 @@ write_files:
           --log-driver=gcplogs \
           -p 8123:8123 \
           -p 9000:9000 \
+          -p 9363:9363 \
           -v /mnt/disks/clickhouse/config.d:/etc/clickhouse-server/config.d \
           -v /mnt/disks/clickhouse/users.d:/etc/clickhouse-server/users.d \
           -v /mnt/disks/clickhouse/data:/var/lib/clickhouse \
@@ -52,3 +75,5 @@ runcmd:
   - echo '${users-xml}' | base64 -d > /mnt/disks/clickhouse/users.d/users.xml
   - systemctl daemon-reload
   - systemctl enable --now clickhouse.service
+  - systemctl enable --now nodeexporter.service
+  - systemctl enable --now config-firewall.service

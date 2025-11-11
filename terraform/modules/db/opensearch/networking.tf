@@ -18,7 +18,7 @@ resource "google_compute_firewall" "allow_cluster" {
 
   allow {
     protocol = "tcp"
-    ports    = ["9200", "9600"]
+    ports    = ["9200", "9600", "9114", "9100"]
   }
 }
 

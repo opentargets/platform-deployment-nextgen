@@ -107,7 +107,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Up time",
+          "title": "Node status",
           "type": "stat"
         },
         {
@@ -152,7 +152,7 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 8,
+            "h": 12,
             "w": 24,
             "x": 0,
             "y": 9
@@ -194,7 +194,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 17
+            "y": 21
           },
           "id": 17,
           "panels": [],
@@ -230,16 +230,16 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 16,
-            "w": 12,
+            "h": 14,
+            "w": 24,
             "x": 0,
-            "y": 18
+            "y": 22
           },
           "id": 14,
           "options": {
             "minVizHeight": 75,
             "minVizWidth": 75,
-            "orientation": "horizontal",
+            "orientation": "auto",
             "reduceOptions": {
               "calcs": [
                 "lastNotNull"
@@ -297,8 +297,8 @@ data:
           "gridPos": {
             "h": 16,
             "w": 12,
-            "x": 12,
-            "y": 18
+            "x": 0,
+            "y": 36
           },
           "id": 25,
           "options": {
@@ -321,7 +321,7 @@ data:
             {
               "editorMode": "code",
               "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}",
-              "legendFormat": "{{`{{instance}}`}}",
+              "legendFormat": "{{`{{nodename}}`}}",
               "range": true,
               "refId": "A"
             }
@@ -335,7 +335,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 34
+            "y": 52
           },
           "id": 23,
           "panels": [],
@@ -407,7 +407,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 35
+            "y": 53
           },
           "id": 24,
           "options": {
@@ -464,7 +464,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 35
+            "y": 53
           },
           "id": 26,
           "options": {
@@ -482,14 +482,14 @@ data:
             },
             "showPercentChange": false,
             "textMode": "value_and_name",
-            "wideLayout": true
+            "wideLayout": false
           },
           "pluginVersion": "12.2.0",
           "targets": [
             {
               "editorMode": "code",
               "expr": "jvm_memory_max_bytes{area=\"heap\"}",
-              "legendFormat": "{{`{{instance}}`}}",
+              "legendFormat": "{{`{{nodename}}`}}",
               "range": true,
               "refId": "A"
             }
@@ -562,7 +562,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 43
+            "y": 61
           },
           "id": 22,
           "options": {
@@ -590,6 +590,67 @@ data:
           ],
           "title": "DB requests rate",
           "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 61
+          },
+          "id": 30,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "value_and_name",
+            "wideLayout": false
+          },
+          "pluginVersion": "12.2.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "expr": "opensearch_jvm_mem_heap_max_bytes",
+              "legendFormat": "{{`{{nodename}}`}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Max Heap Memory Opensearch",
+          "type": "stat"
         },
         {
           "datasource": {
@@ -659,7 +720,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 51
+            "y": 69
           },
           "id": 28,
           "options": {
@@ -714,8 +775,8 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
-            "y": 59
+            "x": 12,
+            "y": 69
           },
           "id": 27,
           "options": {
@@ -767,7 +828,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 67
+            "y": 77
           },
           "id": 3,
           "panels": [],
@@ -842,7 +903,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 68
+            "y": 78
           },
           "id": 1,
           "options": {
@@ -946,7 +1007,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 68
+            "y": 78
           },
           "id": 2,
           "options": {
@@ -981,7 +1042,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 76
+            "y": 86
           },
           "id": 21,
           "panels": [],
@@ -1067,7 +1128,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 77
+            "y": 87
           },
           "id": 18,
           "options": {
@@ -1163,7 +1224,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 77
+            "y": 87
           },
           "id": 19,
           "options": {
@@ -1257,7 +1318,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 85
+            "y": 95
           },
           "id": 20,
           "options": {
@@ -1302,5 +1363,5 @@ data:
       "timezone": "browser",
       "title": "OT Dash",
       "uid": "dde21982-294c-47be-b5ee-032de07f75a6",
-      "version": 1
+      "version": 2
     }
