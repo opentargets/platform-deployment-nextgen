@@ -76,6 +76,7 @@ resource "google_project_iam_member" "node" {
     "roles/stackdriver.resourceMetadata.writer",
     "roles/artifactregistry.reader",
     "roles/container.defaultNodeServiceAccount",
+    "roles/storage.admin",
   ])
 
   project = var.project_id
@@ -88,4 +89,11 @@ resource "google_project_iam_member" "node_cross_project_registry" {
   project = "open-targets-eu-dev"
   role    = "roles/artifactregistry.reader"
   member  = "serviceAccount:${google_service_account.node.email}"
+}
+
+# Workload Identity binding for Loki KSA to node GSA
+resource "google_service_account_iam_member" "loki_workload_identity_binding" {
+  service_account_id = google_service_account.node.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[observability/loki-sa]"
 }

@@ -10,3 +10,13 @@ output "id" {
   description = "The id of the cluster"
   value       = google_container_cluster.cluster.id
 }
+
+output "name" {
+  description = "The name of the cluster"
+  value       = google_container_cluster.cluster.name
+}
+
+output "node_service_account_email" {
+  description = "The email for the cluster node service accounts"
+  value       = google_service_account.node.email
+}

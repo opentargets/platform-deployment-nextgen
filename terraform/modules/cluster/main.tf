@@ -208,3 +208,37 @@ resource "null_resource" "config_connector" {
     kubernetes_manifest.config_connector_operator
   ]
 }
+
+resource "google_storage_bucket" "loki_chunks" {
+  name     = "${var.global_prefix}-loki-gcp-chunks"
+  location = var.region
+
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  labels = merge(var.base_labels, var.labels)
+
+}
+
+resource "google_storage_bucket" "loki_ruler" {
+  name     = "${var.global_prefix}-loki-gcp-ruler"
+  location = var.region
+
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  labels = merge(var.base_labels, var.labels)
+
+}

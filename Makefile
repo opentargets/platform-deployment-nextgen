@@ -70,9 +70,7 @@ define OBSERVABILITY_HELM_REPO_CHECK
 		helm repo add grafana https://grafana.github.io/helm-charts; \
 		helm repo update; \
 	fi;
-	if [ ! -d "helm/observability/charts" ]; then \
-		helm dependency build ./helm/observability; \
-	fi
+	helm dependency build ./helm/observability
 endef
 
 deploy-observability-dev-platform:

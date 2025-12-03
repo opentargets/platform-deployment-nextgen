@@ -4,6 +4,19 @@ output "cluster_aiapi_service_account_emails" {
   value       = module.cluster.aiapi_service_account_emails
 }
 
+output "observability_config" {
+  description = "Configuration values for observability deployment"
+  value = {
+    cluster_name                       = module.cluster.name
+    cluster_node_service_account_email = module.cluster.node_service_account_email
+    gcp_project_id                     = var.project_id
+    gcp_zone                           = var.zone
+    cluster_full_name                  = "gke_${var.project_id}_${var.zone}_${var.global_prefix}"
+    loki_bucket_chunks                 = "${var.global_prefix}-loki-gcp-chunks"
+    loki_bucket_ruler                  = "${var.global_prefix}-loki-gcp-ruler"
+  }
+}
+
 # CLICKHOUSE OUTPUTS
 output "db_clickhouse_internal_name" {
   description = "The internal DNS name of the ClickHouse node."
