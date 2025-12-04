@@ -31,7 +31,7 @@ green:
   webapp:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
-      tag: '0.14.3'
+      tag: '0.14.6'
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
