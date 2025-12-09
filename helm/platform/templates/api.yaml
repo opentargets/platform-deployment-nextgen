@@ -212,12 +212,12 @@ spec:
             httpGet:
               path: {{ include "paths.health.api" $root }}
               port: api
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
           readinessProbe:
             httpGet:
               path: {{ include "paths.health.api" $root }}
               port: api
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
           securityContext:
             allowPrivilegeEscalation: false
 {{- end }}
