@@ -76,6 +76,6 @@ staging
 {{- define "ports.clickhouse" -}}8123{{- end -}}
 {{- define "ports.opensearch" -}}9200{{- end -}}
 
-{{- define "paths.health.api"    -}}/{{- end -}}
+{{- define "paths.health.api"    -}}/health{{- end -}}
 {{- define "paths.health.aiapi"  -}}/health{{- end -}}
 {{- define "paths.health.webapp" -}}/health{{- end -}}
