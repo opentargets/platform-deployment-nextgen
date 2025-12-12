@@ -18,7 +18,7 @@ blue:
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
-      tag: '25.4.3-rc.1'
+      tag: '25.4.3'
   aiapi:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
@@ -35,7 +35,7 @@ green:
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
-      tag: '25.4.3-rc.1'
+      tag: '25.4.3'
   aiapi:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
@@ -61,7 +61,7 @@ resources:
         memory: 8Gi
         cpu: 3000m
       limits:
-        memory: 20Gi
+        memory: 24Gi
         cpu: 7500m
     aiapi:
       minReplicas: 2
