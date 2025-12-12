@@ -114,12 +114,6 @@ spec:
       target:
         type: Utilization
         averageUtilization: 70
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 70
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60
@@ -207,6 +201,11 @@ spec:
               value: {{ $image.tag | quote }}
             - name: META_PRODUCT_NAME
               value: {{ $product | quote }}
+            - name: JAVA_OPTS
+              value: >-
+                -XX:+UseContainerSupport
+                -XX:MaxRAMPercentage=85.0
+                -XX:InitialRAMPercentage=35.0
           resources:
             requests:
               memory: {{ $resources.requests.memory }}
