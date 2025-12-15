@@ -5,7 +5,7 @@ domain: opentargets.org
 dnsZone: opentargets-org
 
 production: blue
-staging: disabled
+staging: enabled
 
 googleTagManagerId: GTM-5BSVCXB
 
@@ -27,15 +27,15 @@ blue:
       openai: openai-token
 
 green:
-  release: '25.09'
+  release: '25.12'
   webapp:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
-      tag: '0.13.8'
+      tag: '0.14.7'
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
-      tag: '25.3.2'
+      tag: '25.4.3'
   aiapi:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
