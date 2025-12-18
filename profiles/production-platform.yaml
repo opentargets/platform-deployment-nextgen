@@ -58,10 +58,10 @@ resources:
       minReplicas: 2
       maxReplicas: 5
       requests:
-        memory: 8Gi
-        cpu: 3000m
+        memory: 20Gi
+        cpu: 2000m
       limits:
-        memory: 24Gi
+        memory: 20Gi
         cpu: 7500m
     aiapi:
       minReplicas: 2
@@ -90,7 +90,7 @@ resources:
         memory: 2Gi
         cpu: 1000m
       limits:
-        memory: 8Gi
+        memory: 4Gi
         cpu: 2000m
     aiapi:
       minReplicas: 1
