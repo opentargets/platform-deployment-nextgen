@@ -4,8 +4,8 @@ product: ppp
 domain: opentargets.org
 dnsZone: opentargets-org
 
-production: blue
-staging: enabled
+production: green
+staging: disabled
 
 googleTagManagerId: GTM-5BSVCXB
 
@@ -31,11 +31,11 @@ green:
   webapp:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
-      tag: '0.14.7'
+      tag: '0.14.9'
   api:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
-      tag: '25.4.3'
+      tag: '25.5.0-rc.2'
   aiapi:
     image:
       name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
