@@ -51,9 +51,9 @@ resource "google_container_cluster" "cluster" {
       disabled = false
     }
 
-    config_connector_config {
-      enabled = true
-    }
+    # config_connector_config {
+    #   enabled = true
+    # }
   }
 
   resource_labels = merge(var.base_labels, var.labels)
@@ -155,6 +155,26 @@ resource "google_container_node_pool" "pools" {
   }
 }
 
+locals {
+  config_connector_operator_components_str = split("---", file("${path.module}/configconnector-operator.yaml"))
+  config_connector_operator_manifests = [
+    for component_str in local.config_connector_operator_components_str : yamldecode(component_str)
+  ]
+}
+
+resource "kubernetes_manifest" "config_connector_operator" {
+  count    = length(local.config_connector_operator_manifests)
+  manifest = local.config_connector_operator_manifests[count.index]
+
+  depends_on = [
+    google_container_cluster.cluster,
+    google_container_node_pool.pools,
+    google_service_account.config_connector,
+    google_project_iam_member.config_connector_roles,
+    google_service_account_iam_member.config_connector_workload_identity,
+  ]
+}
+
 # Config Connector setup.
 # The GKE addon auto-creates a ConfigConnector CR in namespaced mode.
 # We use kubectl apply to reconfigure it to cluster mode.
@@ -185,10 +205,6 @@ resource "null_resource" "config_connector" {
   }
 
   depends_on = [
-    google_container_cluster.cluster,
-    google_container_node_pool.pools,
-    google_service_account.config_connector,
-    google_project_iam_member.config_connector_roles,
-    google_service_account_iam_member.config_connector_workload_identity,
+    kubernetes_manifest.config_connector_operator
   ]
 }
