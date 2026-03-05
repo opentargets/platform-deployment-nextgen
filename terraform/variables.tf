@@ -50,6 +50,26 @@ variable "cluster_disk_size_gb" {
   type        = number
 }
 
+variable "cluster_disk_type_production" {
+  description = "The disk type for GKE nodes in the production node pool"
+  type        = string
+}
+
+variable "cluster_disk_iops_production" {
+  description = "The provisioned IOPS for disks GKE nodes in the production node pool, if using hyperdisks"
+  type        = number
+}
+
+variable "cluster_disk_tput_production" {
+  description = "The provisioned throughput for disks GKE nodes in the production node pool, if using hyperdisks"
+  type        = number
+}
+
+variable "cluster_disk_type_staging" {
+  description = "The disk type for GKE nodes in the staging node pool"
+  type        = string
+}
+
 variable "cluster_kubernetes_version" {
   description = "The Kubernetes version for the GKE cluster"
   type        = string
