@@ -29,6 +29,10 @@ module "cluster" {
   machine_type_production = var.cluster_machine_type_production
   machine_type_staging    = var.cluster_machine_type_staging
   disk_size_gb            = var.cluster_disk_size_gb
+  disk_type_production    = var.cluster_disk_type_production
+  disk_iops_production    = var.cluster_disk_iops_production
+  disk_tput_production    = var.cluster_disk_tput_production
+  disk_type_staging       = var.cluster_disk_type_staging
   kubernetes_version      = var.cluster_kubernetes_version
   labels                  = var.cluster_labels
 }

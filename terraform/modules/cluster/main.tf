@@ -70,6 +70,7 @@ locals {
     production = {
       name         = "${var.global_prefix}-production"
       machine_type = var.machine_type_production
+      disk_type    = var.disk_type_production
       labels = {
         pool = "production"
       }
@@ -77,10 +78,15 @@ locals {
         min_node_count = var.min_node_count
         max_node_count = var.max_node_count
       }
+      boot_disk = {
+        provisioned_iops       = var.disk_iops_production
+        provisioned_throughput = var.disk_tput_production
+      }
     }
     staging = {
       name         = "${var.global_prefix}-staging"
       machine_type = var.machine_type_staging
+      disk_type    = var.disk_type_staging
       labels = {
         pool = "staging"
       }
@@ -106,15 +112,21 @@ resource "google_container_node_pool" "pools" {
     max_node_count = each.value.autoscaling.max_node_count
   }
 
+
   node_config {
     machine_type    = each.value.machine_type
     disk_size_gb    = var.disk_size_gb
-    disk_type       = "pd-ssd"
+    disk_type       = each.value.disk_type
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
     labels          = merge(var.base_labels, var.labels, each.value.labels)
     tags            = ["cluster", "node"]
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    boot_disk {
+      provisioned_iops       = strcontains(each.value.disk_type, "hyperdisk-") ? each.value.boot_disk.provisioned_iops : null
+      provisioned_throughput = strcontains(each.value.disk_type, "hyperdisk-") ? each.value.boot_disk.provisioned_throughput : null
+    }
 
     shielded_instance_config {
       enable_secure_boot          = true
