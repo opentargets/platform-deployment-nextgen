@@ -1,10 +1,30 @@
 .PHONY: deploy-cluster-dev deploy-cluster-prod deploy-apps-dev-platform deploy-apps-dev-ppp deploy-apps-prod-platform deploy-apps-prod-ppp port-forward-prometheus
 
+help:
+	@echo "Available make targets:"
+	@echo "  deploy-cluster-dev                 - TF   — Deploy a development GKE cluster"
+	@echo "  destroy-cluster-dev                - TF   — Destroy the development GKE cluster"
+	@echo "  deploy-cluster-prod                - TF   — Deploy a production GKE cluster"
+	@echo "  deploy-apps-dev-platform           - HELM — Deploy services with platform flavor on the dev cluster"
+	@echo "  deploy-apps-dev-ppp                - HELM — Deploy services with PPP flavor on the dev cluster"
+	@echo "  deploy-apps-prod-platform          - HELM — Deploy services with platform flavor on the production cluster"
+	@echo "  deploy-apps-prod-ppp               - HELM — Deploy services with PPP flavor on the production cluster"
+	@echo "  deploy-observability-dev-platform  - HELM — Deploy observability stack to the development cluster using Helm"
+	@echo "  deploy-observability-prod-platform - HELM — Deploy observability stack to the production cluster using Helm"
+	@echo "  port-forward-prometheus            - Port-forward to Prometheus in the currently active cluster"
+	@echo "  port-forward-grafana               - Port-forward to Grafana in the currently active cluster and display the admin password"
+
 deploy-cluster-dev:
-	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && terraform -chdir=./terraform apply -var-file="../profiles/devcluster.tfvars"
+	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && \
+	terraform -chdir=./terraform apply -var-file="../profiles/devcluster.tfvars"
+
+destroy-cluster-dev:
+	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && \
+	terraform -chdir=./terraform destroy -var-file="../profiles/devcluster.tfvars"
 
 deploy-cluster-prod:
-	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"
+	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && \
+	terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"
 
 deploy-apps-dev-platform:
 	@helm diff upgrade --allow-unreleased devcluster-platform ./helm/platform -f ./profiles/devcluster-platform.yaml; \
