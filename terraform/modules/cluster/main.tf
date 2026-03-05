@@ -1,11 +1,3 @@
-data "google_client_config" "default" {}
-
-provider "kubernetes" {
-  host                   = "https://${google_container_cluster.cluster.endpoint}"
-  token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(google_container_cluster.cluster.master_auth[0].cluster_ca_certificate)
-}
-
 resource "google_container_cluster" "cluster" {
   name                     = var.global_prefix
   project                  = var.project_id
@@ -152,19 +144,32 @@ resource "google_container_node_pool" "pools" {
 }
 
 # Config Connector setup.
-# We use it from inside the cluster to create DNS records and global IPs.
-resource "kubernetes_manifest" "config_connector" {
-  manifest = {
-    apiVersion = "core.cnrm.cloud.google.com/v1beta1"
-    kind       = "ConfigConnector"
-    metadata = {
-      name = "configconnector.core.cnrm.cloud.google.com"
-    }
-    spec = {
-      mode                 = "cluster"
-      googleServiceAccount = "${google_service_account.config_connector.email}"
-      stateIntoSpec        = "Absent"
-    }
+# The GKE addon auto-creates a ConfigConnector CR in namespaced mode.
+# We use kubectl apply to reconfigure it to cluster mode.
+# See:
+# https://docs.cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall
+resource "null_resource" "config_connector" {
+  triggers = {
+    cluster_id            = google_container_cluster.cluster.id
+    service_account_email = google_service_account.config_connector.email
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      gcloud container clusters get-credentials ${google_container_cluster.cluster.name} \
+        --zone ${var.zone} \
+        --project ${var.project_id} && \
+      kubectl apply -f - <<EOF
+      apiVersion: core.cnrm.cloud.google.com/v1beta1
+      kind: ConfigConnector
+      metadata:
+        name: configconnector.core.cnrm.cloud.google.com
+      spec:
+        mode: cluster
+        googleServiceAccount: "${google_service_account.config_connector.email}"
+        stateIntoSpec: Absent
+      EOF
+    EOT
   }
 
   depends_on = [
