@@ -60,6 +60,6 @@ resource "google_compute_instance" "node" {
 
   lifecycle {
     replace_triggered_by = [google_compute_disk.data, null_resource.cloud_init]
-
+    ignore_changes       = [metadata["ssh-keys"]]
   }
 }
