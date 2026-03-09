@@ -69,30 +69,30 @@ locals {
   node_pools = {
     production = {
       name         = "${var.global_prefix}-production"
-      machine_type = var.machine_type_production
-      disk_type    = var.disk_type_production
+      machine_type = var.apps_machine_type
+      disk_type    = var.apps_disk_type
       labels = {
         pool = "production"
       }
       autoscaling = {
-        min_node_count = var.min_node_count
-        max_node_count = var.max_node_count
+        min_node_count = var.apps_min_node_count
+        max_node_count = var.apps_max_node_count
       }
       boot_disk = {
-        provisioned_iops       = var.disk_iops_production
-        provisioned_throughput = var.disk_tput_production
+        provisioned_iops       = var.disk_iops
+        provisioned_throughput = var.disk_throughput
       }
     }
     staging = {
       name         = "${var.global_prefix}-staging"
-      machine_type = var.machine_type_staging
-      disk_type    = var.disk_type_staging
+      machine_type = var.apps_machine_type
+      disk_type    = var.apps_disk_type
       labels = {
         pool = "staging"
       }
       autoscaling = {
         min_node_count = 0
-        max_node_count = var.max_node_count
+        max_node_count = var.apps_max_node_count
       }
     }
   }
@@ -115,7 +115,7 @@ resource "google_container_node_pool" "pools" {
 
   node_config {
     machine_type    = each.value.machine_type
-    disk_size_gb    = var.disk_size_gb
+    disk_size_gb    = var.apps_disk_size_gb
     disk_type       = each.value.disk_type
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
@@ -124,8 +124,8 @@ resource "google_container_node_pool" "pools" {
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
     boot_disk {
-      provisioned_iops       = strcontains(each.value.disk_type, "hyperdisk-") ? each.value.boot_disk.provisioned_iops : null
-      provisioned_throughput = strcontains(each.value.disk_type, "hyperdisk-") ? each.value.boot_disk.provisioned_throughput : null
+      provisioned_iops       = strcontains(each.value.disk_type, "hyperdisk-") ? var.disk_iops : null
+      provisioned_throughput = strcontains(each.value.disk_type, "hyperdisk-") ? var.disk_throughput : null
     }
 
     shielded_instance_config {

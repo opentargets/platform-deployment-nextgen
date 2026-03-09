@@ -17,26 +17,23 @@ provider "google" {
 }
 
 module "cluster" {
-  source                  = "./modules/cluster"
-  global_prefix           = var.global_prefix
-  project_id              = var.project_id
-  region                  = var.region
-  zone                    = var.zone
-  network                 = google_compute_network.main.name
-  base_labels             = var.base_labels
-  min_node_count          = var.cluster_min_node_count
-  max_node_count          = var.cluster_max_node_count
-  machine_type_production = var.cluster_machine_type_production
-  machine_type_staging    = var.cluster_machine_type_staging
-  disk_size_gb            = var.cluster_disk_size_gb
-  disk_type_production    = var.cluster_disk_type_production
-  disk_iops_production    = var.cluster_disk_iops_production
-  disk_tput_production    = var.cluster_disk_tput_production
-  disk_type_staging       = var.cluster_disk_type_staging
-  kubernetes_version      = var.cluster_kubernetes_version
-  labels                  = var.cluster_labels
-}
-
+  source              = "./modules/cluster"
+  global_prefix       = var.global_prefix
+  project_id          = var.project_id
+  region              = var.region
+  zone                = var.zone
+  network             = google_compute_network.main.name
+  base_labels         = var.base_labels
+  kubernetes_version  = var.cluster_kubernetes_version
+  disk_iops           = var.cluster_disk_iops
+  disk_throughput     = var.cluster_disk_throughput
+  labels              = var.cluster_labels
+  apps_min_node_count = var.apps_min_node_count
+  apps_max_node_count = var.apps_max_node_count
+  apps_machine_type   = var.apps_machine_type
+  apps_disk_size_gb   = var.apps_disk_size_gb
+  apps_disk_type      = var.apps_disk_type
+  apps_labels         = var.apps_labels
 module "clickhouse" {
   source             = "./modules/db/clickhouse"
   global_prefix      = var.global_prefix
@@ -46,9 +43,9 @@ module "clickhouse" {
   zone               = var.zone
   network            = google_compute_network.main.name
   base_labels        = var.base_labels
-  machine_type       = var.clickhouse_machine_type
-  disk_size_gb       = var.clickhouse_disk_size_gb
-  clickhouse_version = var.clickhouse_version
+  machine_type       = var.old_clickhouse_machine_type
+  disk_size_gb       = var.old_clickhouse_disk_size_gb
+  clickhouse_version = "25.8.2.29"
   dns_zone_name      = google_dns_managed_zone.internal.name
   labels             = { "app" = "clickhouse" }
 }
@@ -61,9 +58,9 @@ module "opensearch" {
   zone               = var.zone
   network            = google_compute_network.main.name
   base_labels        = var.base_labels
-  machine_type       = var.opensearch_machine_type
-  disk_size_gb       = var.opensearch_disk_size_gb
-  opensearch_version = var.opensearch_version
+  machine_type       = var.old_opensearch_machine_type
+  disk_size_gb       = var.old_opensearch_disk_size_gb
+  opensearch_version = "3.1.0"
   dns_zone_name      = google_dns_managed_zone.internal.name
   labels             = { "app" = "opensearch" }
 }

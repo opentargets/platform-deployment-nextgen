@@ -25,76 +25,83 @@ variable "base_labels" {
 
 
 # CLUSTER VARIABLES
-variable "cluster_min_node_count" {
-  description = "The minimum (and initial) number of nodes in the cluster"
-  type        = number
-}
-
-variable "cluster_max_node_count" {
-  description = "The maximum number of nodes in the cluster"
-  type        = number
-}
-
-variable "cluster_machine_type_production" {
-  description = "The machine type for GKE nodes in the production node pool"
-  type        = string
-}
-
-variable "cluster_machine_type_staging" {
-  description = "The machine type for GKE nodes in the staging node pool"
-  type        = string
-}
-
-variable "cluster_disk_size_gb" {
-  description = "The disk size in GB for each GKE node"
-  type        = number
-}
-
-variable "cluster_disk_type_production" {
-  description = "The disk type for GKE nodes in the production node pool"
-  type        = string
-}
-
-variable "cluster_disk_iops_production" {
-  description = "The provisioned IOPS for disks GKE nodes in the production node pool, if using hyperdisks"
-  type        = number
-}
-
-variable "cluster_disk_tput_production" {
-  description = "The provisioned throughput for disks GKE nodes in the production node pool, if using hyperdisks"
-  type        = number
-}
-
-variable "cluster_disk_type_staging" {
-  description = "The disk type for GKE nodes in the staging node pool"
-  type        = string
-}
-
 variable "cluster_kubernetes_version" {
   description = "The Kubernetes version for the GKE cluster"
   type        = string
 }
 
 variable "cluster_labels" {
-  description = "The specific labels for the GKE cluster"
+  description = "The labels for the GKE cluster"
+  type        = map(string)
+}
+
+variable "cluster_disk_iops" {
+  description = "The provisioned IOPS for hyperdisks"
+  type        = number
+}
+
+variable "cluster_disk_throughput" {
+  description = "The provisioned throughput for hyperdisks in MB/s "
+  type        = number
+}
+
+
+# APPS VARIABLES
+variable "apps_min_node_count" {
+  description = "The minimum (and initial) number of nodes in the apps node pool"
+  type        = number
+}
+
+variable "apps_max_node_count" {
+  description = "The maximum number of nodes in the apps node pool"
+  type        = number
+}
+
+variable "apps_machine_type" {
+  description = "The machine type for nodes in the apps node pool"
+  type        = string
+}
+
+variable "apps_disk_size_gb" {
+  description = "The disk size in GB for each node in the apps node pool"
+  type        = number
+}
+
+variable "apps_disk_type" {
+  description = "The disk type for nodes in the apps node pool"
+  type        = string
+}
+
+variable "apps_labels" {
+  description = "The labels for the apps node pool"
   type        = map(string)
 }
 
 
 # CLICKHOUSE VARIABLES
+variable "old_clickhouse_machine_type" {
+  description = "The machine type to use for the ClickHouse machine — DELETE ONCE DB IS IN-CLUSTER"
+  type        = string
+}
+
+variable "old_clickhouse_disk_size_gb" {
+  description = "The disk size in GB for the ClickHouse machine — DELETE ONCE DB IS IN-CLUSTER"
+  type        = number
+}
+
 variable "clickhouse_machine_type" {
-  description = "The machine type to use for the ClickHouse node"
+  description = "The machine type to use for the ClickHouse nodes"
   type        = string
 }
 
 variable "clickhouse_disk_size_gb" {
-  description = "The disk size in GB for the ClickHouse node"
+  description = "The disk size in GB for the ClickHouse nodes"
   type        = number
 }
 
-variable "clickhouse_version" {
-  description = "The ClickHouse version to deploy"
-  type        = string
+variable "clickhouse_shards" {
+  description = "The number of shards for the ClickHouse cluster"
+  type        = number
 }
 
 variable "clickhouse_data_project_id" {
@@ -103,28 +110,38 @@ variable "clickhouse_data_project_id" {
 }
 
 variable "clickhouse_labels" {
-  description = "The specific labels for the ClickHouse module"
+  description = "The labels for the ClickHouse module"
   type        = map(string)
 }
 
 
 # OPENSEARCH VARIABLES
+variable "old_opensearch_machine_type" {
+  description = "The machine type to use for the OpenSearch machine — DELETE ONCE DB IS IN-CLUSTER"
+  type        = string
+}
+
+variable "old_opensearch_disk_size_gb" {
+  description = "The disk size in GB for the OpenSearch machine — DELETE ONCE DB IS IN-CLUSTER"
+  type        = number
+}
+
+variable "opensearch_shards" {
+  description = "The number of shards for the OpenSearch cluster"
+  type        = number
+}
+
 variable "opensearch_machine_type" {
-  description = "The machine type to use for the OpenSearch node"
+  description = "The machine type to use for the OpenSearch nodes"
   type        = string
 }
 
 variable "opensearch_disk_size_gb" {
-  description = "The disk size in GB for the OpenSearch node"
+  description = "The disk size in GB for the OpenSearch nodes"
   type        = number
 }
 
-variable "opensearch_version" {
-  description = "The OpenSearch version to deploy"
-  type        = string
-}
-
 variable "opensearch_labels" {
-  description = "The specific labels for the OpenSearch module"
+  description = "The labels for the OpenSearch module"
   type        = map(string)
 }
