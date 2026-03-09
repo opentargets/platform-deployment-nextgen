@@ -68,32 +68,13 @@ resource "google_container_cluster" "cluster" {
 locals {
   node_pools = {
     production = {
-      name         = "${var.global_prefix}-production"
-      machine_type = var.apps_machine_type
-      disk_type    = var.apps_disk_type
-      labels = {
-        pool = "production"
-      }
-      autoscaling = {
-        min_node_count = var.apps_min_node_count
-        max_node_count = var.apps_max_node_count
-      }
-      boot_disk = {
-        provisioned_iops       = var.disk_iops
-        provisioned_throughput = var.disk_throughput
-      }
+      name   = "${var.global_prefix}-production"
+      labels = { pool = "production" }
     }
     staging = {
-      name         = "${var.global_prefix}-staging"
-      machine_type = var.apps_machine_type
-      disk_type    = var.apps_disk_type
-      labels = {
-        pool = "staging"
-      }
-      autoscaling = {
-        min_node_count = 0
-        max_node_count = var.apps_max_node_count
-      }
+      name        = "${var.global_prefix}-staging"
+      labels      = { pool = "staging" }
+      autoscaling = { min_node_count = 0 } # allow scale to 0 when staging is off
     }
   }
 }
@@ -108,15 +89,15 @@ resource "google_container_node_pool" "pools" {
   initial_node_count = 1
 
   autoscaling {
-    min_node_count = each.value.autoscaling.min_node_count
-    max_node_count = each.value.autoscaling.max_node_count
+    min_node_count = try(each.value.autoscaling.min_node_count, var.apps_min_node_count)
+    max_node_count = var.apps_max_node_count
   }
 
 
   node_config {
-    machine_type    = each.value.machine_type
+    machine_type    = var.apps_machine_type
     disk_size_gb    = var.apps_disk_size_gb
-    disk_type       = each.value.disk_type
+    disk_type       = var.apps_disk_type
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
     labels          = merge(var.base_labels, var.labels, each.value.labels)
@@ -124,8 +105,8 @@ resource "google_container_node_pool" "pools" {
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
     boot_disk {
-      provisioned_iops       = strcontains(each.value.disk_type, "hyperdisk-") ? var.disk_iops : null
-      provisioned_throughput = strcontains(each.value.disk_type, "hyperdisk-") ? var.disk_throughput : null
+      provisioned_iops       = strcontains(var.apps_disk_type, "hyperdisk-") ? var.disk_iops : null
+      provisioned_throughput = strcontains(var.apps_disk_type, "hyperdisk-") ? var.disk_throughput : null
     }
 
     shielded_instance_config {
