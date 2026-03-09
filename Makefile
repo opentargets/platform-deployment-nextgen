@@ -26,18 +26,28 @@ deploy-cluster-prod:
 	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && \
 	terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"
 
+define CLUSTER_CONTEXT_CHECK
+	@if [ ! kubectl config current-context | grep $1 ]; then \
+		echo "current cluster is not a $1 cluster, aborting deploy"; \
+		exit 1; \
+	fi;
+endef
+
 deploy-apps-dev-platform:
-	@helm diff upgrade --allow-unreleased devcluster-platform ./helm/platform -f ./profiles/devcluster-platform.yaml; \
+	@$(call CLUSTER_CONTEXT_CHECK,dev)
+	helm diff upgrade --allow-unreleased devcluster-platform ./helm/platform -f ./profiles/devcluster-platform.yaml; \
 	read -p "press enter to continue..." nothing; \
 	helm upgrade --install devcluster-platform ./helm/platform -f ./profiles/devcluster-platform.yaml
 
 deploy-apps-dev-ppp:
-	@helm diff upgrade --allow-unreleased devcluster-ppp ./helm/platform -f ./profiles/devcluster-ppp.yaml; \
+	@$(call CLUSTER_CONTEXT_CHECK,dev)
+	helm diff upgrade --allow-unreleased devcluster-ppp ./helm/platform -f ./profiles/devcluster-ppp.yaml; \
 	read -p "press enter to continue..." nothing; \
 	helm upgrade --install devcluster-ppp ./helm/platform -f ./profiles/devcluster-ppp.yaml
 
 deploy-apps-prod-platform:
-	@helm lint ./helm/platform && \
+	@$(call CLUSTER_CONTEXT_CHECK,production)
+	helm lint ./helm/platform && \
 	helm diff upgrade --allow-unreleased production-platform ./helm/platform -f ./profiles/production-platform.yaml; \
 	read -p "confirm production platform apps deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
@@ -47,6 +57,7 @@ deploy-apps-prod-platform:
 	fi
 
 deploy-apps-prod-ppp:
+	@$(call CLUSTER_CONTEXT_CHECK,production)
 	@helm lint ./helm/platform && \
 	helm diff upgrade --allow-unreleased production-ppp ./helm/platform -f ./profiles/production-ppp.yaml; \
 	read -p "confirm production ppp apps deploy: " confirm; \
