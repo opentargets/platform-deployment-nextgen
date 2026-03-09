@@ -12,27 +12,35 @@ base_labels = {
 }
 
 # CLUSTER VARIABLES
-cluster_min_node_count          = 1
-cluster_max_node_count          = 3
-cluster_machine_type_production = "c4d-standard-4"
-cluster_machine_type_staging    = "n1-standard-4"
-cluster_disk_size_gb            = 64
-cluster_disk_type_production    = "hyperdisk-balanced"
-cluster_disk_iops_production    = 3000
-cluster_disk_tput_production    = 140
-cluster_disk_type_staging       = "pd-ssd"
-cluster_kubernetes_version      = "latest"
-cluster_labels                  = {}
+cluster_kubernetes_version = "latest"
+cluster_disk_iops          = 3000
+cluster_disk_throughput    = 140
+cluster_labels             = {}
+
+# APPS VARIABLES
+apps_min_node_count = 1
+apps_max_node_count = 3
+apps_machine_type   = "c4d-standard-4"
+apps_disk_size_gb   = 64
+apps_disk_type      = "hyperdisk-balanced"
 
 # CLICKHOUSE VARIABLES
-clickhouse_machine_type    = "n1-standard-4"
-clickhouse_disk_size_gb    = 75
-clickhouse_version         = "25.8.2.29"
+clickhouse_machine_type    = "c4d-standard-4"
+clickhouse_disk_size_gb    = 30
+clickhouse_shards          = 1
 clickhouse_data_project_id = "open-targets-prod"
-clickhouse_labels          = { "app" = "clickhouse" }
+clickhouse_labels          = {}
 
 # OPENSEARCH VARIABLES
-opensearch_machine_type = "n1-standard-4"
-opensearch_disk_size_gb = 350
-opensearch_version      = "3.1.0"
-opensearch_labels       = { "app" = "opensearch" }
+opensearch_machine_type = "c4d-standard-4"
+opensearch_disk_size_gb = 30
+opensearch_shards       = 1
+opensearch_labels       = {}
+
+# CLICKHOUSE VARIABLES (old)
+old_clickhouse_machine_type = "n1-standard-4"
+old_clickhouse_disk_size_gb = 75
+
+# OPENSEARCH VARIABLES (old)
+old_opensearch_machine_type = "n1-standard-4"
+old_opensearch_disk_size_gb = 350
