@@ -13,6 +13,7 @@ base_labels = {
 
 # CLUSTER VARIABLES
 cluster_kubernetes_version = "latest"
+cluster_disk_type          = "hyperdisk-balanced"
 cluster_disk_iops          = 3000
 cluster_disk_throughput    = 140
 cluster_labels             = {}
@@ -22,18 +23,17 @@ apps_min_node_count = 1
 apps_max_node_count = 3
 apps_machine_type   = "c4d-standard-4"
 apps_disk_size_gb   = 64
-apps_disk_type      = "hyperdisk-balanced"
+apps_labels         = {}
 
 # CLICKHOUSE VARIABLES
 clickhouse_machine_type    = "c4d-standard-4"
-clickhouse_disk_size_gb    = 30
+clickhouse_replicas        = 1
 clickhouse_shards          = 1
-clickhouse_data_project_id = "open-targets-prod"
 clickhouse_labels          = {}
+clickhouse_data_project_id = "open-targets-prod"
 
 # OPENSEARCH VARIABLES
 opensearch_machine_type = "c4d-standard-4"
-opensearch_disk_size_gb = 30
 opensearch_shards       = 1
 opensearch_labels       = {}
 

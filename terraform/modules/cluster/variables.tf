@@ -36,9 +36,9 @@ variable "kubernetes_version" {
   type        = string
 }
 
-variable "labels" {
-  description = "The labels for the GKE cluster"
-  type        = map(string)
+variable "disk_type" {
+  description = "The disk type"
+  type        = string
 }
 
 variable "disk_iops" {
@@ -49,6 +49,11 @@ variable "disk_iops" {
 variable "disk_throughput" {
   description = "The provisioned throughput for hyperdisks in MB/s "
   type        = number
+}
+
+variable "labels" {
+  description = "The labels for the GKE cluster"
+  type        = map(string)
 }
 
 
@@ -73,12 +78,51 @@ variable "apps_disk_size_gb" {
   type        = number
 }
 
-variable "apps_disk_type" {
-  description = "The disk type for nodes in the apps node pool"
+variable "apps_labels" {
+  description = "The labels for the apps node pool"
+  type        = map(string)
+}
+
+
+# CLICKHOUSE VARIABLES
+variable "clickhouse_machine_type" {
+  description = "The machine type to use for the ClickHouse nodes"
   type        = string
 }
 
-variable "apps_labels" {
-  description = "The labels for the apps node pool"
+variable "clickhouse_replicas" {
+  description = "The number of replicas for the ClickHouse cluster"
+  type        = number
+}
+
+variable "clickhouse_shards" {
+  description = "The number of shards for the ClickHouse cluster"
+  type        = number
+}
+
+variable "clickhouse_labels" {
+  description = "The labels for the ClickHouse module"
+  type        = map(string)
+}
+
+variable "clickhouse_data_project_id" {
+  description = "The GCP project id where the backups are stored. Used to create an HMAC key for ClickHouse to access GCS buckets."
+  type        = string
+}
+
+
+# OPENSEARCH VARIABLES
+variable "opensearch_machine_type" {
+  description = "The machine type to use for the OpenSearch nodes"
+  type        = string
+}
+
+variable "opensearch_shards" {
+  description = "The number of shards for the OpenSearch cluster"
+  type        = number
+}
+
+variable "opensearch_labels" {
+  description = "The labels for the OpenSearch module"
   type        = map(string)
 }
