@@ -30,9 +30,9 @@ variable "cluster_kubernetes_version" {
   type        = string
 }
 
-variable "cluster_labels" {
-  description = "The labels for the GKE cluster"
-  type        = map(string)
+variable "cluster_disk_type" {
+  description = "The disk type"
+  type        = string
 }
 
 variable "cluster_disk_iops" {
@@ -43,6 +43,11 @@ variable "cluster_disk_iops" {
 variable "cluster_disk_throughput" {
   description = "The provisioned throughput for hyperdisks in MB/s "
   type        = number
+}
+
+variable "cluster_labels" {
+  description = "The labels for the GKE cluster"
+  type        = map(string)
 }
 
 
@@ -67,11 +72,6 @@ variable "apps_disk_size_gb" {
   type        = number
 }
 
-variable "apps_disk_type" {
-  description = "The disk type for nodes in the apps node pool"
-  type        = string
-}
-
 variable "apps_labels" {
   description = "The labels for the apps node pool"
   type        = map(string)
@@ -94,8 +94,8 @@ variable "clickhouse_machine_type" {
   type        = string
 }
 
-variable "clickhouse_disk_size_gb" {
-  description = "The disk size in GB for the ClickHouse nodes"
+variable "clickhouse_replicas" {
+  description = "The number of replicas for the ClickHouse cluster"
   type        = number
 }
 
@@ -104,14 +104,14 @@ variable "clickhouse_shards" {
   type        = number
 }
 
-variable "clickhouse_data_project_id" {
-  description = "The GCP project id where the backups are stored. Used to create an HMAC key for ClickHouse to access GCS buckets."
-  type        = string
-}
-
 variable "clickhouse_labels" {
   description = "The labels for the ClickHouse module"
   type        = map(string)
+}
+
+variable "clickhouse_data_project_id" {
+  description = "The GCP project id where the backups are stored. Used to create an HMAC key for ClickHouse to access GCS buckets."
+  type        = string
 }
 
 
@@ -126,18 +126,13 @@ variable "old_opensearch_disk_size_gb" {
   type        = number
 }
 
-variable "opensearch_shards" {
-  description = "The number of shards for the OpenSearch cluster"
-  type        = number
-}
-
 variable "opensearch_machine_type" {
   description = "The machine type to use for the OpenSearch nodes"
   type        = string
 }
 
-variable "opensearch_disk_size_gb" {
-  description = "The disk size in GB for the OpenSearch nodes"
+variable "opensearch_shards" {
+  description = "The number of shards for the OpenSearch cluster"
   type        = number
 }
 

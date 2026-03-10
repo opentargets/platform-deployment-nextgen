@@ -79,6 +79,7 @@ locals {
   }
 }
 
+# MAIN NODE POOLS
 resource "google_container_node_pool" "pools" {
   for_each = local.node_pools
 
@@ -96,8 +97,8 @@ resource "google_container_node_pool" "pools" {
 
   node_config {
     machine_type    = var.apps_machine_type
+    disk_type       = var.disk_type
     disk_size_gb    = var.apps_disk_size_gb
-    disk_type       = var.apps_disk_type
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
     labels          = merge(var.base_labels, var.labels, each.value.labels)
@@ -105,8 +106,8 @@ resource "google_container_node_pool" "pools" {
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
     boot_disk {
-      provisioned_iops       = strcontains(var.apps_disk_type, "hyperdisk-") ? var.disk_iops : null
-      provisioned_throughput = strcontains(var.apps_disk_type, "hyperdisk-") ? var.disk_throughput : null
+      provisioned_iops       = strcontains(var.disk_type, "hyperdisk-") ? var.disk_iops : null
+      provisioned_throughput = strcontains(var.disk_type, "hyperdisk-") ? var.disk_throughput : null
     }
 
     shielded_instance_config {
@@ -132,6 +133,128 @@ resource "google_container_node_pool" "pools" {
   lifecycle {
     ignore_changes = [
       initial_node_count, # We don't care about changes to this after creation.
+    ]
+  }
+}
+
+# OPENSEARCH NODE POOL
+resource "google_container_node_pool" "pools_opensearch" {
+  name               = "${var.global_prefix}-opensearch"
+  project            = var.project_id
+  location           = var.zone
+  cluster            = google_container_cluster.cluster.name
+  initial_node_count = 1
+
+  autoscaling {
+    min_node_count = 1
+    max_node_count = var.opensearch_shards
+  }
+
+  node_config {
+    machine_type    = var.opensearch_machine_type
+    disk_type       = var.disk_type
+    disk_size_gb    = 30 # This is the boot disk. Data is on a PV.
+    image_type      = "COS_CONTAINERD"
+    service_account = google_service_account.node.email
+    labels          = merge(var.base_labels, var.labels, { pool = "databases-opensearch" })
+    tags            = ["cluster", "node", "opensearch"]
+    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    boot_disk {
+      provisioned_iops       = strcontains(var.disk_type, "hyperdisk-") ? var.disk_iops : null
+      provisioned_throughput = strcontains(var.disk_type, "hyperdisk-") ? var.disk_throughput : null
+    }
+
+    taint {
+      key    = "workload"
+      value  = "databases"
+      effect = "NO_SCHEDULE"
+    }
+
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+  }
+
+  upgrade_settings {
+    strategy        = "SURGE"
+    max_surge       = 1
+    max_unavailable = 0
+  }
+
+  lifecycle {
+    ignore_changes = [
+      initial_node_count,
+    ]
+  }
+}
+
+# CLICKHOUSE NODE POOL
+resource "google_container_node_pool" "databases_clickhouse" {
+  name               = "${var.global_prefix}-clickhouse"
+  project            = var.project_id
+  location           = var.zone
+  cluster            = google_container_cluster.cluster.name
+  initial_node_count = 1
+
+  autoscaling {
+    min_node_count = 1
+    max_node_count = var.clickhouse_replicas * var.clickhouse_shards
+  }
+
+  node_config {
+    machine_type    = var.clickhouse_machine_type
+    disk_type       = var.disk_type
+    disk_size_gb    = 30 # This is the boot disk. Data is on a PV.
+    image_type      = "COS_CONTAINERD"
+    service_account = google_service_account.node.email
+    labels          = merge(var.base_labels, var.labels, { pool = "databases-clickhouse" })
+    tags            = ["cluster", "node", "clickhouse"]
+    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    boot_disk {
+      provisioned_iops       = strcontains(var.disk_type, "hyperdisk-") ? var.disk_iops : null
+      provisioned_throughput = strcontains(var.disk_type, "hyperdisk-") ? var.disk_throughput : null
+    }
+
+    taint {
+      key    = "workload"
+      value  = "databases"
+      effect = "NO_SCHEDULE"
+    }
+
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+  }
+
+  upgrade_settings {
+    strategy        = "SURGE"
+    max_surge       = 1
+    max_unavailable = 0
+  }
+
+  lifecycle {
+    ignore_changes = [
+      initial_node_count,
     ]
   }
 }

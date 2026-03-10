@@ -17,23 +17,35 @@ provider "google" {
 }
 
 module "cluster" {
-  source              = "./modules/cluster"
-  global_prefix       = var.global_prefix
-  project_id          = var.project_id
-  region              = var.region
-  zone                = var.zone
-  network             = google_compute_network.main.name
-  base_labels         = var.base_labels
-  kubernetes_version  = var.cluster_kubernetes_version
-  disk_iops           = var.cluster_disk_iops
-  disk_throughput     = var.cluster_disk_throughput
-  labels              = var.cluster_labels
-  apps_min_node_count = var.apps_min_node_count
-  apps_max_node_count = var.apps_max_node_count
-  apps_machine_type   = var.apps_machine_type
-  apps_disk_size_gb   = var.apps_disk_size_gb
-  apps_disk_type      = var.apps_disk_type
-  apps_labels         = var.apps_labels
+  source                     = "./modules/cluster"
+  global_prefix              = var.global_prefix
+  project_id                 = var.project_id
+  region                     = var.region
+  zone                       = var.zone
+  network                    = google_compute_network.main.name
+  base_labels                = var.base_labels
+  kubernetes_version         = var.cluster_kubernetes_version
+  disk_type                  = var.cluster_disk_type
+  disk_iops                  = var.cluster_disk_iops
+  disk_throughput            = var.cluster_disk_throughput
+  labels                     = var.cluster_labels
+  apps_min_node_count        = var.apps_min_node_count
+  apps_max_node_count        = var.apps_max_node_count
+  apps_machine_type          = var.apps_machine_type
+  apps_disk_size_gb          = var.apps_disk_size_gb
+  apps_labels                = var.apps_labels
+  clickhouse_machine_type    = var.clickhouse_machine_type
+  clickhouse_replicas        = var.clickhouse_replicas
+  clickhouse_shards          = var.clickhouse_shards
+  clickhouse_data_project_id = var.clickhouse_data_project_id
+  clickhouse_labels          = var.clickhouse_labels
+  opensearch_machine_type    = var.opensearch_machine_type
+  opensearch_shards          = var.opensearch_shards
+  opensearch_labels          = var.opensearch_labels
+}
+
+# After dbs are put in the cluster, we can remove all this and bring the cluster module
+# here into the root, as there won't be any other modules apart from it.
 module "clickhouse" {
   source             = "./modules/db/clickhouse"
   global_prefix      = var.global_prefix

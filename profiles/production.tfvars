@@ -27,14 +27,13 @@ apps_labels         = {}
 
 # CLICKHOUSE VARIABLES
 clickhouse_machine_type    = "c4d-standard-16"
-clickhouse_disk_size_gb    = 400
+clickhouse_replicas        = 1
 clickhouse_shards          = 1
-clickhouse_data_project_id = "open-targets-prod"
 clickhouse_labels          = {}
+clickhouse_data_project_id = "open-targets-prod"
 
 # OPENSEARCH VARIABLES
 opensearch_machine_type = "c4d-highmem-8"
-opensearch_disk_size_gb = 200
 opensearch_shards       = 1
 opensearch_labels       = {}
 
