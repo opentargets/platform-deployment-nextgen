@@ -8,7 +8,7 @@
 {{- $labels := include "labels" .root }}
 {{- $image := index .root.Values $color "api" "image" }}
 {{- $release := index .root.Values $color "release" }}
-{{- $resources := index .root.Values.resources $env "api" }}
+{{- $resources := index .root.Values.resources "api" }}
 ---
 # ServiceAccount for {{ $namespace }}-{{ $color }} API deployment.
 # We disable kubernetes API completely here, the API does not need it.

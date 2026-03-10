@@ -9,7 +9,7 @@
 {{- $image := index .root.Values $color "webapp" "image" }}
 {{- $domain := .root.Values.domain }}
 {{- $subdomain := include "subdomain" (dict "root" .root "env" $env) }}
-{{- $resources := index .root.Values.resources $env "webapp" }}
+{{- $resources := index .root.Values.resources "webapp" }}
 ---
 # ServiceAccount for the {{ $namespace }}-{{ $color }} WebApp.
 # We disable kubernetes API completely here, the WebApp does not need it.

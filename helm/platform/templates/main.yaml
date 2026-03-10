@@ -1,5 +1,6 @@
-# Namespace
+# Common components
 {{ include "common.namespace" . }}
+{{ include "common.hyperdisk" . }}
 
 # Shared dbs
 {{ include "external.clickhouse" . }}

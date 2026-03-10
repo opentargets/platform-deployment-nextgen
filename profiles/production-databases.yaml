@@ -1,0 +1,48 @@
+prefix: production
+gcpProject: open-targets-prod
+
+opensearch:
+  version: '3.1.0'
+  # c4d-highmem-8: 8 vCPU / 64 GB RAM.
+  # Heap at 26 GB (hard cap below 32 GB GC cliff) leaves ~36 GB for OS page cache.
+  # 36 GB page cache comfortably covers the 100 GB index (compressed on disk).
+  jvm: '-Xms26g -Xmx26g'
+  storageSize: '1Ti'
+  resources:
+    requests:
+      memory: '30Gi'
+      cpu: '2'
+    limits:
+      memory: '58Gi'
+      cpu: '8'
+
+clickhouse:
+  version: '25.8.2.29'
+  storageSize: '500Gi'
+  gcs:
+    secretName: clickhouse-gcs-credentials
+  config:
+    # c4d-standard-16: 16 vCPU / 64 GB RAM.
+    # 12 + 12 GB caches + 20 GB max query = ~44 GB; leaves ~20 GB for OS + operator.
+    uncompressedCacheSizeBytes: '12884901888' # 12 GiB
+    markCacheSizeBytes: '12884901888' # 12 GiB
+    maxMemoryUsageBytes: '20000000000' # ~20 GiB
+    maxBytesBeforeExternalSortBytes: '15000000000' # 15 GiB
+    maxBytesBeforeExternalGroupByBytes: '15000000000'
+  resources:
+    requests:
+      memory: '20Gi'
+      cpu: '4'
+    limits:
+      memory: '60Gi'
+      cpu: '16'
+
+keeper:
+  storageSize: '5Gi'
+  resources:
+    requests:
+      memory: '256Mi'
+      cpu: '100m'
+    limits:
+      memory: '1Gi'
+      cpu: '500m'
