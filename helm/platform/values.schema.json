@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2019-09/schema",
   "type": "object",
-  "title": "Helm Chart Values Schema",
+  "title": "Platform Apps Helm Chart Values Schema",
   "description": "Schema for OpenTargets platform Helm chart values",
   "properties": {
     "gcpProject": {
@@ -61,20 +61,27 @@
     },
     "resources": {
       "type": "object",
-      "description": "The resource allocations for different environments",
+      "description": "The resource allocations",
       "properties": {
-        "production": {
-          "$ref": "#/$defs/resourceConfig",
-          "description": "Production environment resource configuration"
+        "webapp": {
+          "$ref": "#/$defs/serviceResources",
+          "description": "The WebApp resource configuration"
         },
-        "staging": {
-          "$ref": "#/$defs/resourceConfig",
-          "description": "Staging environment resource configuration"
+        "api": {
+          "$ref": "#/$defs/serviceResources",
+          "description": "The API resource configuration"
+        },
+        "aiapi": {
+          "$ref": "#/$defs/serviceResources",
+          "description": "The AI API resource configuration"
         }
       },
-      "additionalProperties": {
-        "$ref": "#/$defs/resourceConfig"
-      }
+      "required": [
+        "webapp",
+        "api",
+        "aiapi"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -191,30 +198,6 @@
       ],
       "additionalProperties": false
     },
-    "resourceConfig": {
-      "type": "object",
-      "description": "The resource allocations for the deployments serving an environment",
-      "properties": {
-        "webapp": {
-          "$ref": "#/$defs/serviceResources",
-          "description": "The WebApp resource configuration"
-        },
-        "api": {
-          "$ref": "#/$defs/serviceResources",
-          "description": "The API resource configuration"
-        },
-        "aiapi": {
-          "$ref": "#/$defs/serviceResources",
-          "description": "The AI API resource configuration"
-        }
-      },
-      "required": [
-        "webapp",
-        "api",
-        "aiapi"
-      ],
-      "additionalProperties": false
-    },
     "serviceResources": {
       "type": "object",
       "description": "The resource allocation for a deployment",
@@ -251,12 +234,10 @@
       "description": "Kubernetes resource requirements",
       "properties": {
         "memory": {
-          "type": "string",
           "description": "The memory requirement (e.g., 128Mi, 1Gi). A node with at least this available memory will be a candidate for scheduling the pod.",
           "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ki|m)?$"
         },
         "cpu": {
-          "type": "string",
           "description": "The CPU requirement (e.g., 100m, 1000m, 2). A node with at least this available CPU will be a candidate for scheduling the pod.",
           "pattern": "^\\d+(\\.\\d+)?(m)?$"
         }
@@ -272,12 +253,10 @@
       "description": "Kubernetes resource limits",
       "properties": {
         "memory": {
-          "type": "string",
           "description": "The memory limit (e.g., 256Mi, 2Gi). The pod will be oom-killed if it exceeds this limit.",
           "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ki|m)?$"
         },
         "cpu": {
-          "type": "string",
           "description": "The CPU limit (e.g., 200m, 2000m, 4). The pod will be throttled if it exceeds this limit.",
           "pattern": "^\\d+(\\.\\d+)?(m)?$"
         }
