@@ -40,7 +40,8 @@ module "cluster" {
   clickhouse_data_project_id = var.clickhouse_data_project_id
   clickhouse_labels          = var.clickhouse_labels
   opensearch_machine_type    = var.opensearch_machine_type
-  opensearch_replicas        = var.opensearch_replicas
+  opensearch_min_node_count  = var.opensearch_min_node_count
+  opensearch_max_node_count  = var.opensearch_max_node_count
   opensearch_labels          = var.opensearch_labels
 }
 

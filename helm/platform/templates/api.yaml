@@ -199,7 +199,11 @@ spec:
               value: jdbc:clickhouse://clickhouse.databases.svc.cluster.local:{{ include "ports.clickhouse" $root }}
               {{- end }}
             - name: ELASTICSEARCH_HOST
+              {{- if and (eq $env "production") (eq $prefix "production") }}
               value: {{ $prefix }}-opensearch.{{ $namespace }}.svc.cluster.local
+              {{- else }}
+              value: opensearch.databases.svc.cluster.local
+              {{- end }}
             - name: META_DATA_RELEASE
               value: {{ $release | quote }}
             - name: META_API_VERSION

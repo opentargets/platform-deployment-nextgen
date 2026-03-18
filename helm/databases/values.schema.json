@@ -7,7 +7,8 @@
     "gcpProject",
     "prefix",
     "disk",
-    "clickhouse"
+    "clickhouse",
+    "opensearch"
   ],
   "additionalProperties": false,
   "$defs": {
@@ -43,6 +44,11 @@
           "type": "string",
           "description": "Size of the data PVC (e.g. `100Gi`). Must be a valid Kubernetes storage quantity.",
           "pattern": "^[0-9]+(Ki|Mi|Gi|Ti|Pi|Ei|m|k|M|G|T|P|E)?$"
+        },
+        "heapSize": {
+          "type": "string",
+          "description": "Heap size (e.g. `4Gi`). Only used by OpenSearch. Must be a valid Kubernetes memory quantity.",
+          "pattern": "^[0-9]+(k|m|g)?$"
         },
         "resources": {
           "type": "object",
@@ -103,13 +109,13 @@
       "allOf": [
         {
           "$ref": "#/$defs/nodeCommon"
-        },
+        }
+      ]
+    },
+    "opensearchNode": {
+      "allOf": [
         {
-          "properties": {
-            "version": {
-              "description": "ClickHouse image tag (e.g. `25.8.2.29`)."
-            }
-          }
+          "$ref": "#/$defs/nodeCommon"
         }
       ]
     }
@@ -149,6 +155,10 @@
     "clickhouse": {
       "$ref": "#/$defs/clickhouseNode",
       "description": "ClickHouse configuration (flat, not nested)."
+    },
+    "opensearch": {
+      "$ref": "#/$defs/opensearchNode",
+      "description": "OpenSearch configuration (flat, not nested)."
     }
   }
 }

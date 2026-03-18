@@ -132,8 +132,13 @@ variable "opensearch_machine_type" {
   type        = string
 }
 
-variable "opensearch_replicas" {
-  description = "The number of replicas for the OpenSearch cluster"
+variable "opensearch_min_node_count" {
+  description = "The minimum (and initial) number of nodes in the OpenSearch node pool"
+  type        = number
+}
+
+variable "opensearch_max_node_count" {
+  description = "The maximum number of nodes in the OpenSearch node pool"
   type        = number
 }
 

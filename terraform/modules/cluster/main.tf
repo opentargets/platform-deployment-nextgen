@@ -137,67 +137,6 @@ resource "google_container_node_pool" "pools" {
   }
 }
 
-# OPENSEARCH NODE POOL
-resource "google_container_node_pool" "pools_opensearch" {
-  name               = "${var.global_prefix}-opensearch"
-  project            = var.project_id
-  location           = var.zone
-  cluster            = google_container_cluster.cluster.name
-  initial_node_count = 1
-
-  autoscaling {
-    min_node_count = 1
-    max_node_count = var.opensearch_replicas
-  }
-
-  node_config {
-    machine_type    = var.opensearch_machine_type
-    disk_type       = var.disk_type
-    disk_size_gb    = 30 # This is the boot disk. Data is on a PV.
-    image_type      = "COS_CONTAINERD"
-    service_account = google_service_account.node.email
-    labels          = merge(var.base_labels, var.labels, { pool = "opensearch" })
-    tags            = ["cluster", "node", "opensearch"]
-    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
-
-    boot_disk {
-      provisioned_iops       = strcontains(var.disk_type, "hyperdisk-") ? var.disk_iops : null
-      provisioned_throughput = strcontains(var.disk_type, "hyperdisk-") ? var.disk_throughput : null
-    }
-
-    taint {
-      key    = "workload"
-      value  = "opensearch"
-      effect = "NO_SCHEDULE"
-    }
-
-    shielded_instance_config {
-      enable_secure_boot          = true
-      enable_integrity_monitoring = true
-    }
-
-    workload_metadata_config {
-      mode = "GKE_METADATA"
-    }
-
-    metadata = {
-      disable-legacy-endpoints = "true"
-    }
-  }
-
-  upgrade_settings {
-    strategy        = "SURGE"
-    max_surge       = 1
-    max_unavailable = 0
-  }
-
-  lifecycle {
-    ignore_changes = [
-      initial_node_count,
-    ]
-  }
-}
-
 # CLICKHOUSE NODE POOL
 resource "google_container_node_pool" "databases_clickhouse" {
   name               = "${var.global_prefix}-clickhouse"
@@ -295,4 +234,71 @@ resource "null_resource" "config_connector" {
     google_project_iam_member.config_connector_roles,
     google_service_account_iam_member.config_connector_workload_identity,
   ]
+}
+
+# OPENSEARCH NODE POOL
+resource "google_container_node_pool" "pools_opensearch" {
+  name               = "${var.global_prefix}-opensearch"
+  project            = var.project_id
+  location           = var.zone
+  cluster            = google_container_cluster.cluster.name
+  initial_node_count = 1
+
+  autoscaling {
+    min_node_count = var.opensearch_min_node_count
+    max_node_count = var.opensearch_max_node_count
+  }
+
+  node_config {
+    machine_type    = var.opensearch_machine_type
+    disk_type       = var.disk_type
+    disk_size_gb    = 30 # This is the boot disk. Data is on a PV.
+    image_type      = "COS_CONTAINERD"
+    service_account = google_service_account.node.email
+    labels          = merge(var.base_labels, var.labels, { pool = "opensearch" })
+    tags            = ["cluster", "node", "opensearch"]
+    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    boot_disk {
+      provisioned_iops       = strcontains(var.disk_type, "hyperdisk-") ? var.disk_iops : null
+      provisioned_throughput = strcontains(var.disk_type, "hyperdisk-") ? var.disk_throughput : null
+    }
+
+    taint {
+      key    = "workload"
+      value  = "opensearch"
+      effect = "NO_SCHEDULE"
+    }
+
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    linux_node_config {
+      sysctls = {
+        "vm.max_map_count" = "262144"
+      }
+    }
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+  }
+
+  upgrade_settings {
+    strategy        = "SURGE"
+    max_surge       = 1
+    max_unavailable = 0
+  }
+
+  lifecycle {
+    ignore_changes = [
+      initial_node_count,
+    ]
+  }
 }
