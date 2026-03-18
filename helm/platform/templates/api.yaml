@@ -192,7 +192,12 @@ spec:
               name: api
           env:
             - name: SLICK_CLICKHOUSE_URL
+            # TODO: Remove conditional after 2603
+              {{- if and (eq $env "production") (eq $prefix "production") }}
               value: jdbc:clickhouse://{{ $prefix }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" $root }}
+              {{- else }}
+              value: jdbc:clickhouse://clickhouse.databases.svc.cluster.local:{{ include "ports.clickhouse" $root }}
+              {{- end }}
             - name: ELASTICSEARCH_HOST
               value: {{ $prefix }}-opensearch.{{ $namespace }}.svc.cluster.local
             - name: META_DATA_RELEASE

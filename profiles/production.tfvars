@@ -26,16 +26,11 @@ apps_disk_type      = "hyperdisk-balanced"
 apps_labels         = {}
 
 # CLICKHOUSE VARIABLES
-clickhouse_machine_type    = "c4d-standard-16"
-clickhouse_replicas        = 1
-clickhouse_shards          = 1
+clickhouse_machine_type    = "c4d-standard-4"
+clickhouse_min_node_count  = 1
+clickhouse_max_node_count  = 4
 clickhouse_labels          = {}
 clickhouse_data_project_id = "open-targets-prod"
-
-# OPENSEARCH VARIABLES
-opensearch_machine_type = "c4d-highmem-8"
-opensearch_shards       = 1
-opensearch_labels       = {}
 
 # CLICKHOUSE VARIABLES (old)
 old_clickhouse_machine_type = "n1-standard-16"

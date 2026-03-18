@@ -1,0 +1,165 @@
+---
+# ConfigMap with ClickHouse server configuration.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-config
+  namespace: databases
+data:
+  config.xml: |
+{{ .Files.Get "files/config.xml" | indent 4 }}
+  users.xml: |
+{{ .Files.Get "files/users.xml" | indent 4 }}
+
+
+---
+# Service that exposes ClickHouse pods within the cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse
+  namespace: databases
+spec:
+  type: ClusterIP
+  selector:
+    app: clickhouse
+  ports:
+    - port: 8123
+      targetPort: 8123
+      name: http
+    - port: 9000
+      targetPort: 9000
+      name: native
+
+
+---
+# PodDisruptionBudget to ensure at least one ClickHouse pod is always available.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: clickhouse
+  namespace: databases
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: clickhouse
+
+
+---
+# VolumeSnapshotContent containing the ClickHouse data.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotContent
+metadata:
+  name: clickhouse-data-snapshotcontent
+spec:
+  deletionPolicy: Retain
+  driver: pd.csi.storage.gke.io
+  source:
+    snapshotHandle: projects/{{ .Values.gcpProject }}/global/snapshots/{{ .Values.clickhouse.snapshot }}
+  volumeSnapshotRef:
+    name: clickhouse-data-snapshot
+    namespace: databases
+
+
+---
+# VolumeSnapshot to reference the ClickHouse data snapshot content.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: clickhouse-data-snapshot
+  namespace: databases
+spec:
+  source:
+    volumeSnapshotContentName: clickhouse-data-snapshotcontent
+
+---
+# StatefulSet for ClickHouse.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse
+  namespace: databases
+spec:
+  serviceName: clickhouse
+  replicas: {{ .Values.clickhouse.replicas }}
+  selector:
+    matchLabels:
+      app: clickhouse
+  template:
+    metadata:
+      labels:
+        app: clickhouse
+      annotations:
+        # Trigger a rolling update if the config changes
+        checksum/config: {{ print (.Files.Get "files/config.xml") (.Files.Get "files/users.xml") | sha256sum }}
+    spec:
+      tolerations:
+        - key: workload
+          value: clickhouse
+          effect: NoSchedule
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+      affinity:
+        nodeAffinity: # ensure pods are scheduled to clickhouse nodes
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - clickhouse
+        podAntiAffinity: # avoid co-locating ClickHouse pods in the same node
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: clickhouse
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:{{ .Values.clickhouse.version }}
+          ports:
+            - containerPort: 8123
+              name: http
+            - containerPort: 9000
+              name: native
+          resources:
+            requests:
+              cpu: {{ .Values.clickhouse.resources.requests.cpu | quote }}
+              memory: {{ .Values.clickhouse.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.clickhouse.resources.limits.cpu | quote }}
+              memory: {{ .Values.clickhouse.resources.limits.memory | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: tmp
+              mountPath: /var/lib/clickhouse-tmp
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/config.xml
+              subPath: config.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/users.d/users.xml
+              subPath: users.xml
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: clickhouse-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: hyperdisk-balanced
+        dataSource:
+          name: clickhouse-data-snapshot
+          kind: VolumeSnapshot
+          apiGroup: snapshot.storage.k8s.io
+        resources:
+          requests:
+            storage: {{ .Values.clickhouse.storageSize | quote }}

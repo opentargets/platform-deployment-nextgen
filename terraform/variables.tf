@@ -52,6 +52,11 @@ variable "cluster_labels" {
 
 
 # APPS VARIABLES
+variable "apps_machine_type" {
+  description = "The machine type for nodes in the apps node pool"
+  type        = string
+}
+
 variable "apps_min_node_count" {
   description = "The minimum (and initial) number of nodes in the apps node pool"
   type        = number
@@ -60,11 +65,6 @@ variable "apps_min_node_count" {
 variable "apps_max_node_count" {
   description = "The maximum number of nodes in the apps node pool"
   type        = number
-}
-
-variable "apps_machine_type" {
-  description = "The machine type for nodes in the apps node pool"
-  type        = string
 }
 
 variable "apps_disk_size_gb" {
@@ -79,6 +79,32 @@ variable "apps_labels" {
 
 
 # CLICKHOUSE VARIABLES
+variable "clickhouse_machine_type" {
+  description = "The machine type to use for the ClickHouse nodes"
+  type        = string
+}
+
+
+variable "clickhouse_min_node_count" {
+  description = "The minimum (and initial) number of nodes in the ClickHouse node pool"
+  type        = number
+}
+
+variable "clickhouse_max_node_count" {
+  description = "The maximum number of nodes in the ClickHouse node pool"
+}
+
+
+variable "clickhouse_data_project_id" {
+  description = "The GCP project id where the backups are stored. Used to create an HMAC key for ClickHouse to access GCS buckets."
+  type        = string
+}
+
+variable "clickhouse_labels" {
+  description = "The labels for the ClickHouse module"
+  type        = map(string)
+}
+
 variable "old_clickhouse_machine_type" {
   description = "The machine type to use for the ClickHouse machine — DELETE ONCE DB IS IN-CLUSTER"
   type        = string
@@ -87,31 +113,6 @@ variable "old_clickhouse_machine_type" {
 variable "old_clickhouse_disk_size_gb" {
   description = "The disk size in GB for the ClickHouse machine — DELETE ONCE DB IS IN-CLUSTER"
   type        = number
-}
-
-variable "clickhouse_machine_type" {
-  description = "The machine type to use for the ClickHouse nodes"
-  type        = string
-}
-
-variable "clickhouse_replicas" {
-  description = "The number of replicas for the ClickHouse cluster"
-  type        = number
-}
-
-variable "clickhouse_shards" {
-  description = "The number of shards for the ClickHouse cluster"
-  type        = number
-}
-
-variable "clickhouse_labels" {
-  description = "The labels for the ClickHouse module"
-  type        = map(string)
-}
-
-variable "clickhouse_data_project_id" {
-  description = "The GCP project id where the backups are stored. Used to create an HMAC key for ClickHouse to access GCS buckets."
-  type        = string
 }
 
 
@@ -131,8 +132,8 @@ variable "opensearch_machine_type" {
   type        = string
 }
 
-variable "opensearch_shards" {
-  description = "The number of shards for the OpenSearch cluster"
+variable "opensearch_replicas" {
+  description = "The number of replicas for the OpenSearch cluster"
   type        = number
 }
 

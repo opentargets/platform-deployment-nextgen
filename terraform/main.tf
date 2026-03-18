@@ -29,18 +29,18 @@ module "cluster" {
   disk_iops                  = var.cluster_disk_iops
   disk_throughput            = var.cluster_disk_throughput
   labels                     = var.cluster_labels
+  apps_machine_type          = var.apps_machine_type
   apps_min_node_count        = var.apps_min_node_count
   apps_max_node_count        = var.apps_max_node_count
-  apps_machine_type          = var.apps_machine_type
   apps_disk_size_gb          = var.apps_disk_size_gb
   apps_labels                = var.apps_labels
   clickhouse_machine_type    = var.clickhouse_machine_type
-  clickhouse_replicas        = var.clickhouse_replicas
-  clickhouse_shards          = var.clickhouse_shards
+  clickhouse_min_node_count  = var.clickhouse_min_node_count
+  clickhouse_max_node_count  = var.clickhouse_max_node_count
   clickhouse_data_project_id = var.clickhouse_data_project_id
   clickhouse_labels          = var.clickhouse_labels
   opensearch_machine_type    = var.opensearch_machine_type
-  opensearch_shards          = var.opensearch_shards
+  opensearch_replicas        = var.opensearch_replicas
   opensearch_labels          = var.opensearch_labels
 }
 

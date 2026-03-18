@@ -90,13 +90,13 @@ variable "clickhouse_machine_type" {
   type        = string
 }
 
-variable "clickhouse_replicas" {
-  description = "The number of replicas for the ClickHouse cluster"
+variable "clickhouse_min_node_count" {
+  description = "The minimum (and initial) number of nodes in the ClickHouse node pool"
   type        = number
 }
 
-variable "clickhouse_shards" {
-  description = "The number of shards for the ClickHouse cluster"
+variable "clickhouse_max_node_count" {
+  description = "The maximum number of nodes in the ClickHouse node pool"
   type        = number
 }
 
@@ -117,8 +117,8 @@ variable "opensearch_machine_type" {
   type        = string
 }
 
-variable "opensearch_shards" {
-  description = "The number of shards for the OpenSearch cluster"
+variable "opensearch_replicas" {
+  description = "The number of replicas for the OpenSearch cluster"
   type        = number
 }
 
