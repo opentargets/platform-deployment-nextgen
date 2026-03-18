@@ -1,7 +1,7 @@
 global_prefix = "devcluster"
 project_id    = "open-targets-eu-dev"
 region        = "europe-west1"
-zone          = "europe-west1-b"
+zone          = "europe-west1-c"
 base_labels = {
   "team"        = "open-targets",
   "subteam"     = "backend",
@@ -27,15 +27,10 @@ apps_labels         = {}
 
 # CLICKHOUSE VARIABLES
 clickhouse_machine_type    = "c4d-standard-4"
-clickhouse_replicas        = 1
-clickhouse_shards          = 1
+clickhouse_min_node_count  = 1
+clickhouse_max_node_count  = 4
 clickhouse_labels          = {}
 clickhouse_data_project_id = "open-targets-prod"
-
-# OPENSEARCH VARIABLES
-opensearch_machine_type = "c4d-standard-4"
-opensearch_shards       = 1
-opensearch_labels       = {}
 
 # CLICKHOUSE VARIABLES (old)
 old_clickhouse_machine_type = "n1-standard-4"

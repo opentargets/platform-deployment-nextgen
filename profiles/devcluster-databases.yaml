@@ -1,13 +1,13 @@
-gcpProject: open-targets-prod
-prefix: production
+gcpProject: open-targets-eu-dev
+prefix: devcluster
 
 disk:
-  iops: '6000'
-  throughput: 280Mi
+  iops: '3000'
+  throughput: 140Mi
 
 clickhouse:
   snapshot: platform-2603-ch-rc3
-  replicas: 1
+  replicas: 2
   version: '25.8.2.29'
   storageSize: 400Gi
   resources:

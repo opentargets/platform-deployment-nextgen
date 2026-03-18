@@ -147,7 +147,7 @@ resource "google_container_node_pool" "pools_opensearch" {
 
   autoscaling {
     min_node_count = 1
-    max_node_count = var.opensearch_shards
+    max_node_count = var.opensearch_replicas
   }
 
   node_config {
@@ -156,7 +156,7 @@ resource "google_container_node_pool" "pools_opensearch" {
     disk_size_gb    = 30 # This is the boot disk. Data is on a PV.
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
-    labels          = merge(var.base_labels, var.labels, { pool = "databases-opensearch" })
+    labels          = merge(var.base_labels, var.labels, { pool = "opensearch" })
     tags            = ["cluster", "node", "opensearch"]
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
@@ -167,7 +167,7 @@ resource "google_container_node_pool" "pools_opensearch" {
 
     taint {
       key    = "workload"
-      value  = "databases"
+      value  = "opensearch"
       effect = "NO_SCHEDULE"
     }
 
@@ -207,8 +207,8 @@ resource "google_container_node_pool" "databases_clickhouse" {
   initial_node_count = 1
 
   autoscaling {
-    min_node_count = 1
-    max_node_count = var.clickhouse_replicas * var.clickhouse_shards
+    min_node_count = var.clickhouse_min_node_count
+    max_node_count = var.clickhouse_max_node_count
   }
 
   node_config {
@@ -217,7 +217,7 @@ resource "google_container_node_pool" "databases_clickhouse" {
     disk_size_gb    = 30 # This is the boot disk. Data is on a PV.
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
-    labels          = merge(var.base_labels, var.labels, { pool = "databases-clickhouse" })
+    labels          = merge(var.base_labels, var.labels, { pool = "clickhouse" })
     tags            = ["cluster", "node", "clickhouse"]
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
@@ -228,7 +228,7 @@ resource "google_container_node_pool" "databases_clickhouse" {
 
     taint {
       key    = "workload"
-      value  = "databases"
+      value  = "clickhouse"
       effect = "NO_SCHEDULE"
     }
 

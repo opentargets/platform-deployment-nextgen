@@ -1,10 +1,9 @@
 # Common components
 {{ include "common.namespace" . }}
-{{ include "common.hyperdisk" . }}
 
-# Shared dbs
-{{ include "external.clickhouse" . }}
-{{ include "external.opensearch" . }}
+# TODO: REMOVE AFTER 2603
+{{ include "db.opensearch" . }}
+{{ include "db.clickhouse" . }}
 
 {{- if include "isDeploymentUsed" (dict "root" . "color" "blue") }}
 # Blue deployment components

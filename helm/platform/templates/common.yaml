@@ -17,25 +17,6 @@ metadata:
 {{- end }}
 
 
-# StorageClass definition for Hyperdisk Balanced.
-{{ define "common.hyperdisk" }}
-{{- $root := . }}
----
-# StorageClass for Hyperdisk Balanced with {{ .Values.clusterDiskIops }} IOPS and {{ .Values.clusterDiskThroughput }} throughput.
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: hyperdisk-balanced
-provisioner: pd.csi.storage.gke.io
-parameters:
-  type: hyperdisk-balanced
-  provisioned-iops-on-create: {{ .Values.clusterDiskIops }}
-  provisioned-throughput-on-create: {{ .Values.clusterDiskThroughput }}
-volumeBindingMode: WaitForFirstConsumer
-allowVolumeExpansion: true
-{{- end }}
-
-
 {{ define "common.networkpolicy" }}
 {{- $root := .root }}
 {{- $color := .color | default "blue" }}
