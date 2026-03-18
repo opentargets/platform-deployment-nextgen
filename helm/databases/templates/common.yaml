@@ -71,6 +71,8 @@ spec:
           port: 8123    # ClickHouse HTTP
         - protocol: TCP
           port: 9000    # ClickHouse native protocol
+        - protocol: TCP
+          port: 9200    # OpenSearch
 
 
 ---
