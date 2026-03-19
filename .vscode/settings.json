@@ -2,12 +2,16 @@
   "yaml.schemas": {
     "./helm/platform/values.schema.json": [
       "helm/platform/values.yaml",
-      "profiles/*.yaml"
+      "profiles/*-{platform,ppp}.yaml"
+    ],
+    "./helm/databases/values.schema.json": [
+      "helm/databases/values.yaml",
+      "profiles/*-databases.yaml"
     ],
     "./helm/observability/values.schema.json": [
       "helm/observability/values.yaml",
-      "profiles/*.yaml"
-    ]
+      "profiles/*-observability.yaml"
+    ],
   },
   "yaml.format.printWidth": 120,
   "yaml.format.singleQuote": true
