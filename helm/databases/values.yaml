@@ -8,7 +8,7 @@ disk:
 clickhouse:
   snapshot: platform-2603-ch-rc3
   replicas: 1
-  version: '25.8.2.29'
+  version: '25.8.18.1'
   storageSize: 400Gi
   resources:
     requests:
@@ -21,7 +21,7 @@ clickhouse:
 opensearch:
   snapshot: platform-2603-os-rc4
   replicas: 1
-  version: '3.1.0'
+  version: '3.5.0'
   storageSize: 400Gi
   heapSize: 15g
   resources:

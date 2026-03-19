@@ -6,9 +6,9 @@ disk:
   throughput: 140Mi
 
 clickhouse:
-  snapshot: platform-2603-ch-rc3
+  snapshot: platform-2603-ch-rc5
   replicas: 2
-  version: '25.8.2.29'
+  version: '25.8.18.1'
   storageSize: 400Gi
   resources:
     requests:
@@ -19,9 +19,9 @@ clickhouse:
       memory: 10Gi
 
 opensearch:
-  snapshot: platform-2603-os-rc4
+  snapshot: platform-2603-os-rc5
   replicas: 2
-  version: '3.1.0'
+  version: '3.5.0'
   storageSize: 400Gi
   heapSize: 15g
   resources:
