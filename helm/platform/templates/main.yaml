@@ -1,9 +1,6 @@
 # Common components
 {{ include "common.namespace" . }}
-
-# TODO: REMOVE AFTER 2603
-{{ include "db.opensearch" . }}
-{{ include "db.clickhouse" . }}
+{{ include "common.storageclass" . }}
 
 {{- if include "isDeploymentUsed" (dict "root" . "color" "blue") }}
 # Blue deployment components
@@ -11,6 +8,8 @@
 {{ include "deployment.api" (dict "root" . "color" "blue") }}
 {{ include "deployment.aiapi" (dict "root" . "color" "blue") }}
 {{ include "deployment.webapp" (dict "root" . "color" "blue") }}
+{{ include "statefulset.clickhouse" (dict "root" . "color" "blue") }}
+{{ include "statefulset.opensearch" (dict "root" . "color" "blue") }}
 {{- end }}
 
 {{- if include "isDeploymentUsed" (dict "root" . "color" "green") }}
@@ -19,16 +18,26 @@
 {{ include "deployment.api" (dict "root" . "color" "green") }}
 {{ include "deployment.aiapi" (dict "root" . "color" "green") }}
 {{ include "deployment.webapp" (dict "root" . "color" "green") }}
+{{ include "statefulset.clickhouse" (dict "root" . "color" "green") }}
+{{ include "statefulset.opensearch" (dict "root" . "color" "green") }}
 {{- end }}
 
 # Production services
 {{ include "service.api" (dict "root" . "env" "prod") }}
 {{ include "service.aiapi" (dict "root" . "env" "prod") }}
 {{ include "service.webapp" (dict "root" . "env" "prod") }}
+{{ include "service.clickhouse" (dict "root" . "env" "prod") }}
+{{ include "service.opensearch" (dict "root" . "env" "prod") }}
 {{ include "common.ingress" (dict "root" . "env" "prod") }}
 
 # Staging services
 {{ include "service.api" (dict "root" . "env" "staging") }}
 {{ include "service.aiapi" (dict "root" . "env" "staging") }}
 {{ include "service.webapp" (dict "root" . "env" "staging") }}
+{{ include "service.clickhouse" (dict "root" . "env" "staging") }}
+{{ include "service.opensearch" (dict "root" . "env" "staging") }}
 {{ include "common.ingress" (dict "root" . "env" "staging") }}
+
+# TODO: DELETE AFTER 2603
+{{ include "external.clickhouse" . }}
+{{ include "external.opensearch" . }}

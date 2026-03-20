@@ -17,6 +17,26 @@ metadata:
 {{- end }}
 
 
+# StorageClass for Hyperdisk Balanced. Cluster-scoped, shared across colors.
+{{- define "common.storageclass" -}}
+{{- $root := . -}}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: hyperdisk-balanced
+  annotations:
+    helm.sh/resource-policy: keep
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: hyperdisk-balanced
+  provisioned-iops-on-create: {{ $root.Values.resources.disk.iops | quote }}
+  provisioned-throughput-on-create: {{ $root.Values.resources.disk.throughput | quote }}
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+{{- end }}
+
+
 {{ define "common.networkpolicy" }}
 {{- $root := .root }}
 {{- $color := .color | default "blue" }}

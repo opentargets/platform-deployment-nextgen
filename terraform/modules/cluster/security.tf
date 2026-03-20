@@ -89,3 +89,22 @@ resource "google_project_iam_member" "node_cross_project_registry" {
   role    = "roles/artifactregistry.reader"
   member  = "serviceAccount:${google_service_account.node.email}"
 }
+
+# Add permissions to the GKE agent service account to read and use snapshots in eu-dev,
+# which is needed to allow provisioning volumesnapshotcontents for the db PVCs.
+data "google_project" "cluster" {
+  project_id = var.project_id
+}
+
+resource "google_project_iam_custom_role" "snapshot_reader" {
+  project     = "open-targets-eu-dev"
+  role_id     = "snapshotReader"
+  title       = "Snapshot Reader"
+  permissions = ["compute.snapshots.get", "compute.snapshots.list", "compute.snapshots.useReadOnly"]
+}
+
+resource "google_project_iam_member" "gke_agent_cross_project_snapshots" {
+  project = "open-targets-eu-dev"
+  role    = google_project_iam_custom_role.snapshot_reader.id
+  member  = "serviceAccount:service-${data.google_project.cluster.number}@container-engine-robot.iam.gserviceaccount.com"
+}

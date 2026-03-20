@@ -1,0 +1,229 @@
+{{- define "statefulset.clickhouse" -}}
+{{- $root := .root }}
+{{- $color := .color }}
+{{- $namespace := include "prefix-product" $root }}
+{{- $labels := include "labels" $root }}
+{{- $ch := index $root.Values $color "clickhouse" }}
+{{- $chRes := $root.Values.resources.clickhouse }}
+---
+# ConfigMap with ClickHouse config for {{ $namespace }}-{{ $color }} StatefulSet.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse-config
+  namespace: {{ $namespace }}
+data:
+  config.xml: |
+{{ $root.Files.Get "files/clickhouse/config.xml" | indent 4 }}
+  users.xml: |
+{{ $root.Files.Get "files/clickhouse/users.xml" | indent 4 }}
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} ClickHouse.
+# Allows ingress from API pods of the same color.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: clickhouse
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: clickhouse
+      color: {{ $color }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api
+              color: {{ $color }}
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.clickhouse" $root }}
+        - protocol: TCP
+          port: 9000
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} ClickHouse.
+# Allows egress for DNS and HTTPS (GCS access for backups, etc).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse-egress
+  namespace: {{ $namespace }}
+  labels:
+    app: clickhouse
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: clickhouse
+      color: {{ $color }}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: UDP
+          port: {{ include "ports.dns" $root }}
+        - protocol: TCP
+          port: {{ include "ports.dns" $root }}
+    - ports:
+        - protocol: TCP
+          port: 443
+
+
+---
+# PodDisruptionBudget for {{ $namespace }}-{{ $color }} ClickHouse StatefulSet.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse-pdb
+  namespace: {{ $namespace }}
+  labels:
+    app: clickhouse
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: clickhouse
+      color: {{ $color }}
+
+
+---
+# VolumeSnapshotContent containing the {{ $namespace }}-{{ $color }} ClickHouse data.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotContent
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse-snapshotcontent
+spec:
+  deletionPolicy: Retain
+  driver: pd.csi.storage.gke.io
+  source:
+    snapshotHandle: {{ $ch.snapshot }}
+  volumeSnapshotRef:
+    name: {{ $namespace }}-{{ $color }}-clickhouse-snapshot
+    namespace: {{ $namespace }}
+
+
+---
+# VolumeSnapshot to reference the {{ $namespace }}-{{ $color }} ClickHouse snapshot content.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse-snapshot
+  namespace: {{ $namespace }}
+spec:
+  source:
+    volumeSnapshotContentName: {{ $namespace }}-{{ $color }}-clickhouse-snapshotcontent
+
+
+---
+# StatefulSet for {{ $namespace }}-{{ $color }} ClickHouse.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse
+  namespace: {{ $namespace }}
+  labels:
+    app: clickhouse
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  serviceName: {{ $namespace }}-{{ $color }}-clickhouse
+  replicas: {{ $chRes.replicas }}
+  selector:
+    matchLabels:
+      app: clickhouse
+      color: {{ $color }}
+  template:
+    metadata:
+      labels:
+        app: clickhouse
+        color: {{ $color }}
+        {{- $labels | nindent 8 }}
+      annotations:
+        # Trigger a rolling update if the config changes.
+        checksum/config: {{ print ($root.Files.Get "files/clickhouse/config.xml") ($root.Files.Get "files/clickhouse/users.xml") | sha256sum }}
+    spec:
+      tolerations:
+        - key: workload
+          value: clickhouse
+          effect: NoSchedule
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - clickhouse
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: clickhouse
+                  color: {{ $color }}
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: clickhouse
+          image: {{ $ch.image }}
+          ports:
+            - containerPort: {{ include "ports.clickhouse" $root }}
+              name: http
+            - containerPort: 9000
+              name: native
+          resources:
+            requests:
+              cpu: {{ $chRes.requests.cpu | quote }}
+              memory: {{ $chRes.requests.memory | quote }}
+            limits:
+              cpu: {{ $chRes.limits.cpu | quote }}
+              memory: {{ $chRes.limits.memory | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: tmp
+              mountPath: /var/lib/clickhouse-tmp
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/config.xml
+              subPath: config.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/users.d/users.xml
+              subPath: users.xml
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ $namespace }}-{{ $color }}-clickhouse-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: hyperdisk-balanced
+        dataSource:
+          name: {{ $namespace }}-{{ $color }}-clickhouse-snapshot
+          kind: VolumeSnapshot
+          apiGroup: snapshot.storage.k8s.io
+        resources:
+          requests:
+            storage: {{ $chRes.storageSize | quote }}
+{{- end }}

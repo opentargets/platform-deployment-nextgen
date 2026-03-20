@@ -74,12 +74,27 @@
         "aiapi": {
           "$ref": "#/$defs/serviceResources",
           "description": "The AI API resource configuration"
+        },
+        "disk": {
+          "$ref": "#/$defs/diskConfig",
+          "description": "The disk configuration for database storage classes"
+        },
+        "clickhouse": {
+          "$ref": "#/$defs/clickhouseResources",
+          "description": "The ClickHouse infrastructure sizing, shared across all colors"
+        },
+        "opensearch": {
+          "$ref": "#/$defs/opensearchResources",
+          "description": "The OpenSearch infrastructure sizing, shared across all colors"
         }
       },
       "required": [
         "webapp",
         "api",
-        "aiapi"
+        "aiapi",
+        "disk",
+        "clickhouse",
+        "opensearch"
       ],
       "additionalProperties": false
     }
@@ -108,6 +123,14 @@
           "description": "The data release name (e.g., `25.09`)",
           "pattern": "^\\d{2}\\.\\d{2}(-.*)?$"
         },
+        "clickhouse": {
+          "$ref": "#/$defs/clickhouseConfig",
+          "description": "The ClickHouse database configuration for this deployment"
+        },
+        "opensearch": {
+          "$ref": "#/$defs/opensearchConfig",
+          "description": "The OpenSearch database configuration for this deployment"
+        },
         "webapp": {
           "$ref": "#/$defs/webappService"
         },
@@ -120,10 +143,110 @@
       },
       "required": [
         "release",
+        "clickhouse",
+        "opensearch",
         "webapp",
         "api",
         "aiapi"
       ],
+      "additionalProperties": false
+    },
+    "diskConfig": {
+      "type": "object",
+      "description": "Storage class disk configuration",
+      "properties": {
+        "iops": {
+          "type": "string",
+          "description": "Provisioned IOPS for the hyperdisk storage class"
+        },
+        "throughput": {
+          "type": "string",
+          "description": "Provisioned throughput for the hyperdisk storage class (e.g., 140Mi)"
+        }
+      },
+      "required": ["iops", "throughput"],
+      "additionalProperties": false
+    },
+    "clickhouseConfig": {
+      "type": "object",
+      "description": "ClickHouse per-release configuration",
+      "properties": {
+        "snapshot": {
+          "type": "string",
+          "description": "The GCP snapshot name to restore ClickHouse data from"
+        },
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        }
+      },
+      "required": ["snapshot", "image"],
+      "additionalProperties": false
+    },
+    "opensearchConfig": {
+      "type": "object",
+      "description": "OpenSearch per-release configuration",
+      "properties": {
+        "snapshot": {
+          "type": "string",
+          "description": "The GCP snapshot name to restore OpenSearch data from"
+        },
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        }
+      },
+      "required": ["snapshot", "image"],
+      "additionalProperties": false
+    },
+    "clickhouseResources": {
+      "type": "object",
+      "description": "ClickHouse infrastructure sizing (shared across all colors)",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of ClickHouse replicas"
+        },
+        "storageSize": {
+          "type": "string",
+          "description": "PVC storage size (e.g., 400Gi)",
+          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
+        },
+        "requests": {
+          "$ref": "#/$defs/resourceRequirements"
+        },
+        "limits": {
+          "$ref": "#/$defs/resourceLimits"
+        }
+      },
+      "required": ["replicas", "storageSize", "requests", "limits"],
+      "additionalProperties": false
+    },
+    "opensearchResources": {
+      "type": "object",
+      "description": "OpenSearch infrastructure sizing (shared across all colors)",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of OpenSearch replicas"
+        },
+        "storageSize": {
+          "type": "string",
+          "description": "PVC storage size (e.g., 400Gi)",
+          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
+        },
+        "heapSize": {
+          "type": "string",
+          "description": "JVM heap size for OpenSearch (e.g., 15g)"
+        },
+        "requests": {
+          "$ref": "#/$defs/resourceRequirements"
+        },
+        "limits": {
+          "$ref": "#/$defs/resourceLimits"
+        }
+      },
+      "required": ["replicas", "storageSize", "heapSize", "requests", "limits"],
       "additionalProperties": false
     },
     "webappService": {
@@ -178,25 +301,8 @@
       "additionalProperties": false
     },
     "imageConfig": {
-      "type": "object",
-      "description": "The config for a container image",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The full container image name, including the registry (e.g., `gcr.io/open-targets-dev/platform/webapp`)",
-          "pattern": "^[a-z0-9.-]+(/[a-z0-9._-]+)+$"
-        },
-        "tag": {
-          "type": "string",
-          "description": "The container image tag (e.g., `25.2.2-intervals.3`). Rememever, our tags do not have a prepending `v`.",
-          "pattern": "^[a-zA-Z0-9._-]+$"
-        }
-      },
-      "required": [
-        "name",
-        "tag"
-      ],
-      "additionalProperties": false
+      "type": "string",
+      "description": "The full container image reference including tag (e.g., `gcr.io/open-targets-dev/platform/webapp:25.2.2`)"
     },
     "serviceResources": {
       "type": "object",

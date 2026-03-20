@@ -147,7 +147,7 @@ resource "google_container_node_pool" "databases_clickhouse" {
 
   autoscaling {
     min_node_count = var.clickhouse_min_node_count
-    max_node_count = var.clickhouse_max_node_count
+    max_node_count = var.clickhouse_max_node_count * 2 # Because it holds staging and prod dbs.
   }
 
   node_config {
@@ -246,7 +246,7 @@ resource "google_container_node_pool" "pools_opensearch" {
 
   autoscaling {
     min_node_count = var.opensearch_min_node_count
-    max_node_count = var.opensearch_max_node_count
+    max_node_count = var.opensearch_max_node_count * 2 # Because it holds staging and prod dbs.
   }
 
   node_config {
