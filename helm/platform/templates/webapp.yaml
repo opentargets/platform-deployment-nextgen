@@ -148,7 +148,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: webapp
-          image: {{ $image.name }}:{{ $image.tag }}
+          image: {{ $image }}
           ports:
             - containerPort: {{ include "ports.http" $root }}
               name: http

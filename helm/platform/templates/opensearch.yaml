@@ -1,0 +1,236 @@
+{{- define "statefulset.opensearch" -}}
+{{- $root := .root }}
+{{- $color := .color }}
+{{- $namespace := include "prefix-product" $root }}
+{{- $labels := include "labels" $root }}
+{{- $os := index $root.Values $color "opensearch" }}
+{{- $osRes := $root.Values.resources.opensearch }}
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
+# Allows ingress from API pods of the same color.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-opensearch-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: opensearch
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: opensearch
+      color: {{ $color }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api
+              color: {{ $color }}
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.opensearch" $root }}
+
+
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
+# Allows egress for DNS and HTTPS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-opensearch-egress
+  namespace: {{ $namespace }}
+  labels:
+    app: opensearch
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: opensearch
+      color: {{ $color }}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: UDP
+          port: {{ include "ports.dns" $root }}
+        - protocol: TCP
+          port: {{ include "ports.dns" $root }}
+    - ports:
+        - protocol: TCP
+          port: 443
+
+
+---
+# PodDisruptionBudget for {{ $namespace }}-{{ $color }} OpenSearch StatefulSet.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $namespace }}-{{ $color }}-opensearch-pdb
+  namespace: {{ $namespace }}
+  labels:
+    app: opensearch
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: opensearch
+      color: {{ $color }}
+
+
+---
+# VolumeSnapshotContent containing the {{ $namespace }}-{{ $color }} OpenSearch data.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotContent
+metadata:
+  name: {{ $namespace }}-{{ $color }}-opensearch-snapshotcontent
+spec:
+  deletionPolicy: Retain
+  driver: pd.csi.storage.gke.io
+  source:
+    snapshotHandle: {{ $os.snapshot }}
+  volumeSnapshotRef:
+    name: {{ $namespace }}-{{ $color }}-opensearch-snapshot
+    namespace: {{ $namespace }}
+
+
+---
+# VolumeSnapshot to reference the {{ $namespace }}-{{ $color }} OpenSearch snapshot content.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: {{ $namespace }}-{{ $color }}-opensearch-snapshot
+  namespace: {{ $namespace }}
+spec:
+  source:
+    volumeSnapshotContentName: {{ $namespace }}-{{ $color }}-opensearch-snapshotcontent
+
+
+---
+# StatefulSet for {{ $namespace }}-{{ $color }} OpenSearch.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $namespace }}-{{ $color }}-opensearch
+  namespace: {{ $namespace }}
+  labels:
+    app: opensearch
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  serviceName: {{ $namespace }}-{{ $color }}-opensearch
+  replicas: {{ $osRes.replicas }}
+  selector:
+    matchLabels:
+      app: opensearch
+      color: {{ $color }}
+  template:
+    metadata:
+      labels:
+        app: opensearch
+        color: {{ $color }}
+        {{- $labels | nindent 8 }}
+    spec:
+      tolerations:
+        - key: workload
+          value: opensearch
+          effect: NoSchedule
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: pool
+                    operator: In
+                    values:
+                      - opensearch
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: opensearch
+                  color: {{ $color }}
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: opensearch
+          image: {{ $os.image }}
+          ports:
+            - containerPort: {{ include "ports.opensearch" $root }}
+              name: http
+            - containerPort: 9600
+              name: metrics
+          env:
+            - name: discovery.type
+              value: "single-node"
+            - name: network.host
+              value: "0.0.0.0"
+            - name: bootstrap.memory_lock
+              value: "true"
+            - name: DISABLE_SECURITY_PLUGIN
+              value: "true"
+            - name: path.data
+              value: /usr/share/opensearch/data/data
+            - name: OPENSEARCH_JAVA_OPTS
+              value: "-Xms{{ $osRes.heapSize }} -Xmx{{ $osRes.heapSize }} -XX:+UseTransparentHugePages"
+            - name: OPENSEARCH_PATH_CONF
+              value: /usr/share/opensearch/config
+          resources:
+            requests:
+              cpu: {{ $osRes.requests.cpu | quote }}
+              memory: {{ $osRes.requests.memory | quote }}
+            limits:
+              cpu: {{ $osRes.limits.cpu | quote }}
+              memory: {{ $osRes.limits.memory | quote }}
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/opensearch/data
+            - name: logs
+              mountPath: /usr/share/opensearch/logs
+          readinessProbe:
+            httpGet:
+              path: /_cluster/health
+              port: {{ include "ports.opensearch" $root }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /_cluster/health
+              port: {{ include "ports.opensearch" $root }}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+      volumes:
+        - name: logs
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: hyperdisk-balanced
+        dataSource:
+          name: {{ $namespace }}-{{ $color }}-opensearch-snapshot
+          kind: VolumeSnapshot
+          apiGroup: snapshot.storage.k8s.io
+        resources:
+          requests:
+            storage: {{ $osRes.storageSize | quote }}
+{{- end }}

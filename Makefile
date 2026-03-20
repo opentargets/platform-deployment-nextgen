@@ -7,20 +7,23 @@
 
 help:
 	@echo "Available make targets:"
-	@echo "  deploy-cluster-dev        - TF   — Deploy a development GKE cluster"
-	@echo "  destroy-cluster-dev       - TF   — Destroy the development GKE cluster"
-	@echo "  deploy-cluster-prod       - TF   — Deploy a production GKE cluster"
-	@echo "  deploy-apps-dev-platform  - HELM — Deploy services with platform flavor on the dev cluster"
-	@echo "  deploy-apps-dev-ppp       - HELM — Deploy services with PPP flavor on the dev cluster"
-	@echo "  deploy-apps-prod-platform - HELM — Deploy services with platform flavor on the production cluster"
-	@echo "  deploy-apps-prod-ppp      - HELM — Deploy services with PPP flavor on the production cluster"
-	@echo "  deploy-observability-dev  - HELM — Deploy observability stack to the development cluster using Helm"
-	@echo "  deploy-observability-prod - HELM — Deploy observability stack to the production cluster using Helm"
-	@echo "  port-forward-prometheus   - Port-forward to Prometheus in the currently active cluster"
-	@echo "  port-forward-grafana      - Port-forward to Grafana in the currently active cluster and display the admin password"
+	@echo
+	@echo "  deploy-cluster-dev         - TF   — Deploy  the development GKE cluster"
+	@echo "  deploy-cluster-prod        - TF   — Deploy  the production GKE cluster"
+	@echo "  destroy-cluster-dev        - TF   — Destroy the development GKE cluster"
+	@echo
+	@echo "  deploy-chart-dev-platform  - HELM — Deploy the platform flavor on the dev  cluster"
+	@echo "  deploy-chart-dev-ppp       - HELM — Deploy the PPP      flavor on the dev  cluster"
+	@echo "  deploy-chart-prod-platform - HELM — Deploy the platform flavor on the prod cluster"
+	@echo "  deploy-chart-prod-ppp      - HELM — Deploy the PPP      flavor on the prod cluster"
+	@echo
+	@echo "  deploy-observability-dev   - HELM — Deploy observability stack to the development cluster using Helm"
+	@echo "  deploy-observability-prod  - HELM — Deploy observability stack to the production cluster using Helm"
+	@echo "  port-forward-prometheus    - Port-forward to Prometheus in the currently active cluster"
+	@echo "  port-forward-grafana       - Port-forward to Grafana in the currently active cluster and display the admin password"
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Clusters
+# Terraform
 deploy-cluster-dev:
 	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && \
 	terraform -chdir=./terraform apply -var-file="../profiles/devcluster.tfvars"
@@ -41,55 +44,37 @@ define CLUSTER_CONTEXT_CHECK
 endef
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Applications
-deploy-apps-dev-platform:
+# Helm
+deploy-chart-dev-platform:
 	@$(call CLUSTER_CONTEXT_CHECK,dev)
 	helm diff upgrade --allow-unreleased devcluster-platform ./helm/platform -f ./profiles/devcluster-platform.yaml; \
 	read -p "press enter to continue..." nothing; \
 	helm upgrade --install devcluster-platform ./helm/platform -f ./profiles/devcluster-platform.yaml
 
-deploy-apps-dev-ppp:
+deploy-chart-dev-ppp:
 	@$(call CLUSTER_CONTEXT_CHECK,dev)
 	helm diff upgrade --allow-unreleased devcluster-ppp ./helm/platform -f ./profiles/devcluster-ppp.yaml; \
 	read -p "press enter to continue..." nothing; \
 	helm upgrade --install devcluster-ppp ./helm/platform -f ./profiles/devcluster-ppp.yaml
 
-deploy-apps-prod-platform:
+deploy-chart-prod-platform:
 	@$(call CLUSTER_CONTEXT_CHECK,production)
 	helm lint ./helm/platform && \
 	helm diff upgrade --allow-unreleased production-platform ./helm/platform -f ./profiles/production-platform.yaml; \
-	read -p "confirm production platform apps deploy: " confirm; \
+	read -p "confirm production platform chart deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
 		helm upgrade --install production-platform ./helm/platform -f ./profiles/production-platform.yaml; \
 	else \
 		echo "deploy cancelled"; \
 	fi
 
-deploy-apps-prod-ppp:
+deploy-chart-prod-ppp:
 	@$(call CLUSTER_CONTEXT_CHECK,production)
 	@helm lint ./helm/platform && \
 	helm diff upgrade --allow-unreleased production-ppp ./helm/platform -f ./profiles/production-ppp.yaml; \
-	read -p "confirm production ppp apps deploy: " confirm; \
+	read -p "confirm production ppp chart deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
 		helm upgrade --install production-ppp ./helm/platform -f ./profiles/production-ppp.yaml; \
-	else \
-		echo "deploy cancelled"; \
-	fi
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Databases
-deploy-databases-dev:
-	@$(call CLUSTER_CONTEXT_CHECK,dev)
-	helm diff upgrade --allow-unreleased devcluster-databases ./helm/databases -f ./profiles/devcluster-databases.yaml; \
-	read -p "press enter to continue..." nothing; \
-	helm upgrade --install devcluster-databases ./helm/databases -f ./profiles/devcluster-databases.yaml
-
-deploy-databases-prod:
-	@$(call CLUSTER_CONTEXT_CHECK,production)
-	helm diff upgrade --allow-unreleased production-databases ./helm/databases -f ./profiles/production-databases.yaml; \
-	read -p "confirm production databases deploy: " confirm; \
-	if [ "$$confirm" = "confirm" ]; then \
-		helm upgrade --install production-databases ./helm/databases -f ./profiles/production-databases.yaml; \
 	else \
 		echo "deploy cancelled"; \
 	fi

@@ -10,41 +10,43 @@ staging: disabled
 googleTagManagerId: GTM-XXXXXXX
 
 blue:
-  release: '25.06'
+  release: '26.03'
   webapp:
-    image:
-      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
-      tag: '0.12.8'
-
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.5
   api:
-    image:
-      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
-      tag: '25.0.2'
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.0.0-4247.22
   aiapi:
-    image:
-      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
-      tag: '0.0.13'
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:
       openai: openai-token
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8.18.1
+    snapshot: platform-2603-ch-rc3
+  opensearch:
+    image: opensearchproject/opensearch:3.5.0
+    snapshot: platform-2603-os-rc4
 
 green:
-  release: '25.09'
+  release: '26.03'
   webapp:
-    image:
-      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps
-      tag: '0.13.2'
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.5
   api:
-    image:
-      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api
-      tag: '25.2.1'
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.0.0-4247.22
   aiapi:
-    image:
-      name: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api
-      tag: '0.0.13'
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:
       openai: openai-token
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8.18.1
+    snapshot: platform-2603-ch-rc5
+  opensearch:
+    image: opensearchproject/opensearch:3.5.0
+    snapshot: platform-2603-os-rc5
 
 resources:
+  disk:
+    iops: '3000'
+    throughput: 140Mi
   webapp:
     minReplicas: 1
     maxReplicas: 5
@@ -58,11 +60,11 @@ resources:
     minReplicas: 2
     maxReplicas: 5
     requests:
-      memory: 16Gi
-      cpu: 4000m
+      memory: 4Gi
+      cpu: 1000m
     limits:
-      memory: 24Gi
-      cpu: 7500m
+      memory: 6Gi
+      cpu: 1875m
   aiapi:
     minReplicas: 1
     maxReplicas: 5
@@ -72,3 +74,22 @@ resources:
     limits:
       memory: 256Mi
       cpu: 500m
+  clickhouse:
+    replicas: 1
+    storageSize: 400Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 10000m
+      memory: 10Gi
+  opensearch:
+    replicas: 1
+    storageSize: 400Gi
+    heapSize: 15g
+    requests:
+      cpu: 1000m
+      memory: 20Gi
+    limits:
+      cpu: 10000m
+      memory: 28Gi
