@@ -1,6 +1,6 @@
 <clickhouse>
   <logger>
-    <level>debug</level>
+    <level>error</level>
     <console>1</console>
   </logger>
 

@@ -204,7 +204,9 @@ spec:
             - name: JAVA_OPTS
               value: >-
                 -XX:+UseContainerSupport
-                -XX:MaxRAMPercentage=85.0
+                -XX:+UseG1GC
+                -XX:MaxGCPauseMillis=500
+                -XX:MaxRAMPercentage=75.0
                 -XX:InitialRAMPercentage=35.0
           resources:
             requests:
@@ -213,16 +215,27 @@ spec:
             limits:
               memory: {{ $resources.limits.memory }}
               cpu: {{ $resources.limits.cpu }}
+          startupProbe:
+            httpGet:
+              path: {{ include "paths.health.api" $root }}
+              port: api
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
           livenessProbe:
             httpGet:
               path: {{ include "paths.health.api" $root }}
               port: api
-            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: {{ include "paths.health.api" $root }}
               port: api
-            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
           securityContext:
             allowPrivilegeEscalation: false
 {{- end }}
