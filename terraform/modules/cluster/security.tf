@@ -96,7 +96,11 @@ data "google_project" "cluster" {
   project_id = var.project_id
 }
 
+# Grant GKE agent service account permissions to read snapshots in eu-dev project.
+# Only created for prod cluster since it's in a different project than the snapshots.
 resource "google_project_iam_custom_role" "snapshot_reader" {
+  count = var.project_id == "open-targets-prod" ? 1 : 0
+
   project     = "open-targets-eu-dev"
   role_id     = "snapshotReader"
   title       = "Snapshot Reader"
@@ -104,7 +108,9 @@ resource "google_project_iam_custom_role" "snapshot_reader" {
 }
 
 resource "google_project_iam_member" "gke_agent_cross_project_snapshots" {
+  count = var.project_id == "open-targets-prod" ? 1 : 0
+
   project = "open-targets-eu-dev"
-  role    = google_project_iam_custom_role.snapshot_reader.id
+  role    = google_project_iam_custom_role.snapshot_reader[0].id
   member  = "serviceAccount:service-${data.google_project.cluster.number}@container-engine-robot.iam.gserviceaccount.com"
 }
