@@ -5,33 +5,33 @@ domain: opentargets.xyz
 dnsZone: opentargets-xyz
 
 production: blue
-staging: enabled
+staging: disabled
 
 googleTagManagerId: GTM-XXXXXXX
 
 blue:
   release: '26.03'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.5
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7
   api:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.0.0-4247.22
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.0
   aiapi:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:
       openai: openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: platform-2603-ch-rc3
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch-rc5
   opensearch:
     image: opensearchproject/opensearch:3.5.0
-    snapshot: platform-2603-os-rc4
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os-rc5
 
 green:
   release: '26.03'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.5
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7
   api:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.0.0-4247.22
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.0
   aiapi:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:

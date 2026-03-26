@@ -49,6 +49,37 @@ spec:
           port: {{ include "ports.clickhouse" $root }}
         - protocol: TCP
           port: 9000
+          
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} ClickHouse.
+# Allows ingress from Prometheus pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-clickhouse-metrics-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: clickhouse
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: clickhouse
+      color: {{ $color }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.clickhouse.metrics" $root }}
 
 
 ---
@@ -186,6 +217,8 @@ spec:
           ports:
             - containerPort: {{ include "ports.clickhouse" $root }}
               name: http
+            - containerPort: {{ include "ports.clickhouse.metrics" $root}}
+              name: metrics
             - containerPort: 9000
               name: native
           resources:

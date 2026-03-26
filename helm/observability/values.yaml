@@ -1,9 +1,11 @@
 prometheus:
+  alertmanager:
+    enabled: false
   server:
     persistentVolume:
       enabled: true
       size: 30Gi
-      storageClass: standard
+      storageClass: hyperdisk-balanced
     retention: 30d
 
   serverFiles:

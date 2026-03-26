@@ -115,6 +115,8 @@ metadata:
     app: clickhouse
     environment: {{ $env }}
     {{- $labels | nindent 4 }}
+  annotations:
+    prometheus.io/scrape: {{ if and (eq $env "prod") (eq .root.Values.product "platform") }}"true"{{ else }}"false"{{ end }}
 spec:
   type: ClusterIP
   selector:
@@ -124,9 +126,12 @@ spec:
     - port: {{ include "ports.clickhouse" $root }}
       targetPort: {{ include "ports.clickhouse" $root }}
       name: http
-    - port: 9000
-      targetPort: 9000
+    - port: {{ include "ports.clickhouse.native" $root }}
+      targetPort: {{ include "ports.clickhouse.native" $root }}
       name: native
+    - port: {{ include "ports.clickhouse.metrics" $root }}
+      targetPort: {{ include "ports.clickhouse.metrics" $root }}
+      name: metrics
 {{- end }}
 
 
@@ -147,6 +152,8 @@ metadata:
     app: opensearch
     environment: {{ $env }}
     {{- $labels | nindent 4 }}
+  annotations:
+    prometheus.io/scrape: {{ if eq $env "prod" }}"true"{{ else }}"false"{{ end }}
 spec:
   type: ClusterIP
   selector:
@@ -156,9 +163,9 @@ spec:
     - port: {{ include "ports.opensearch" $root }}
       targetPort: {{ include "ports.opensearch" $root }}
       name: http
-    - port: 9600
-      targetPort: 9600
-      name: metrics
+    - port: {{ include "ports.opensearch.perf" $root }}
+      targetPort: {{ include "ports.opensearch.perf" $root }}
+      name: perfanalyzer
 {{- end }}
 
 

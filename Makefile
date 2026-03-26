@@ -81,18 +81,18 @@ deploy-chart-prod-ppp:
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Observability stack
-deploy-observability-dev-platform:
+deploy-observability-dev:
 	@helm dependency build ./helm/observability
 	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/devcluster-observability.yaml; \
 	read -p "press enter to continue..." nothing; \
 	helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/devcluster-observability.yaml
 
-deploy-observability-prod-platform:
+deploy-observability-prod:
 	@helm dependency build ./helm/observability
 	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/production-observability.yaml; \
 	read -p "confirm production observability deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
-		helm upgrade observability ./helm/observability --namespace observability --install -f ./profiles/production-observability.yaml; \
+		helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/production-observability.yaml; \
 	else \
 		echo "deploy cancelled"; \
 	fi
