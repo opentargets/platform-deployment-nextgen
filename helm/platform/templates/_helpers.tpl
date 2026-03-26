@@ -72,6 +72,7 @@ staging
 
 # ports and paths
 {{- define "ports.dns"        -}}53{{- end -}}
+{{- define "ports.apiproxy"   -}}8081{{- end -}}
 {{- define "ports.http"       -}}8080{{- end -}}
 {{- define "ports.clickhouse" -}}8123{{- end -}}
 {{- define "ports.opensearch" -}}9200{{- end -}}

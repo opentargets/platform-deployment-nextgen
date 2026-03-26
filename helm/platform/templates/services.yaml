@@ -56,7 +56,7 @@ spec:
     color: {{ $deploymentColor }}
   ports:
     - port: {{ include "ports.http" $root }}
-      targetPort: {{ include "ports.http" $root }}
+      targetPort: {{ include "ports.apiproxy" $root }}
       protocol: TCP
       name: api
   type: NodePort

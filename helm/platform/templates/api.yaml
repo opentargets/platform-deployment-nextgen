@@ -86,7 +86,7 @@ spec:
     - from: []
       ports:
         - protocol: TCP
-          port: {{ include "ports.http" $root }}
+          port: {{ include "ports.apiproxy" $root }}
 
 
 ---
@@ -144,6 +144,32 @@ spec:
 
 
 ---
+# ConfigMap for {{ $namespace }}-{{ $color }} API rate-limiter nginx sidecar.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $namespace }}-{{ $color }}-nginx-config
+  namespace: {{ $namespace }}
+data:
+  default.conf: |
+    map $http_x_forwarded_for $real_client_ip {
+      ~^(\S+),\s  $1;
+      default     $http_x_forwarded_for;
+    }
+
+    limit_req_zone $real_client_ip zone=api_limit:10m rate=40r/s;
+
+    server {
+      listen {{ include "ports.apiproxy" $root }};
+      location / {
+        limit_req zone=api_limit burst=80 nodelay;
+        limit_req_status 429;
+        proxy_pass http://127.0.0.1:{{ include "ports.http" $root }};
+      }
+    }
+
+
+---
 # API {{ $namespace }}-{{ $color }} deployment.
 apiVersion: apps/v1
 kind: Deployment
@@ -185,6 +211,21 @@ spec:
                   color: {{ $color }}
               topologyKey: kubernetes.io/hostname
       containers:
+        - name: nginx-ratelimit
+          image: nginx:alpine
+          ports:
+            - containerPort: {{ include "ports.apiproxy" $root }}
+              name: apiproxy
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
         - name: api
           image: {{ $image }}
           ports:
@@ -238,4 +279,8 @@ spec:
             failureThreshold: 3
           securityContext:
             allowPrivilegeEscalation: false
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ $namespace }}-{{ $color }}-nginx-config
 {{- end }}
