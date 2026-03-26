@@ -36,6 +36,37 @@ spec:
         - protocol: TCP
           port: {{ include "ports.opensearch" $root }}
 
+---
+# NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
+# Allows ingress from Prometheus pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-{{ $color }}-opensearch-metrics-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: opensearch
+    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: opensearch
+      color: {{ $color }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.opensearch" $root }}
+
 
 ---
 # NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
@@ -163,6 +194,23 @@ spec:
                   app: opensearch
                   color: {{ $color }}
               topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: install-plugins
+          image: {{ $os.image }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              # Install plugins
+              /usr/share/opensearch/bin/opensearch-plugin install --batch https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.5.0.0/prometheus-exporter-3.5.0.0.zip
+              # Copy plugins to shared volume
+              cp -r /usr/share/opensearch/plugins/* /plugins/
+          volumeMounts:
+            - name: plugins
+              mountPath: /plugins
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
       containers:
         - name: opensearch
           image: {{ $os.image }}
@@ -186,6 +234,10 @@ spec:
               value: "-Xms{{ $osRes.heapSize }} -Xmx{{ $osRes.heapSize }} -XX:+UseTransparentHugePages"
             - name: OPENSEARCH_PATH_CONF
               value: /usr/share/opensearch/config
+            - name: prometheus.indices
+              value: "true"
+            - name: prometheus.cluster.settings
+              value: "true"
           resources:
             requests:
               cpu: {{ $osRes.requests.cpu | quote }}
@@ -202,6 +254,8 @@ spec:
               mountPath: /usr/share/opensearch/data
             - name: logs
               mountPath: /usr/share/opensearch/logs
+            - name: plugins
+              mountPath: /usr/share/opensearch/plugins
           readinessProbe:
             httpGet:
               path: /_cluster/health
@@ -218,6 +272,8 @@ spec:
             failureThreshold: 3
       volumes:
         - name: logs
+          emptyDir: {}
+        - name: plugins
           emptyDir: {}
   volumeClaimTemplates:
     - metadata:

@@ -3,7 +3,7 @@ prometheus:
     persistentVolume:
       enabled: true
       size: 30Gi
-      storageClass: standard
+      storageClass: hyperdisk-balanced
     retention: 30d
 
   serverFiles:
@@ -65,6 +65,12 @@ prometheus:
           kubernetes_sd_configs:
             - role: endpoints
           relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_app]
+              action: drop
+              regex: opensearch
+            - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_port_number]
+              action: drop
+              regex: 'clickhouse;(8123|9000)'
             - source_labels: [__meta_kubernetes_endpoint_node_name]
               target_label: nodename
             - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
@@ -267,28 +273,31 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: node
-
-        - job_name: databases
-          static_configs:
-            - targets:
-                - clickhouse.devcluster.internal:9363
-                - clickhouse.devcluster.internal:9100
-                - opensearch.devcluster.internal:9100
+        - job_name: opensearch
+          honor_labels: true
+          metrics_path: /_prometheus/metrics
+          kubernetes_sd_configs:
+            - role: pod
           relabel_configs:
-            - source_labels: [__address__]
-              regex: '([^:]+):.*'
-              target_label: nodename
+            - source_labels: [__meta_kubernetes_pod_label_app]
+              action: keep
+              regex: opensearch
+            - source_labels: [__meta_kubernetes_pod_ip]
               action: replace
-        - job_name: opensearch-exporter
-          metrics_path: '/_prometheus/metrics'
-          static_configs:
-            - targets:
-                - opensearch.devcluster.internal:9200
-          relabel_configs:
-            - source_labels: [__address__]
-              regex: '([^:]+):.*'
-              target_label: nodename
+              target_label: __address__
+              replacement: $1:9200
+            - source_labels: [__meta_kubernetes_namespace]
               action: replace
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: replace
+              target_label: pod
+            - source_labels: [__meta_kubernetes_pod_label_color]
+              action: replace
+              target_label: color
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              action: replace
+              target_label: node
 
 grafana:
   sidecar:
