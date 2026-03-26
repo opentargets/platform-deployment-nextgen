@@ -16,6 +16,7 @@ metadata:
     environment: {{ $env }}
     {{- $labels | nindent 4 }}
   annotations:
+    cloud.google.com/neg: '{"ingress": true}'
     cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-cdn"}'
 spec:
   selector:
@@ -48,6 +49,7 @@ metadata:
     environment: {{ $env }}
     {{- $labels | nindent 4 }}
   annotations:
+    cloud.google.com/neg: '{"ingress": true}'
     cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-no-cdn"}'
     prometheus.io/scrape: {{ if eq $env "prod" }}"true"{{ else }}"false"{{ end }}
 spec:
@@ -81,6 +83,7 @@ metadata:
     environment: {{ $env }}
     {{- $labels | nindent 4 }}
   annotations:
+    cloud.google.com/neg: '{"ingress": true}'
     cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-no-cdn"}'
 spec:
   selector:
