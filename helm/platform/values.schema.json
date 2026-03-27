@@ -46,6 +46,20 @@
       ],
       "description": "Whether the staging environment is enabled or disabled. If disabled, staging services will point to production deployments too."
     },
+    "security": {
+      "type": "object",
+      "description": "Security-related configuration",
+      "properties": {
+        "rateLimiterWhitelist": {
+          "type": "array",
+          "description": "List of IPs to allow through the API rate limiter (in CIDR notation)."
+        },
+        "blacklist": {
+          "type": "array",
+          "description": "List of IPs to block from accessing the API (in CIDR notation)."
+        }
+      }
+    },
     "googleTagManagerId": {
       "type": "string",
       "description": "The Google Tag Manager ID to set in the production Web Application. It should have the format `GTM-XXXXXX`.",
@@ -164,7 +178,10 @@
           "description": "Provisioned throughput for the hyperdisk storage class (e.g., 140Mi)"
         }
       },
-      "required": ["iops", "throughput"],
+      "required": [
+        "iops",
+        "throughput"
+      ],
       "additionalProperties": false
     },
     "clickhouseConfig": {
@@ -179,7 +196,10 @@
           "$ref": "#/$defs/imageConfig"
         }
       },
-      "required": ["snapshot", "image"],
+      "required": [
+        "snapshot",
+        "image"
+      ],
       "additionalProperties": false
     },
     "opensearchConfig": {
@@ -194,7 +214,10 @@
           "$ref": "#/$defs/imageConfig"
         }
       },
-      "required": ["snapshot", "image"],
+      "required": [
+        "snapshot",
+        "image"
+      ],
       "additionalProperties": false
     },
     "clickhouseResources": {
@@ -218,7 +241,12 @@
           "$ref": "#/$defs/resourceLimits"
         }
       },
-      "required": ["replicas", "storageSize", "requests", "limits"],
+      "required": [
+        "replicas",
+        "storageSize",
+        "requests",
+        "limits"
+      ],
       "additionalProperties": false
     },
     "opensearchResources": {
@@ -246,7 +274,13 @@
           "$ref": "#/$defs/resourceLimits"
         }
       },
-      "required": ["replicas", "storageSize", "heapSize", "requests", "limits"],
+      "required": [
+        "replicas",
+        "storageSize",
+        "heapSize",
+        "requests",
+        "limits"
+      ],
       "additionalProperties": false
     },
     "webappService": {

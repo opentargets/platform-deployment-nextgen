@@ -61,10 +61,10 @@ resources:
     maxReplicas: 5
     requests:
       memory: 20Gi
-      cpu: 2000m
+      cpu: 4000m
     limits:
       memory: 20Gi
-      cpu: 7500m
+      cpu: 8000m
   aiapi:
     minReplicas: 2
     maxReplicas: 5
@@ -78,18 +78,23 @@ resources:
     replicas: 2
     storageSize: 400Gi
     requests:
-      cpu: 1000m
       memory: 2Gi
+      cpu: 1000m
     limits:
-      cpu: 10000m
       memory: 10Gi
+      cpu: 10000m
   opensearch:
     replicas: 2
     storageSize: 400Gi
     heapSize: 15g
     requests:
-      cpu: 1000m
       memory: 20Gi
+      cpu: 1000m
     limits:
-      cpu: 10000m
       memory: 28Gi
+      cpu: 10000m
+
+security:
+  rateLimiterWhitelist:
+    - 193.62.199.235
+  blackList: []

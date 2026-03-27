@@ -64,7 +64,7 @@ resources:
       cpu: 1000m
     limits:
       memory: 6Gi
-      cpu: 1875m
+      cpu: 4000m
   aiapi:
     minReplicas: 1
     maxReplicas: 5
@@ -93,3 +93,7 @@ resources:
     limits:
       cpu: 10000m
       memory: 28Gi
+
+security:
+  rateLimiterWhitelist: []
+  blackList: []
