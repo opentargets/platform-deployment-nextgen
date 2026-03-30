@@ -259,25 +259,10 @@ spec:
             - containerPort: {{ include "ports.http" $root }}
               name: api
           env:
-            ############################################################################################################
-            # TODO: Remove conditional after 2603 REPLACE WITH:
-            # - name: SLICK_CLICKHOUSE_URL
-            #   value: jdbc:clickhouse://{{ $namespace }}-{{ $env | replace "production" "prod" }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" $root }}
-            # - name: ELASTICSEARCH_HOST
-            #   value: {{ $namespace }}-{{ $env | replace "production" "prod" }}-opensearch.{{ $namespace }}.svc.cluster.local
-            ############################################################################################################
             - name: SLICK_CLICKHOUSE_URL
-              {{- if and (eq $env "production") (eq $prefix "production") }}
-              value: jdbc:clickhouse://{{ $prefix }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" $root }}
-              {{- else }}
               value: jdbc:clickhouse://{{ $namespace }}-{{ $env | replace "production" "prod" }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" $root }}
-              {{- end }}
             - name: ELASTICSEARCH_HOST
-              {{- if and (eq $env "production") (eq $prefix "production") }}
-              value: {{ $prefix }}-opensearch.{{ $namespace }}.svc.cluster.local
-              {{- else }}
               value: {{ $namespace }}-{{ $env | replace "production" "prod" }}-opensearch.{{ $namespace }}.svc.cluster.local
-              {{- end }}
             - name: META_DATA_RELEASE
               value: {{ $release | quote }}
             - name: META_API_VERSION
