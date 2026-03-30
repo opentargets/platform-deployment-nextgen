@@ -42,6 +42,9 @@ resource "google_container_cluster" "cluster" {
     }
   }
 
+  # Disable deletion protection for non-production clusters.
+  deletion_protection = var.project_id == "open-targets-prod" ? true : false
+
   release_channel {
     channel = "REGULAR"
   }
