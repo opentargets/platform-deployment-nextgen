@@ -44,9 +44,6 @@ green:
     snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os-rc5
 
 resources:
-  disk:
-    iops: '6000'
-    throughput: 280Mi
   webapp:
     minReplicas: 2
     maxReplicas: 5

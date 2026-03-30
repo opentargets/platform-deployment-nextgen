@@ -1,6 +1,5 @@
 # Common components
 {{ include "common.namespace" . }}
-{{ include "common.storageclass" . }}
 
 {{- if include "isDeploymentUsed" (dict "root" . "color" "blue") }}
 # Blue deployment components

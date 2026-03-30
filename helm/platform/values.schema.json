@@ -75,10 +75,6 @@
           "$ref": "#/$defs/serviceResources",
           "description": "The AI API resource configuration"
         },
-        "disk": {
-          "$ref": "#/$defs/diskConfig",
-          "description": "The disk configuration for database storage classes"
-        },
         "clickhouse": {
           "$ref": "#/$defs/clickhouseResources",
           "description": "The ClickHouse infrastructure sizing, shared across all colors"
@@ -92,7 +88,6 @@
         "webapp",
         "api",
         "aiapi",
-        "disk",
         "clickhouse",
         "opensearch"
       ],
@@ -178,22 +173,6 @@
       ],
       "additionalProperties": false
     },
-    "diskConfig": {
-      "type": "object",
-      "description": "Storage class disk configuration",
-      "properties": {
-        "iops": {
-          "type": "string",
-          "description": "Provisioned IOPS for the hyperdisk storage class"
-        },
-        "throughput": {
-          "type": "string",
-          "description": "Provisioned throughput for the hyperdisk storage class (e.g., 140Mi)"
-        }
-      },
-      "required": ["iops", "throughput"],
-      "additionalProperties": false
-    },
     "clickhouseConfig": {
       "type": "object",
       "description": "ClickHouse per-release configuration",
@@ -206,7 +185,10 @@
           "$ref": "#/$defs/imageConfig"
         }
       },
-      "required": ["snapshot", "image"],
+      "required": [
+        "snapshot",
+        "image"
+      ],
       "additionalProperties": false
     },
     "opensearchConfig": {
@@ -221,7 +203,10 @@
           "$ref": "#/$defs/imageConfig"
         }
       },
-      "required": ["snapshot", "image"],
+      "required": [
+        "snapshot",
+        "image"
+      ],
       "additionalProperties": false
     },
     "clickhouseResources": {
@@ -245,7 +230,12 @@
           "$ref": "#/$defs/resourceLimits"
         }
       },
-      "required": ["replicas", "storageSize", "requests", "limits"],
+      "required": [
+        "replicas",
+        "storageSize",
+        "requests",
+        "limits"
+      ],
       "additionalProperties": false
     },
     "opensearchResources": {
@@ -273,7 +263,13 @@
           "$ref": "#/$defs/resourceLimits"
         }
       },
-      "required": ["replicas", "storageSize", "heapSize", "requests", "limits"],
+      "required": [
+        "replicas",
+        "storageSize",
+        "heapSize",
+        "requests",
+        "limits"
+      ],
       "additionalProperties": false
     },
     "webappService": {

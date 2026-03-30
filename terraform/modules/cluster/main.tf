@@ -198,6 +198,41 @@ resource "google_container_node_pool" "databases_clickhouse" {
   }
 }
 
+# StorageClass for Hyperdisk Balanced. Cluster-scoped, shared across deployments.
+resource "null_resource" "storageclass_hyperdisk" {
+  triggers = {
+    cluster_id      = google_container_cluster.cluster.id
+    disk_iops       = var.disk_iops
+    disk_throughput = var.disk_throughput
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      gcloud container clusters get-credentials ${google_container_cluster.cluster.name} \
+        --zone ${var.zone} \
+        --project ${var.project_id} && \
+      kubectl apply -f - <<EOF
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: hyperdisk-balanced
+      provisioner: pd.csi.storage.gke.io
+      parameters:
+        type: hyperdisk-balanced
+        provisioned-iops-on-create: "${var.disk_iops}"
+        provisioned-throughput-on-create: "${var.disk_throughput}Mi"
+      volumeBindingMode: WaitForFirstConsumer
+      allowVolumeExpansion: true
+      EOF
+    EOT
+  }
+
+  depends_on = [
+    google_container_cluster.cluster,
+    google_container_node_pool.pools,
+  ]
+}
+
 # Config Connector setup.
 # The GKE addon auto-creates a ConfigConnector CR in namespaced mode.
 # We use kubectl apply to reconfigure it to cluster mode.

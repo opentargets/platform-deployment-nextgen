@@ -44,9 +44,6 @@ green:
     snapshot: platform-2603-os-rc5
 
 resources:
-  disk:
-    iops: '3000'
-    throughput: 140Mi
   webapp:
     minReplicas: 1
     maxReplicas: 5
