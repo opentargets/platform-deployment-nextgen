@@ -75,21 +75,21 @@ resources:
     replicas: 2
     storageSize: 400Gi
     requests:
-      cpu: 1000m
       memory: 2Gi
+      cpu: 1000m
     limits:
-      cpu: 10000m
       memory: 10Gi
+      cpu: 4000m
   opensearch:
     replicas: 2
     storageSize: 400Gi
-    heapSize: 15g
+    heapSize: 8g
     requests:
+      memory: 4Gi
       cpu: 1000m
-      memory: 20Gi
     limits:
-      cpu: 10000m
-      memory: 28Gi
+      memory: 16Gi
+      cpu: 4000m
 
 security:
   rateLimiterWhitelist: []

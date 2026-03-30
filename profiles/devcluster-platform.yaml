@@ -38,10 +38,10 @@ green:
       openai: openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: platform-2603-ch-rc5
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch-rc5
   opensearch:
     image: opensearchproject/opensearch:3.5.0
-    snapshot: platform-2603-os-rc5
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os-rc5
 
 resources:
   webapp:
@@ -51,23 +51,23 @@ resources:
       memory: 32Mi
       cpu: 50m
     limits:
-      memory: 64Mi
-      cpu: 200m
+      memory: 256Mi
+      cpu: 500m
   api:
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 5
     requests:
-      memory: 4Gi
-      cpu: 1000m
+      memory: 20Gi
+      cpu: 2000m
     limits:
-      memory: 6Gi
-      cpu: 1875m
+      memory: 20Gi
+      cpu: 7500m
   aiapi:
     minReplicas: 1
     maxReplicas: 5
     requests:
-      memory: 128Mi
-      cpu: 100m
+      memory: 72Mi
+      cpu: 50m
     limits:
       memory: 256Mi
       cpu: 500m
@@ -75,21 +75,21 @@ resources:
     replicas: 1
     storageSize: 400Gi
     requests:
-      cpu: 1000m
       memory: 2Gi
+      cpu: 1000m
     limits:
-      cpu: 10000m
       memory: 10Gi
+      cpu: 4000m
   opensearch:
     replicas: 1
     storageSize: 400Gi
-    heapSize: 15g
+    heapSize: 8g
     requests:
+      memory: 4Gi
       cpu: 1000m
-      memory: 20Gi
     limits:
-      cpu: 10000m
-      memory: 28Gi
+      memory: 16Gi
+      cpu: 4000m
 
 security:
   rateLimiterWhitelist: []
