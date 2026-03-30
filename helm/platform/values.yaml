@@ -91,5 +91,7 @@ resources:
       cpu: 1000m
       memory: 20Gi
     limits:
-      cpu: 10000m
-      memory: 28Gi
+
+security:
+  rateLimiterWhitelist: []
+  blacklist: []

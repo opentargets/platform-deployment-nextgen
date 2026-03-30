@@ -97,6 +97,33 @@
         "opensearch"
       ],
       "additionalProperties": false
+    },
+    "security": {
+      "type": "object",
+      "description": "The API security blacklists and whitelists",
+      "properties": {
+        "rateLimiterWhitelist": {
+          "type": "array",
+          "description": "List of CIDR blocks to whitelist from API rate limiting",
+          "items": {
+            "type": "string",
+            "format": "ipv4-cidr"
+          }
+        },
+        "blacklist": {
+          "type": "array",
+          "description": "List of CIDR blocks to blacklist from accessing the API",
+          "items": {
+            "type": "string",
+            "format": "ipv4-cidr"
+          }
+        }
+      },
+      "required": [
+        "rateLimiterWhitelist",
+        "blacklist"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
