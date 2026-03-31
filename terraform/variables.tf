@@ -94,39 +94,12 @@ variable "clickhouse_max_node_count" {
   description = "The maximum number of nodes in the ClickHouse node pool"
 }
 
-
-variable "clickhouse_data_project_id" {
-  description = "The GCP project id where the backups are stored. Used to create an HMAC key for ClickHouse to access GCS buckets."
-  type        = string
-}
-
 variable "clickhouse_labels" {
   description = "The labels for the ClickHouse module"
   type        = map(string)
 }
 
-variable "old_clickhouse_machine_type" {
-  description = "The machine type to use for the ClickHouse machine — DELETE ONCE DB IS IN-CLUSTER"
-  type        = string
-}
-
-variable "old_clickhouse_disk_size_gb" {
-  description = "The disk size in GB for the ClickHouse machine — DELETE ONCE DB IS IN-CLUSTER"
-  type        = number
-}
-
-
 # OPENSEARCH VARIABLES
-variable "old_opensearch_machine_type" {
-  description = "The machine type to use for the OpenSearch machine — DELETE ONCE DB IS IN-CLUSTER"
-  type        = string
-}
-
-variable "old_opensearch_disk_size_gb" {
-  description = "The disk size in GB for the OpenSearch machine — DELETE ONCE DB IS IN-CLUSTER"
-  type        = number
-}
-
 variable "opensearch_machine_type" {
   description = "The machine type to use for the OpenSearch nodes"
   type        = string

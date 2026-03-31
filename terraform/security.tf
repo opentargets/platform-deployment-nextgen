@@ -1,4 +1,4 @@
-# These service accounts are used by the ai-api to access the secret manager for
+# These service accounts are used by the aiapi to access the secret manager for
 # the openai token. They are created here to avoid having to grant IAM roles to
 # the config-connector service account.
 locals {

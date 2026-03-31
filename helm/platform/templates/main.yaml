@@ -36,7 +36,3 @@
 {{ include "service.clickhouse" (dict "root" . "env" "staging") }}
 {{ include "service.opensearch" (dict "root" . "env" "staging") }}
 {{ include "common.ingress" (dict "root" . "env" "staging") }}
-
-# TODO: DELETE AFTER 2603
-{{ include "external.clickhouse" . }}
-{{ include "external.opensearch" . }}

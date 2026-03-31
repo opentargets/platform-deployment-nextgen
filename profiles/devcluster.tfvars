@@ -26,22 +26,13 @@ apps_disk_size_gb   = 64
 apps_labels         = {}
 
 # CLICKHOUSE VARIABLES
-clickhouse_machine_type    = "c4d-standard-4"
-clickhouse_min_node_count  = 1
-clickhouse_max_node_count  = 5
-clickhouse_labels          = {}
-clickhouse_data_project_id = "open-targets-prod"
+clickhouse_machine_type   = "c4d-standard-4"
+clickhouse_min_node_count = 1
+clickhouse_max_node_count = 5
+clickhouse_labels         = {}
 
 # OPENSEARCH VARIABLES
 opensearch_machine_type   = "c3d-highmem-4"
 opensearch_min_node_count = 1
 opensearch_max_node_count = 5
 opensearch_labels         = {}
-
-# CLICKHOUSE VARIABLES (old)
-old_clickhouse_machine_type = "n1-standard-4"
-old_clickhouse_disk_size_gb = 75
-
-# OPENSEARCH VARIABLES (old)
-old_opensearch_machine_type = "n1-standard-4"
-old_opensearch_disk_size_gb = 350
