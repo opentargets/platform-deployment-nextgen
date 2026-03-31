@@ -51,7 +51,7 @@ metadata:
   annotations:
     cloud.google.com/neg: '{"ingress": true}'
     cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-no-cdn"}'
-    prometheus.io/scrape: {{ if eq $env "prod" }}"true"{{ else }}"false"{{ end }}
+    prometheus.io/scrape: {{ if and (eq $env "prod") (eq .root.Values.product "platform") }}"true"{{ else }}"false"{{ end }}
 spec:
   selector:
     app: api
@@ -153,7 +153,7 @@ metadata:
     environment: {{ $env }}
     {{- $labels | nindent 4 }}
   annotations:
-    prometheus.io/scrape: {{ if eq $env "prod" }}"true"{{ else }}"false"{{ end }}
+    prometheus.io/scrape: {{ if and (eq $env "prod") (eq .root.Values.product "platform") }}"true"{{ else }}"false"{{ end }}
 spec:
   type: ClusterIP
   selector:
