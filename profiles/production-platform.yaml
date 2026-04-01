@@ -18,7 +18,7 @@ blue:
   aiapi:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:
-      openai: openai-token
+      openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
     snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch-rc5
@@ -35,7 +35,7 @@ green:
   aiapi:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:
-      openai: openai-token
+      openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
     snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch-rc5
