@@ -5,6 +5,7 @@
 {{- $labels := include "labels" $root }}
 {{- $ch := index $root.Values $color "clickhouse" }}
 {{- $chRes := $root.Values.resources.clickhouse }}
+{{- $chName := printf "%s-%s-clickhouse-%s" $namespace $color (splitList "/" $ch.snapshot | last) -}}
 ---
 # ConfigMap with ClickHouse config for {{ $namespace }}-{{ $color }} StatefulSet.
 apiVersion: v1
@@ -136,14 +137,14 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotContent
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse-snapshotcontent
+  name: {{ $chName }}
 spec:
   deletionPolicy: Retain
   driver: pd.csi.storage.gke.io
   source:
     snapshotHandle: {{ $ch.snapshot }}
   volumeSnapshotRef:
-    name: {{ $namespace }}-{{ $color }}-clickhouse-snapshot
+    name: {{ $chName }}
     namespace: {{ $namespace }}
 
 
@@ -152,11 +153,11 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse-snapshot
+  name: {{ $chName }}
   namespace: {{ $namespace }}
 spec:
   source:
-    volumeSnapshotContentName: {{ $namespace }}-{{ $color }}-clickhouse-snapshotcontent
+    volumeSnapshotContentName: {{ $chName }}
 
 
 ---
@@ -164,14 +165,14 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse
+  name: {{ $chName }}
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
     color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
-  serviceName: {{ $namespace }}-{{ $color }}-clickhouse
+  serviceName: {{ $chName }}
   replicas: {{ $chRes.replicas }}
   selector:
     matchLabels:
@@ -271,7 +272,7 @@ spec:
           - ReadWriteOnce
         storageClassName: hyperdisk-balanced
         dataSource:
-          name: {{ $namespace }}-{{ $color }}-clickhouse-snapshot
+          name: {{ $chName }}
           kind: VolumeSnapshot
           apiGroup: snapshot.storage.k8s.io
         resources:

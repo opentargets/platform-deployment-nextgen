@@ -21,13 +21,13 @@ blue:
       openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch-rc2
+    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch
   opensearch:
     image: opensearchproject/opensearch:3.5.0
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os-rc1
+    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os
 
 green:
-  release: '25.12'
+  release: '26.03'
   webapp:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.10
   api:
@@ -38,10 +38,10 @@ green:
       openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch-rc2
+    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch
   opensearch:
     image: opensearchproject/opensearch:3.5.0
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os-rc1
+    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os
 
 resources:
   webapp:
@@ -57,7 +57,7 @@ resources:
     minReplicas: 2
     maxReplicas: 5
     requests:
-      memory: 2Gi
+      memory: 4Gi
       cpu: 1000m
     limits:
       memory: 4Gi
@@ -73,7 +73,7 @@ resources:
       cpu: 500m
   clickhouse:
     replicas: 2
-    storageSize: 400Gi
+    storageSize: 125Gi
     requests:
       memory: 2Gi
       cpu: 500m
@@ -82,14 +82,14 @@ resources:
       cpu: 2000m
   opensearch:
     replicas: 2
-    storageSize: 400Gi
-    heapSize: 2g
+    storageSize: 50Gi
+    heapSize: 3g
     requests:
-      memory: 2Gi
+      memory: 4Gi
       cpu: 1000m
     limits:
-      memory: 4Gi
-      cpu: 4000m
+      memory: 6Gi
+      cpu: 2000m
 
 security:
   rateLimiterWhitelist: []

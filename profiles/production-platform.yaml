@@ -21,10 +21,10 @@ blue:
       openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch-rc5
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch
   opensearch:
     image: opensearchproject/opensearch:3.5.0
-    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os-rc5
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os
 
 green:
   release: '26.03'
@@ -38,10 +38,10 @@ green:
       openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch-rc5
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch
   opensearch:
     image: opensearchproject/opensearch:3.5.0
-    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os-rc5
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os
 
 resources:
   webapp:
@@ -73,7 +73,7 @@ resources:
       cpu: 500m
   clickhouse:
     replicas: 2
-    storageSize: 400Gi
+    storageSize: 125Gi
     requests:
       memory: 2Gi
       cpu: 1000m
@@ -82,13 +82,13 @@ resources:
       cpu: 4000m
   opensearch:
     replicas: 2
-    storageSize: 400Gi
-    heapSize: 8g
+    storageSize: 50Gi
+    heapSize: 4g
     requests:
-      memory: 4Gi
+      memory: 6Gi
       cpu: 1000m
     limits:
-      memory: 16Gi
+      memory: 8Gi
       cpu: 4000m
 
 security:

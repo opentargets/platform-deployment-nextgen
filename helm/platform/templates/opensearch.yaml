@@ -5,7 +5,7 @@
 {{- $labels := include "labels" $root }}
 {{- $os := index $root.Values $color "opensearch" }}
 {{- $osRes := $root.Values.resources.opensearch }}
-
+{{- $osName := printf "%s-%s-opensearch-%s" $namespace $color (splitList "/" $os.snapshot | last) -}}
 
 ---
 # NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
@@ -122,14 +122,14 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotContent
 metadata:
-  name: {{ $namespace }}-{{ $color }}-opensearch-snapshotcontent
+  name: {{ $osName }}
 spec:
   deletionPolicy: Retain
   driver: pd.csi.storage.gke.io
   source:
     snapshotHandle: {{ $os.snapshot }}
   volumeSnapshotRef:
-    name: {{ $namespace }}-{{ $color }}-opensearch-snapshot
+    name: {{ $osName }}
     namespace: {{ $namespace }}
 
 
@@ -138,11 +138,11 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
-  name: {{ $namespace }}-{{ $color }}-opensearch-snapshot
+  name: {{ $osName }}
   namespace: {{ $namespace }}
 spec:
   source:
-    volumeSnapshotContentName: {{ $namespace }}-{{ $color }}-opensearch-snapshotcontent
+    volumeSnapshotContentName: {{ $osName }}
 
 
 ---
@@ -150,14 +150,14 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $namespace }}-{{ $color }}-opensearch
+  name: {{ $osName }}
   namespace: {{ $namespace }}
   labels:
     app: opensearch
     color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
-  serviceName: {{ $namespace }}-{{ $color }}-opensearch
+  serviceName: {{ $osName }}
   replicas: {{ $osRes.replicas }}
   selector:
     matchLabels:
@@ -283,7 +283,7 @@ spec:
           - ReadWriteOnce
         storageClassName: hyperdisk-balanced
         dataSource:
-          name: {{ $namespace }}-{{ $color }}-opensearch-snapshot
+          name: {{ $osName }}
           kind: VolumeSnapshot
           apiGroup: snapshot.storage.k8s.io
         resources:
