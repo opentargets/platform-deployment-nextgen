@@ -17,3 +17,9 @@ dependencies:
   - name: grafana
     version: 10.1.0
     repository: oci://ghcr.io/grafana/helm-charts
+  - name: loki
+    version: 6.46.0
+    repository: oci://ghcr.io/grafana/helm-charts
+  - name: alloy-operator
+    version: 0.5.3
+    repository: oci://ghcr.io/grafana/helm-charts

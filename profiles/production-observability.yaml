@@ -307,3 +307,81 @@ grafana:
     datasources:
       enabled: true
       label: grafana_datasource
+
+loki:
+  loki:
+    commonConfig:
+      replication_factor: 3
+    schemaConfig:
+      configs:
+        - from: '2024-04-01'
+          store: tsdb
+          object_store: gcs
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    storage_config:
+      gcs:
+        bucket_name: production-loki-gcp-chunks # Your actual gcs bucket name, for example, loki-gcp-chunks
+    pattern_ingester:
+      enabled: true
+    limits_config:
+      allow_structured_metadata: true
+      volume_enabled: true
+
+    ruler:
+      enable_api: true
+      storage_config:
+      type: gcs
+      gcs_storage_config:
+        region: europe-west1 # The GCS region, for example europe-west4
+        bucketnames: production-loki-gcp-ruler # Your actual gcs bucket name, for example, loki-gcp-ruler
+      alertmanager_url: http://observability-alertmanagers.observability.svc:9093 # The URL of the Alertmanager to send alerts (Prometheus, Mimir, etc.)
+    storage:
+      type: gcs
+      bucketNames:
+        chunks: production-loki-gcp-chunks # Your actual gcs bucket name, for example, loki-gcp-chunks
+        ruler: production-loki-gcp-ruler # Your actual gcs bucket name, for example, loki-gcp-ruler
+  serviceAccount:
+    create: true
+    name: loki-sa
+    annotations:
+      iam.gke.io/gcp-service-account: production-node@open-targets-eu-dev.iam.gserviceaccount.com
+
+  minio:
+    enabled: false
+
+  deploymentMode: SingleBinary
+
+  singleBinary:
+    replicas: 3
+    persistence:
+      storageClass: hyperdisk-balanced
+
+  # Zero out replica counts of other deployment modes
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+
+  ingester:
+    replicas: 0
+  querier:
+    replicas: 0
+  queryFrontend:
+    replicas: 0
+  queryScheduler:
+    replicas: 0
+  distributor:
+    replicas: 0
+  compactor:
+    replicas: 0
+  indexGateway:
+    replicas: 0
+  bloomCompactor:
+    replicas: 0
+  bloomGateway:
+    replicas: 0

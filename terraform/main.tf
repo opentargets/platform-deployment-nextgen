@@ -358,3 +358,37 @@ resource "google_container_node_pool" "pools_opensearch" {
     ]
   }
 }
+
+resource "google_storage_bucket" "loki_chunks" {
+  name     = "${var.global_prefix}-loki-gcp-chunks"
+  location = var.region
+
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  labels = var.base_labels
+
+}
+
+resource "google_storage_bucket" "loki_ruler" {
+  name     = "${var.global_prefix}-loki-gcp-ruler"
+  location = var.region
+
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  labels = var.base_labels
+
+}

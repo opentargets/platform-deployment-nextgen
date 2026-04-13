@@ -57,7 +57,7 @@ resources:
     minReplicas: 1
     maxReplicas: 5
     requests:
-      memory: 20Gi
+      memory: 8Gi
       cpu: 2000m
     limits:
       memory: 20Gi
