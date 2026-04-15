@@ -274,8 +274,9 @@ spec:
                 -XX:+UseContainerSupport
                 -XX:+UseG1GC
                 -XX:MaxGCPauseMillis=500
-                -XX:MaxRAMPercentage=75.0
                 -XX:InitialRAMPercentage=35.0
+                -XX:MaxRAMPercentage=85.0
+                -XX:+UseTransparentHugePages
           resources:
             requests:
               memory: {{ $resources.requests.memory }}
