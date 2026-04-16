@@ -365,7 +365,7 @@ spec:
 
 ---
 # FrontendConfig for {{ $namespace }}-{{ $env }}.
-# With HTTP to HTTPS redirect enabled.
+# With TLS1.2 policy and HTTP to HTTPS redirect enabled.
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
 metadata:
@@ -377,4 +377,5 @@ spec:
   redirectToHttps:
     enabled: true
     responseCodeName: MOVED_PERMANENTLY_DEFAULT
+  sslPolicy: {{ .root.Values.prefix }}-tls12-policy
 {{- end }}

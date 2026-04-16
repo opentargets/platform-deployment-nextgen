@@ -1,3 +1,10 @@
+# The ssl policy to enforce TLS 1.2 for the ingress load balancer.
+resource "google_compute_ssl_policy" "tls12" {
+  name            = "${var.global_prefix}-tls12-policy"
+  min_tls_version = "TLS_1_2"
+  profile         = "MODERN"
+}
+
 # These service accounts are used by the aiapi to access the secret manager for
 # the openai token. They are created here to avoid having to grant IAM roles to
 # the config-connector service account.
