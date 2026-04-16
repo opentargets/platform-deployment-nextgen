@@ -278,4 +278,7 @@ spec:
         resources:
           requests:
             storage: {{ $chRes.storageSize | quote }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
 {{- end }}

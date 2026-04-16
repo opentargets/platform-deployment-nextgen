@@ -289,4 +289,7 @@ spec:
         resources:
           requests:
             storage: {{ $osRes.storageSize | quote }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
 {{- end }}
