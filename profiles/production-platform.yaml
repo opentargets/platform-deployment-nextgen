@@ -83,13 +83,13 @@ resources:
   opensearch:
     replicas: 2
     storageSize: 50Gi
-    heapSize: 8g
+    heapSize: 4g
     requests:
       memory: 6Gi
-      cpu: 1000m
+      cpu: 500m
     limits:
       memory: 8Gi
-      cpu: 4000m
+      cpu: 2000m
 
 security:
   rateLimiterWhitelist: []

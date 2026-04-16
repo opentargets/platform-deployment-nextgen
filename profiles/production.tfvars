@@ -32,7 +32,7 @@ clickhouse_max_node_count = 5
 clickhouse_labels         = {}
 
 # OPENSEARCH VARIABLES
-opensearch_machine_type   = "c3d-highmem-2"
+opensearch_machine_type   = "n4-highmem-2"
 opensearch_min_node_count = 1
 opensearch_max_node_count = 5
 opensearch_labels         = {}
