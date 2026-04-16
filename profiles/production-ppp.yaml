@@ -83,7 +83,7 @@ resources:
   opensearch:
     replicas: 2
     storageSize: 50Gi
-    heapSize: 3g
+    heapSize: 2g
     requests:
       memory: 4Gi
       cpu: 1000m
