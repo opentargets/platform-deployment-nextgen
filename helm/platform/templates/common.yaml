@@ -326,6 +326,9 @@ metadata:
   labels:
     {{- $labels | nindent 4 }}
 spec:
+  customResponseHeaders:
+    headers:
+      - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
   cdn:
     enabled: true
     cachePolicy:
@@ -355,6 +358,9 @@ metadata:
   labels:
     {{- $labels | nindent 4 }}
 spec:
+  customResponseHeaders:
+    headers:
+      - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
   cdn:
     enabled: false
   {{- if eq $product "ppp" }}
