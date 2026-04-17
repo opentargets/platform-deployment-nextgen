@@ -12,7 +12,7 @@ googleTagManagerId: GTM-5BSVCXB
 blue:
   release: '26.03'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.10
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
   api:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.2-ppp
   aiapi:
@@ -29,7 +29,7 @@ blue:
 green:
   release: '26.03'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.10
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
   api:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.2-ppp
   aiapi:

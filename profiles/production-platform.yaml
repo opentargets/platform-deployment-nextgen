@@ -12,7 +12,7 @@ googleTagManagerId: GTM-WPXWRDV
 blue:
   release: '26.03'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
   api:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.1-rc.4
   aiapi:
@@ -29,9 +29,9 @@ blue:
 green:
   release: '26.03'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
   api:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.1-rc.3
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.1-rc.4
   aiapi:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:
