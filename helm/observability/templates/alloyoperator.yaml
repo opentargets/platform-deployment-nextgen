@@ -3,6 +3,11 @@ kind: Alloy
 metadata:
   name: alloy-configuration
 spec:
+  controller:
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations:
+      - operator: Exists
   alloy:
     configMap:
       content: |
