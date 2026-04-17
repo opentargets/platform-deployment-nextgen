@@ -329,6 +329,10 @@ spec:
   customResponseHeaders:
     headers:
       - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
+      # These should eventually be moved into the frontend app
+      - "X-Content-Type-Options: nosniff"
+      - "X-Frame-Options: DENY"
+      - "Content-Security-Policy: base-uri 'self'; frame-ancestors 'none'"
   cdn:
     enabled: true
     cachePolicy:
@@ -361,6 +365,9 @@ spec:
   customResponseHeaders:
     headers:
       - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
+      # This should eventually be moved into the api
+      - "X-Content-Type-Options: nosniff"
+
   cdn:
     enabled: false
   {{- if eq $product "ppp" }}
