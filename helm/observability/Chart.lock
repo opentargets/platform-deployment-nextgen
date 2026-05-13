@@ -8,8 +8,8 @@ dependencies:
 - name: loki
   repository: oci://ghcr.io/grafana/helm-charts
   version: 6.46.0
-- name: alloy-operator
-  repository: oci://ghcr.io/grafana/helm-charts
-  version: 0.5.3
-digest: sha256:5db1c5c69ed8fb40d2eddaf836012c123b1f786e5f9d3e21f3c62a6e5c0e19f9
-generated: "2026-04-10T16:07:01.466077572+01:00"
+- name: alloy
+  repository: https://grafana.github.io/helm-charts
+  version: 1.8.0
+digest: sha256:31af132e30db30daff24aa44170a0be58036d5cf290357891bec6650160abf29
+generated: "2026-04-29T14:42:25.524324671+01:00"
