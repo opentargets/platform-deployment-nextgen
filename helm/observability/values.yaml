@@ -404,6 +404,11 @@ loki:
     replicas: 0
 
 alloy:
+  serviceAccount:
+    create: true
+    name: alloy-sa
+    annotations:
+      iam.gke.io/gcp-service-account: devcluster-node@open-targets-eu-dev.iam.gserviceaccount.com
   controller:
     nodeSelector:
       kubernetes.io/os: linux
@@ -415,13 +420,13 @@ alloy:
           emptyDir: {}
     initContainers:
       - name: geoip-init
-        image: curlimages/curl:latest
+        image: gcr.io/google.com/cloudsdktool/cloud-sdk:567.0.0-stable
         command: ["sh", "-c"]
         args:
           - |
             for i in {1..5}; do
               echo "downloading mmdb database attempt #"$i
-              curl -L https://ipinfo.io/data/ipinfo_lite.mmdb?token=77ca8c820597a9 -o /geoip/location.mmdb && break || sleep 10;
+              gsutil cp gs://open-targets-ops/observability/geoip.mmdb /geoip/location.mmdb && break || sleep 10;
             done
             echo "database downloaded"
         volumeMounts:
@@ -459,6 +464,17 @@ alloy:
         // You can specify multiple loki.source.file components by giving them different labels.
         loki.source.file "node_logs" {
           targets    = local.file_match.node_logs.targets
+          forward_to = [loki.process.node_logs.receiver]
+        }
+
+        loki.process "node_logs" {
+          stage.static_labels {
+              values = {
+                cluster = "2gke_open-targets-eu-dev_europe-west1-b_devcluster",
+                log_source = "node_logs",
+              }
+          }
+
           forward_to = [loki.write.default.receiver]
         }
 
@@ -559,14 +575,14 @@ alloy:
               source  = "ip"
               db      = "/geoip/location.mmdb"
               db_type = "country"
-              custom_lookups = {
-                "my_continent" = "continent",
-              }
           }
 
           stage.labels {
               values = {
-                  my_continent       = "",
+                  geoip_country_name       = "geoip_country_name",
+                  geoip_country_code       = "geoip_country_code",
+                  geoip_continent_name     = "geoip_continent_name",
+                  geoip_continent_code     = "geoip_continent_code",
               }
           }
 

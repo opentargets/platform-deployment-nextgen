@@ -97,6 +97,12 @@ resource "google_service_account_iam_member" "loki_workload_identity_binding" {
   member             = "serviceAccount:${var.project_id}.svc.id.goog[observability/loki-sa]"
 }
 
+resource "google_service_account_iam_member" "alloy_workload_identity_binding" {
+  service_account_id = google_service_account.node.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[observability/alloy-sa]"
+}
+
 # Also, give the node service account access to read images from eu-dev
 resource "google_project_iam_member" "node_cross_project_registry" {
   project = "open-targets-eu-dev"
