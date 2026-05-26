@@ -2,7 +2,7 @@ apiVersion: v2
 name: observability
 description: Helm chart for the Open Targets Platform Observability stack.
 type: application
-version: '0.1.0'
+version: "0.1.0"
 icon: https://www.opentargets.org/assets/img/branding/OT_helix_colour_svg.svg
 keywords:
   - opentargets
@@ -17,3 +17,9 @@ dependencies:
   - name: grafana
     version: 10.1.0
     repository: oci://ghcr.io/grafana/helm-charts
+  - name: loki
+    version: 6.46.0
+    repository: oci://ghcr.io/grafana/helm-charts
+  - name: alloy
+    version: 1.8.0
+    repository: https://grafana.github.io/helm-charts

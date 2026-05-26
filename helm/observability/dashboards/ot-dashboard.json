@@ -76,9 +76,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -141,9 +139,7 @@
         "minVizWidth": 0,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -208,9 +204,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -232,12 +226,185 @@
       "type": "gauge"
     },
     {
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "description": "Gives a broad vision of where the requests are being done ",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 36,
+      "options": {
+        "basemap": {
+          "config": {
+            "server": "streets",
+            "showLabels": true,
+            "theme": "auto"
+          },
+          "name": "Layer 0",
+          "noRepeat": false,
+          "type": "default"
+        },
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": true,
+              "style": {
+                "color": {
+                  "fixed": "dark-green"
+                },
+                "opacity": 0.4,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "build/img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "text": {
+                  "field": "Line (count)",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "A"
+            },
+            "location": {
+              "lookup": "Line",
+              "mode": "lookup"
+            },
+            "name": "Layer 1",
+            "tooltip": true,
+            "type": "markers"
+          },
+          {
+            "config": {
+              "nightColor": "#ccccdb70",
+              "show": "to",
+              "sun": false
+            },
+            "name": "Layer 4",
+            "opacity": 0.4,
+            "tooltip": true,
+            "type": "dayNight"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": false,
+          "id": "fit",
+          "lastOnly": false,
+          "lat": 0,
+          "layer": "Layer 1",
+          "lon": 0,
+          "noRepeat": false,
+          "shared": false,
+          "zoom": 3
+        }
+      },
+      "pluginVersion": "12.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "{container=\"api\"} |= `client_ip` | json | line_format `{{.geoip_country_code}}`",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Requests source",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Line": {
+                "aggregations": ["count"],
+                "operation": "groupby"
+              }
+            }
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "geomap"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 23
       },
       "id": 17,
       "panels": [],
@@ -278,7 +445,7 @@
         "h": 5,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 24
       },
       "id": 25,
       "options": {
@@ -286,9 +453,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -339,7 +504,7 @@
         "h": 5,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 24
       },
       "id": 26,
       "options": {
@@ -349,9 +514,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -444,7 +607,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 29
       },
       "id": 31,
       "options": {
@@ -542,7 +705,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 29
       },
       "id": 28,
       "options": {
@@ -637,7 +800,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 37
       },
       "id": 24,
       "options": {
@@ -732,7 +895,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 37
       },
       "id": 22,
       "options": {
@@ -816,7 +979,7 @@
         "h": 12,
         "w": 6,
         "x": 0,
-        "y": 30
+        "y": 45
       },
       "id": 34,
       "options": {
@@ -885,7 +1048,7 @@
         "h": 12,
         "w": 8,
         "x": 6,
-        "y": 30
+        "y": 45
       },
       "id": 27,
       "options": {
@@ -902,9 +1065,7 @@
         "namePlacement": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "limit": 10,
           "values": true
@@ -1000,7 +1161,7 @@
         "h": 12,
         "w": 10,
         "x": 14,
-        "y": 30
+        "y": 45
       },
       "id": 35,
       "options": {
@@ -1037,7 +1198,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 57
       },
       "id": 3,
       "panels": [],
@@ -1110,7 +1271,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 43
+        "y": 58
       },
       "id": 1,
       "options": {
@@ -1215,7 +1376,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 43
+        "y": 58
       },
       "id": 2,
       "options": {
@@ -1323,7 +1484,7 @@
         "h": 15,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 68
       },
       "id": 18,
       "options": {
@@ -1431,7 +1592,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 68
+        "y": 83
       },
       "id": 20,
       "options": {

@@ -51,6 +51,17 @@
       "type": "object",
       "description": "Custom configuration for Prometheus Helm chart",
       "properties": {
+        "alertmanager": {
+          "type": "object",
+          "description": "Configuration for Prometheus Alertmanager",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "If true, enables Prometheus Alertmanager"
+            }
+          },
+          "additionalProperties": true
+        },
         "configmapReload": {
           "type": "object",
           "description": "Configuration for configmap-reload sidecar"
@@ -108,7 +119,327 @@
           },
           "additionalProperties": true
         }
-      }
+      },
+      "additionalProperties": true
+    },
+    "loki": {
+      "type": "object",
+      "description": "Custom configuration for Loki Helm chart",
+      "properties": {
+        "loki": {
+          "type": "object",
+          "properties": {
+            "commonConfig": {
+              "type": "object",
+              "properties": {
+                "replication_factor": {
+                  "type": "integer",
+                  "description": "Loki replication factor"
+                }
+              },
+              "additionalProperties": true
+            },
+            "schemaConfig": {
+              "type": "object",
+              "properties": {
+                "configs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "from": {
+                        "type": "string"
+                      },
+                      "store": {
+                        "type": "string"
+                      },
+                      "object_store": {
+                        "type": "string"
+                      },
+                      "schema": {
+                        "type": "string"
+                      },
+                      "index": {
+                        "type": "object",
+                        "properties": {
+                          "prefix": {
+                            "type": "string"
+                          },
+                          "period": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "additionalProperties": true
+            },
+            "storage_config": {
+              "type": "object",
+              "properties": {
+                "gcs": {
+                  "type": "object",
+                  "properties": {
+                    "bucket_name": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
+            },
+            "pattern_ingester": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": true
+            },
+            "limits_config": {
+              "type": "object",
+              "properties": {
+                "allow_structured_metadata": {
+                  "type": "boolean"
+                },
+                "volume_enabled": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": true
+            },
+            "ruler": {
+              "type": "object",
+              "properties": {
+                "enable_api": {
+                  "type": "boolean"
+                },
+                "storage_config": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "additionalProperties": true
+                },
+                "type": {
+                  "type": "string"
+                },
+                "gcs_storage_config": {
+                  "type": "object",
+                  "properties": {
+                    "region": {
+                      "type": "string"
+                    },
+                    "bucketnames": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "alertmanager_url": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "storage": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "bucketNames": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        },
+        "serviceAccount": {
+          "type": "object",
+          "properties": {
+            "create": {
+              "type": "boolean"
+            },
+            "name": {
+              "type": "string"
+            },
+            "annotations": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "minio": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true
+        },
+        "deploymentMode": {
+          "type": "string"
+        },
+        "singleBinary": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "backend": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "read": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "write": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "ingester": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "querier": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "queryFrontend": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "queryScheduler": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "distributor": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "compactor": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "indexGateway": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "bloomCompactor": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "bloomGateway": {
+          "type": "object",
+          "properties": {
+            "replicas": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "alloy": {
+      "type": "object",
+      "description": "Custom configuration for Alloy Helm chart",
+      "properties": {
+        "alloy": {
+          "type": "object",
+          "properties": {
+            "configMap": {
+              "type": "object",
+              "properties": {
+                "create": {
+                  "type": "boolean"
+                },
+                "content": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
     },
     "additionalProperties": true
   },
