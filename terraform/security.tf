@@ -103,6 +103,14 @@ resource "google_service_account_iam_member" "alloy_workload_identity_binding" {
   member             = "serviceAccount:${var.project_id}.svc.id.goog[observability/alloy-sa]"
 }
 
+resource "google_storage_bucket_iam_member" "bucket_access" {
+  count = var.project_id == "open-targets-prod" ? 1 : 0
+
+  bucket = "open-targets-ops"
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.node.email}"
+}
+
 # Also, give the node service account access to read images from eu-dev
 resource "google_project_iam_member" "node_cross_project_registry" {
   project = "open-targets-eu-dev"
