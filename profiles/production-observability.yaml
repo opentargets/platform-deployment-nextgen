@@ -406,6 +406,7 @@ loki:
     replicas: 3
     persistence:
       storageClass: hyperdisk-balanced
+      size: 12Gi
 
   # Zero out replica counts of other deployment modes
   backend:
