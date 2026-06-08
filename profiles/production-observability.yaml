@@ -395,7 +395,7 @@ loki:
     create: true
     name: loki-sa
     annotations:
-      iam.gke.io/gcp-service-account: production-node@open-targets-eu-dev.iam.gserviceaccount.com
+      iam.gke.io/gcp-service-account: production-node@open-targets-prod.iam.gserviceaccount.com
 
   minio:
     enabled: false
