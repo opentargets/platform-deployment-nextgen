@@ -1,7 +1,6 @@
 .PHONY: deploy-cluster-dev destroy-cluster-dev deploy-cluster-prod \
-	deploy-apps-dev-platform deploy-apps-dev-ppp deploy-apps-prod-platform deploy-apps-prod-ppp \
-	deploy-databases-dev deploy-databases-prod \
-	deploy-observability-dev-platform deploy-observability-prod-platform \
+	deploy-chart-dev-platform deploy-chart-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
+	deploy-observability-dev deploy-observability-prod \
 	port-forward-prometheus port-forward-grafana \
 	help
 
