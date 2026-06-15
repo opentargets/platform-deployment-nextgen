@@ -15,10 +15,10 @@ dependencies:
     version: 27.39.0
     repository: oci://ghcr.io/prometheus-community/charts
   - name: grafana
-    version: 10.1.0
+    version: 10.5.15
     repository: oci://ghcr.io/grafana/helm-charts
   - name: loki
-    version: 6.46.0
+    version: 7.0.0
     repository: oci://ghcr.io/grafana/helm-charts
   - name: alloy
     version: 1.8.0
