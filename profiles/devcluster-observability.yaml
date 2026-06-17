@@ -122,6 +122,11 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: node
+            - source_labels: [nodename]
+              action: replace
+              target_label: node_environment
+              regex: gke-[^-]+-[^-]+-([^-]+)-.*
+              replacement: $1
         - job_name: kubernetes-service-endpoints-slow
           honor_labels: true
           scrape_interval: 5m
@@ -500,7 +505,7 @@ alloy:
         loki.process "node_logs" {
           stage.static_labels {
               values = {
-                cluster = "2gke_open-targets-eu-dev_europe-west1-b_devcluster",
+                cluster = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
                 log_source = "node_logs",
               }
           }

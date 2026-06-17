@@ -449,9 +449,9 @@
       "targets": [
         {
           "disableTextWrap": false,
-          "editorMode": "code",
+          "editorMode": "builder",
           "exemplar": false,
-          "expr": "sort_desc(topk(10, sum by(query_name) (increase(platform_api_graphql_requests_total{query_name!=\"\"}[$__range]))))",
+          "expr": "sort_desc(topk(10, sum by(query_name) (increase(platform_api_graphql_requests_total{node_environment=\"$environment\", query_name!=\"\"}[$__range]))))",
           "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -771,7 +771,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_replace(\n  jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"},\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)\n",
+          "expr": "label_replace(\n  jvm_memory_used_bytes{area=\"heap\", node_environment=\"$environment\"} / jvm_memory_max_bytes{area=\"heap\", node_environment=\"$environment\"},\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)\n",
           "instant": true,
           "legendFormat": "{{ short_node }}",
           "range": false,
@@ -832,7 +832,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "\n\nlabel_replace(\n  jvm_memory_max_bytes{area=\"heap\"},\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)\n",
+          "expr": "\n\nlabel_replace(\n  jvm_memory_max_bytes{area=\"heap\", node_environment=\"$environment\"},\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)\n",
           "instant": true,
           "legendFormat": "{{ short_node }}",
           "range": false,
@@ -1030,7 +1030,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}",
+          "expr": "jvm_memory_used_bytes{area=\"heap\", node_environment=\"$environment\"} / jvm_memory_max_bytes{area=\"heap\", node_environment=\"$environment\"}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -1125,7 +1125,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by(instance)(rate(platform_api_graphql_requests_total[5m]))\n  and on(instance) up == 1",
+          "expr": "sum by(instance)(rate(platform_api_graphql_requests_total{node_environment=\"$environment\"}[5m]))\n  and on(instance) up == 1",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -1220,7 +1220,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (database)(rate(platform_api_db_query_total[5m]))",
+          "expr": "sum by (database)(rate(platform_api_db_query_total{node_environment=\"$environment\"}[5m]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -1296,7 +1296,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "topk(10,\n  (1 - \n    sum by(query_name) (rate(platform_api_cache_missed_total{query_name!=\"\"}[$__range]))\n    /\n    sum by(query_name) (rate(platform_api_graphql_requests_total{query_name!=\"\"}[$__range]))\n  ) * 100\n)",
+          "expr": "topk(10,\n  (1 - \n    sum by(query_name) (rate(platform_api_cache_missed_total{query_name!=\"\", node_environment=\"$environment\"}[$__range]))\n    /\n    sum by(query_name) (rate(platform_api_graphql_requests_total{query_name!=\"\", node_environment=\"$environment\"}[$__range]))\n  ) * 100\n)",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -1412,7 +1412,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(1 - \n  sum(rate(platform_api_cache_missed_total[5m]))\n  /\n  sum(rate(platform_api_graphql_requests_total[5m]))\n) * 100",
+          "expr": "(1 - \n  sum(rate(platform_api_cache_missed_total{node_environment=\"$environment\"}[5m]))\n  /\n  sum(rate(platform_api_graphql_requests_total{node_environment=\"$environment\"}[5m]))\n) * 100",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -1857,7 +1857,29 @@
   "schemaVersion": 42,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "text": "staging",
+          "value": "staging"
+        },
+        "name": "environment",
+        "options": [
+          {
+            "selected": false,
+            "text": "production",
+            "value": "production"
+          },
+          {
+            "selected": true,
+            "text": "staging",
+            "value": "staging"
+          }
+        ],
+        "query": "production,staging",
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-1h",
@@ -1867,5 +1889,5 @@
   "timezone": "browser",
   "title": "OT Dash",
   "uid": "dde21982-294c-47be-b5ee-032de07f75a6",
-  "version": 1
+  "version": 2
 }
