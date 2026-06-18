@@ -5,12 +5,12 @@ domain: opentargets.org
 dnsZone: opentargets-org
 
 production: blue
-staging: disabled
+staging: enabled
 
 googleTagManagerId: GTM-WPXWRDV
 
 blue:
-  release: '26.03'
+  release: "26.03"
   webapp:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
   api:
@@ -27,21 +27,21 @@ blue:
     snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os
 
 green:
-  release: '26.03'
+  release: "26.06"
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.16.3
   api:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.1-rc.4
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.0-4408.3
   aiapi:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:
       openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2606-ch
   opensearch:
     image: opensearchproject/opensearch:3.5.0
-    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2606-os
 
 resources:
   webapp:
