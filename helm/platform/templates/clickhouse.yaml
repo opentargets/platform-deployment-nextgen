@@ -5,7 +5,8 @@
 {{- $labels := include "labels" $root }}
 {{- $ch := index $root.Values $color "clickhouse" }}
 {{- $chRes := $root.Values.resources.clickhouse }}
-{{- $chName := printf "%s-%s-clickhouse-%s" $namespace $color (splitList "/" $ch.snapshot | last) -}}
+{{- $svc := ternary "ch" "clickhouse" (eq $color "green") -}}
+{{- $chName := printf "%s-%s-%s-%s" $namespace $color $svc (splitList "/" $ch.snapshot | last) -}}
 ---
 # ConfigMap with ClickHouse config for {{ $namespace }}-{{ $color }} StatefulSet.
 apiVersion: v1

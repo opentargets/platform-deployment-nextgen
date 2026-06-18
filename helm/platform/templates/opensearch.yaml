@@ -5,7 +5,8 @@
 {{- $labels := include "labels" $root }}
 {{- $os := index $root.Values $color "opensearch" }}
 {{- $osRes := $root.Values.resources.opensearch }}
-{{- $osName := printf "%s-%s-opensearch-%s" $namespace $color (splitList "/" $os.snapshot | last) -}}
+{{- $svc := ternary "os" "opensearch" (eq $color "green") -}}
+{{- $osName := printf "%s-%s-%s-%s" $namespace $color $svc (splitList "/" $os.snapshot | last) -}}
 
 ---
 # NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
