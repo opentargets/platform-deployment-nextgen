@@ -1,0 +1,34 @@
+{
+  "languages": {
+    "YAML": {
+      "format_on_save": "on",
+      "formatter": "language_server",
+    },
+  },
+  "lsp": {
+    "yaml-language-server": {
+      "settings": {
+        "yaml": {
+          "format": {
+            "singleQuote": true,
+            "printWidth": 120,
+          },
+          "schemas": {
+            "./helm/platform/values.schema.json": [
+              "helm/platform/values.yaml",
+              "profiles/*-{platform,ppp}.yaml",
+            ],
+            "./helm/databases/values.schema.json": [
+              "helm/databases/values.yaml",
+              "profiles/*-databases.yaml",
+            ],
+            "./helm/observability/values.schema.json": [
+              "helm/observability/values.yaml",
+              "profiles/*-observability.yaml",
+            ],
+          },
+        },
+      },
+    },
+  },
+}
