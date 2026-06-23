@@ -1,72 +1,61 @@
 {{- define "deployment.webapp" }}
-{{- $root := .root }}
-{{- $color := .color | default "blue" }}
-{{- $env := include "env" (dict "root" $root "color" $color ) }}
-{{- $prefix := .root.Values.prefix }}
-{{- $product := .root.Values.product }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $image := index .root.Values $color "webapp" "image" }}
-{{- $domain := .root.Values.domain }}
-{{- $subdomain := include "subdomain" (dict "root" .root "env" $env) }}
-{{- $resources := index .root.Values.resources "webapp" }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
+{{- $subdomain := include "subdomain" . }}
+{{- $resources := .Values.resources.webapp }}
 ---
-# ServiceAccount for the {{ $namespace }}-{{ $color }} WebApp.
-# We disable kubernetes API completely here, the WebApp does not need it.
+# ServiceAccount for {{ $namespace }} WebApp.
+# Kubernetes API access is disabled; the WebApp does not need it.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $namespace }}-{{ $color }}-webapp
+  name: {{ $namespace }}-webapp
   namespace: {{ $namespace }}
   labels:
-    app: api
-    color: {{ $color }}
+    app: webapp
     {{- $labels | nindent 4 }}
 automountServiceAccountToken: false
 
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} WebApp deployment.
-# Allows ingress traffic from all sources to the HTTP port.
+# NetworkPolicy for {{ $namespace }} WebApp.
+# Allows ingress from all sources to the HTTP port.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-webapp-ingress
+  name: {{ $namespace }}-webapp-ingress
   namespace: {{ $namespace }}
   labels:
     app: webapp
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: webapp
-      color: {{ $color }}
   policyTypes:
     - Ingress
   ingress:
     - from: []
       ports:
         - protocol: TCP
-          port: {{ include "ports.http" $root }}
+          port: {{ include "ports.http" . }}
 
 
 ---
-# HorizontalPodAutoscaler for {{ $namespace }}-{{ $color }} webapp deployment.
+# HorizontalPodAutoscaler for {{ $namespace }} WebApp.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $namespace }}-{{ $color }}-webapp-hpa
+  name: {{ $namespace }}-webapp-hpa
   namespace: {{ $namespace }}
   labels:
     app: webapp
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ $namespace }}-{{ $color }}-webapp
+    name: {{ $namespace }}-webapp
   minReplicas: {{ $resources.minReplicas }}
   maxReplicas: {{ $resources.maxReplicas }}
   metrics:
@@ -86,83 +75,81 @@ spec:
 
 
 ---
-# PodDisruptionBudget for {{ $namespace }}-{{ $color }} WebApp deployment.
-# Ensures at least one pod is always running during voluntary disruptions.
+# PodDisruptionBudget for {{ $namespace }} WebApp.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ $namespace }}-{{ $color }}-webapp-pdb
+  name: {{ $namespace }}-webapp-pdb
   namespace: {{ $namespace }}
   labels:
     app: webapp
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
       app: webapp
-      color: {{ $color }}
 
 
 ---
-# Webapp {{ $namespace }}-{{ $color }} deployment.
+# WebApp Deployment for {{ $namespace }}.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $namespace }}-{{ $color }}-webapp
+  name: {{ $namespace }}-webapp
   namespace: {{ $namespace }}
   labels:
     app: webapp
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   selector:
     matchLabels:
       app: webapp
-      color: {{ $color }}
   template:
     metadata:
       labels:
         app: webapp
-        color: {{ $color }}
         {{- $labels | nindent 8 }}
     spec:
-      serviceAccountName: {{ $namespace }}-{{ $color }}-webapp
+      serviceAccountName: {{ $namespace }}-webapp
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gcp.enabled }}
       affinity:
-        nodeAffinity: # ensure pods are scheduled to the right type of node (production/staging)
+        nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: pool
                     operator: In
                     values:
-                      - {{ $env }}
-        podAntiAffinity: # avoid co-locating pods of the same app+color in the same node
+                      - production
+        podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  product: {{ $product }}
+                  product: {{ .Values.product }}
                   app: webapp
-                  color: {{ $color }}
               topologyKey: kubernetes.io/hostname
+      {{- end }}
       containers:
         - name: webapp
-          image: {{ $image }}
+          image: {{ .Values.webapp.image }}
           ports:
-            - containerPort: {{ include "ports.http" $root }}
+            - containerPort: {{ include "ports.http" . }}
               name: http
           env:
             - name: WEBAPP_API_URL
               value: https://api.{{ $subdomain }}/api/v4/graphql
             - name: WEBAPP_OPENAI_URL
               value: https://ai.{{ $subdomain }}
-            {{- if and (eq $prefix "production") (eq $env "production") }}
+            {{- if eq .Values.prefix "production" }}
             - name: WEBAPP_GOOGLE_TAG_MANAGER_ID
-              value: {{ .root.Values.googleTagManagerId }}
+              value: {{ .Values.googleTagManagerId }}
             {{- end }}
             - name: WEBAPP_FLAVOR
-              value: {{ $product }}
+              value: {{ .Values.product }}
           resources:
             requests:
               memory: {{ $resources.requests.memory }}
@@ -172,12 +159,12 @@ spec:
               cpu: {{ $resources.limits.cpu }}
           livenessProbe:
             httpGet:
-              path: {{ include "paths.health.webapp" $root }}
+              path: {{ include "paths.health.webapp" . }}
               port: http
             initialDelaySeconds: 5
           readinessProbe:
             httpGet:
-              path: {{ include "paths.health.webapp" $root }}
+              path: {{ include "paths.health.webapp" . }}
               port: http
             initialDelaySeconds: 5
           securityContext:

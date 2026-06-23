@@ -1,38 +1,20 @@
 # Common components
 {{ include "common.namespace" . }}
+{{ include "common.networkpolicy" . }}
 
-{{- if include "isDeploymentUsed" (dict "root" . "color" "blue") }}
-# Blue deployment components
-{{ include "common.networkpolicy" (dict "root" . "color" "blue") }}
-{{ include "deployment.api" (dict "root" . "color" "blue") }}
-{{ include "deployment.aiapi" (dict "root" . "color" "blue") }}
-{{ include "deployment.webapp" (dict "root" . "color" "blue") }}
-{{ include "statefulset.clickhouse" (dict "root" . "color" "blue") }}
-{{ include "statefulset.opensearch" (dict "root" . "color" "blue") }}
-{{- end }}
+# Platform components
+{{ include "deployment.api" . }}
+{{ include "deployment.aiapi" . }}
+{{ include "deployment.webapp" . }}
+{{ include "statefulset.clickhouse" . }}
+{{ include "statefulset.opensearch" . }}
 
-{{- if include "isDeploymentUsed" (dict "root" . "color" "green") }}
-# Green deployment components
-{{ include "common.networkpolicy" (dict "root" . "color" "green") }}
-{{ include "deployment.api" (dict "root" . "color" "green") }}
-{{ include "deployment.aiapi" (dict "root" . "color" "green") }}
-{{ include "deployment.webapp" (dict "root" . "color" "green") }}
-{{ include "statefulset.clickhouse" (dict "root" . "color" "green") }}
-{{ include "statefulset.opensearch" (dict "root" . "color" "green") }}
-{{- end }}
+# Services
+{{ include "service.api" . }}
+{{ include "service.aiapi" . }}
+{{ include "service.webapp" . }}
+{{ include "service.clickhouse" . }}
+{{ include "service.opensearch" . }}
 
-# Production services
-{{ include "service.api" (dict "root" . "env" "prod") }}
-{{ include "service.aiapi" (dict "root" . "env" "prod") }}
-{{ include "service.webapp" (dict "root" . "env" "prod") }}
-{{ include "service.clickhouse" (dict "root" . "env" "prod") }}
-{{ include "service.opensearch" (dict "root" . "env" "prod") }}
-{{ include "common.ingress" (dict "root" . "env" "prod") }}
-
-# Staging services
-{{ include "service.api" (dict "root" . "env" "staging") }}
-{{ include "service.aiapi" (dict "root" . "env" "staging") }}
-{{ include "service.webapp" (dict "root" . "env" "staging") }}
-{{ include "service.clickhouse" (dict "root" . "env" "staging") }}
-{{ include "service.opensearch" (dict "root" . "env" "staging") }}
-{{ include "common.ingress" (dict "root" . "env" "staging") }}
+# Ingress and routing
+{{ include "common.ingress" . }}

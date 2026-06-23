@@ -1,9 +1,7 @@
 # Namespace definition.
 {{ define "common.namespace" }}
-{{- $root := . }}
 {{- $namespace := include "prefix-product" . }}
 {{- $labels := include "labels" . }}
-{{- $gcpProject := .Values.gcpProject }}
 ---
 # Namespace {{ $namespace }} for {{ .Values.product }}.
 apiVersion: v1
@@ -12,26 +10,25 @@ metadata:
   name: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
+  {{- if .Values.gcp.enabled }}
   annotations:
-    cnrm.cloud.google.com/project-id: {{ $gcpProject }}
+    cnrm.cloud.google.com/project-id: {{ .Values.gcpProject }}
+  {{- end }}
 {{- end }}
 
 
 {{ define "common.networkpolicy" }}
-{{- $root := .root }}
-{{- $color := .color | default "blue" }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }}.
-# Defalt deny all ingress and egress traffic.
+# NetworkPolicy for {{ $namespace }}.
+# Default deny all ingress and egress traffic.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-default-deny
+  name: {{ $namespace }}-default-deny
   namespace: {{ $namespace }}
   labels:
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector: {}
@@ -42,28 +39,27 @@ spec:
 
 
 {{ define "common.ingress" }}
-{{- $root := .root }}
-{{- $env := .env | default "prod" }}
-{{- $prefix := .root.Values.prefix }}
-{{- $product := .root.Values.product }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $domain := .root.Values.domain }}
-{{- $subdomain := include "subdomain" (dict "root" $root "env" .env) }}
-{{- $dnsZone := .root.Values.dnsZone }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
+{{- $subdomain := include "subdomain" . }}
+{{- $domain := .Values.domain }}
+{{- $dnsZone := .Values.dnsZone }}
+{{- $product := .Values.product }}
+{{- $prefix := .Values.prefix }}
+{{- if .Values.gcp.enabled }}
 ---
-# Ingress for {{ $namespace }}-{{ $env }} deployment.
+# Ingress for {{ $namespace }}.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ $namespace }}-{{ $env }}-ingress
+  name: {{ $namespace }}-ingress
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: {{ $namespace }}-{{ $env }}-computeaddress-global
-    networking.gke.io/managed-certificates: {{ $namespace }}-{{ $env }}-ssl-cert,{{ $namespace }}-{{ $env }}-ssl-cert-fallback
-    networking.gke.io/v1beta1.FrontendConfig: {{ $namespace }}-{{ $env }}-frontendconfig-http-redirect
+    kubernetes.io/ingress.global-static-ip-name: {{ $namespace }}-computeaddress-global
+    networking.gke.io/managed-certificates: {{ $namespace }}-ssl-cert,{{ $namespace }}-ssl-cert-fallback
+    networking.gke.io/v1beta1.FrontendConfig: {{ $namespace }}-frontendconfig-http-redirect
     cloud.google.com/neg: '{"ingress": true}'
 spec:
   rules:
@@ -74,9 +70,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ $namespace }}-{{ $env }}-webapp
+                name: {{ $namespace }}-webapp
                 port:
-                  number: {{ include "ports.http" $root }}
+                  number: {{ include "ports.http" . }}
     - host: www.{{ $subdomain }}
       http:
         paths:
@@ -84,9 +80,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ $namespace }}-{{ $env }}-webapp
+                name: {{ $namespace }}-webapp
                 port:
-                  number: {{ include "ports.http" $root }}
+                  number: {{ include "ports.http" . }}
     - host: api.{{ $subdomain }}
       http:
         paths:
@@ -94,9 +90,10 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ $namespace }}-{{ $env }}-api
+                name: {{ $namespace }}-api
                 port:
-                  number: {{ include "ports.http" $root }}
+                  number: {{ include "ports.http" . }}
+    {{- if .Values.aiapi.enabled }}
     - host: ai.{{ $subdomain }}
       http:
         paths:
@@ -104,12 +101,12 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ $namespace }}-{{ $env }}-aiapi
+                name: {{ $namespace }}-aiapi
                 port:
-                  number: {{ include "ports.http" $root }}
-    {{- if and (eq $env "prod") (eq $product "platform") }}
-    # Entries for old genetics app redirection.
-    # Created only in the production platform deployment only.
+                  number: {{ include "ports.http" . }}
+    {{- end }}
+    {{- if eq $product "platform" }}
+    # Entries for old genetics app redirection (production platform only).
     - host: genetics.{{ $domain }}
       http:
         paths:
@@ -117,9 +114,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ $namespace }}-{{ $env }}-webapp
+                name: {{ $namespace }}-webapp
                 port:
-                  number: {{ include "ports.http" $root }}
+                  number: {{ include "ports.http" . }}
     - host: www.genetics.{{ $domain }}
       http:
         paths:
@@ -127,32 +124,32 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ $namespace }}-{{ $env }}-webapp
+                name: {{ $namespace }}-webapp
                 port:
-                  number: {{ include "ports.http" $root }}
+                  number: {{ include "ports.http" . }}
     {{- end }}
 
 ---
-# Static IP Address for {{ $namespace }}-{{ $env }} ingress.
+# Static IP Address for {{ $namespace }} ingress.
 apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeAddress
 metadata:
-  name: {{ $namespace }}-{{ $env }}-computeaddress-global
+  name: {{ $namespace }}-computeaddress-global
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
 spec:
   location: global
-  description: Global IP address for {{ $namespace }}-{{ $env }} deployment
-  resourceID: {{ $namespace }}-{{ $env }}-computeaddress-global
+  description: Global IP address for {{ $namespace }} deployment
+  resourceID: {{ $namespace }}-computeaddress-global
 
 
 ---
-# DNSRecordSet type A for {{ $namespace }}-{{ $env }} WebApp.
+# DNSRecordSet type A for {{ $namespace }} WebApp.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
-  name: {{ $namespace }}-{{ $env }}-dnsrecordset-webapp
+  name: {{ $namespace }}-dnsrecordset-webapp
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -164,16 +161,16 @@ spec:
     external: {{ $dnsZone }}
   rrdatasRefs:
     - kind: ComputeAddress
-      name: {{ $namespace }}-{{ $env }}-computeaddress-global
+      name: {{ $namespace }}-computeaddress-global
       namespace: {{ $namespace }}
 
 
 ---
-# DNSRecordSet type CNAME for {{ $namespace }}-{{ $env }} WebApp www prefix.
+# DNSRecordSet type CNAME for {{ $namespace }} WebApp www prefix.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
-  name: {{ $namespace }}-{{ $env }}-dnsrecordset-webapp-www
+  name: {{ $namespace }}-dnsrecordset-webapp-www
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -188,11 +185,11 @@ spec:
 
 
 ---
-# DNSRecordSet type A for {{ $namespace }}-{{ $env }} API.
+# DNSRecordSet type A for {{ $namespace }} API.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
-  name: {{ $namespace }}-{{ $env }}-dnsrecordset-api
+  name: {{ $namespace }}-dnsrecordset-api
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -204,16 +201,16 @@ spec:
     external: {{ $dnsZone }}
   rrdatasRefs:
     - kind: ComputeAddress
-      name: {{ $namespace }}-{{ $env }}-computeaddress-global
+      name: {{ $namespace }}-computeaddress-global
       namespace: {{ $namespace }}
 
 
 ---
-# DNSRecordSet type A for {{ $namespace }}-{{ $env }} AI API.
+# DNSRecordSet type A for {{ $namespace }} AI API.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
-  name: {{ $namespace }}-{{ $env }}-dnsrecordset-aiapi
+  name: {{ $namespace }}-dnsrecordset-aiapi
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -225,18 +222,17 @@ spec:
     external: {{ $dnsZone }}
   rrdatasRefs:
     - kind: ComputeAddress
-      name: {{ $namespace }}-{{ $env }}-computeaddress-global
+      name: {{ $namespace }}-computeaddress-global
       namespace: {{ $namespace }}
 
 
-{{ if and (eq $env "prod") (eq $product "platform") }}
+{{- if eq $product "platform" }}
 ---
-# DNSRecordSet type A for {{ $namespace }}-{{ $env }} old genetics app.
-# Created only in the production platform deployment.
+# DNSRecordSet type A for {{ $namespace }} old genetics app.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
-  name: {{ $namespace }}-{{ $env }}-dnsrecordset-genetics
+  name: {{ $namespace }}-dnsrecordset-genetics
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -248,16 +244,15 @@ spec:
     external: {{ $dnsZone }}
   rrdatasRefs:
     - kind: ComputeAddress
-      name: {{ $namespace }}-{{ $env }}-computeaddress-global
+      name: {{ $namespace }}-computeaddress-global
       namespace: {{ $namespace }}
 
 ---
-# DNSRecordSet type CNAME for {{ $namespace }}-{{ $env }} old genetics app www prefix.
-# Created only in the production platform deployment.
+# DNSRecordSet type CNAME for {{ $namespace }} old genetics app www prefix.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
-  name: {{ $namespace }}-{{ $env }}-dnsrecordset-genetics-www
+  name: {{ $namespace }}-dnsrecordset-genetics-www
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -272,12 +267,11 @@ spec:
 {{- end }}
 
 ---
-# ManagedCertificate for {{ $namespace }}-{{ $env }} ingress.
-# Main managed certificate.
+# ManagedCertificate for {{ $namespace }} ingress.
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
-  name: {{ $namespace }}-{{ $env }}-ssl-cert
+  name: {{ $namespace }}-ssl-cert
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -287,19 +281,18 @@ spec:
     - www.{{ $subdomain }}
     - api.{{ $subdomain }}
     - ai.{{ $subdomain }}
-    {{- if and (eq $env "prod") (eq $product "platform") }}
+    {{- if eq $product "platform" }}
     - genetics.{{ $domain }}
     - www.genetics.{{ $domain }}
     {{- end }}
 
 
 ---
-# ManagedCertificate for {{ $namespace }}-{{ $env }} ingress.
-# Fallback managed certificate used for renewals
+# ManagedCertificate for {{ $namespace }} ingress (fallback for renewals).
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
-  name: {{ $namespace }}-{{ $env }}-ssl-cert-fallback
+  name: {{ $namespace }}-ssl-cert-fallback
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -309,19 +302,18 @@ spec:
     - www.{{ $subdomain }}
     - api.{{ $subdomain }}
     - ai.{{ $subdomain }}
-    {{- if and (eq $env "prod") (eq $product "platform") }}
+    {{- if eq $product "platform" }}
     - genetics.{{ $domain }}
     - www.genetics.{{ $domain }}
     {{- end }}
 
 
 ---
-# BackendConfig for {{ $namespace }}-{{ $env }} WebApp.
-# With CDN enabled and conditional Cloud Armor policy for PPP product.
+# BackendConfig for {{ $namespace }} WebApp (CDN enabled).
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
-  name: {{ $namespace }}-{{ $env }}-backendconfig-cdn
+  name: {{ $namespace }}-backendconfig-cdn
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -329,7 +321,6 @@ spec:
   customResponseHeaders:
     headers:
       - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
-      # These should eventually be moved into the frontend app
       - "X-Content-Type-Options: nosniff"
       - "X-Frame-Options: DENY"
       - "Content-Security-Policy: base-uri 'self'; frame-ancestors 'none'"
@@ -352,12 +343,11 @@ spec:
 
 
 ---
-# BackendConfig for {{ $namespace }}-{{ $env }} API and AI API.
-# With CDN disabled and conditional Cloud Armor policy for PPP product.
+# BackendConfig for {{ $namespace }} API and AI API (CDN disabled).
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
-  name: {{ $namespace }}-{{ $env }}-backendconfig-no-cdn
+  name: {{ $namespace }}-backendconfig-no-cdn
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -365,9 +355,7 @@ spec:
   customResponseHeaders:
     headers:
       - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
-      # This should eventually be moved into the api
       - "X-Content-Type-Options: nosniff"
-
   cdn:
     enabled: false
   {{- if eq $product "ppp" }}
@@ -377,12 +365,11 @@ spec:
 
 
 ---
-# FrontendConfig for {{ $namespace }}-{{ $env }}.
-# With TLS1.2 policy and HTTP to HTTPS redirect enabled.
+# FrontendConfig for {{ $namespace }} (TLS 1.2 + HTTP→HTTPS redirect).
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
 metadata:
-  name: {{ $namespace }}-{{ $env }}-frontendconfig-http-redirect
+  name: {{ $namespace }}-frontendconfig-http-redirect
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -390,5 +377,64 @@ spec:
   redirectToHttps:
     enabled: true
     responseCodeName: MOVED_PERMANENTLY_DEFAULT
-  sslPolicy: {{ .root.Values.prefix }}-tls12-policy
+  sslPolicy: {{ .Values.prefix }}-tls12-policy
+
+{{- else }}
+---
+# Ingress for {{ $namespace }} (local/non-GCP, nginx ingress controller).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $namespace }}-ingress
+  namespace: {{ $namespace }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ $subdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-webapp
+                port:
+                  number: {{ include "ports.http" . }}
+    - host: www.{{ $subdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-webapp
+                port:
+                  number: {{ include "ports.http" . }}
+    - host: api.{{ $subdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-api
+                port:
+                  number: {{ include "ports.http" . }}
+    {{- if .Values.aiapi.enabled }}
+    - host: ai.{{ $subdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $namespace }}-aiapi
+                port:
+                  number: {{ include "ports.http" . }}
+    {{- end }}
+{{- end }}
 {{- end }}

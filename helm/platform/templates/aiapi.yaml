@@ -1,79 +1,82 @@
 {{ define "deployment.aiapi" }}
-{{- $root := .root }}
-{{- $color := .color | default "blue" }}
-{{- $env := include "env" (dict "root" $root "color" $color ) }}
-{{- $product := .root.Values.product }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $image := index .root.Values $color "aiapi" "image" }}
-{{- $domain := .root.Values.domain }}
-{{- $subdomain := include "subdomain" (dict "root" .root "env" $env) }}
-{{- $gcpProject := .root.Values.gcpProject }}
-{{- $openaiSecret := index $root.Values $color "aiapi" "secrets" "openai" }}
-{{- $resources := index .root.Values.resources "aiapi" }}
+{{- if .Values.aiapi.enabled }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
+{{- $subdomain := include "subdomain" . }}
+{{- $resources := .Values.resources.aiapi }}
+{{- if .Values.gcp.enabled }}
 ---
-# SecretProviderClass for {{ $namespace }}-{{ $color }} OpenAI token.
+# SecretProviderClass for {{ $namespace }} OpenAI token (GCP Secret Manager).
 apiVersion: secrets-store.csi.x-k8s.io/v1
 kind: SecretProviderClass
 metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi-openai-token
+  name: {{ $namespace }}-aiapi-openai-token
   namespace: {{ $namespace }}
   labels:
     app: aiapi
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   provider: gke
   parameters:
     secrets: |
-      - resourceName: {{ $openaiSecret }}/versions/latest
+      - resourceName: {{ .Values.aiapi.secrets.openai }}/versions/latest
         fileName: openai_token
-
-
+{{- else if .Values.aiapi.secrets.openai }}
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} AI API deployment.
-# Allows ingress traffic from all sources to the HTTP port.
-# AI API is called from the clients' browsers.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+# Secret for {{ $namespace }} OpenAI token (local/non-GCP).
+apiVersion: v1
+kind: Secret
 metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi-ingress
+  name: {{ $namespace }}-aiapi-openai-token
   namespace: {{ $namespace }}
   labels:
     app: aiapi
-    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+type: Opaque
+stringData:
+  openai_token: {{ .Values.aiapi.secrets.openai | quote }}
+{{- end }}
+
+
+---
+# NetworkPolicy for {{ $namespace }} AI API.
+# Allows ingress from all sources (AI API is browser-called).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-aiapi-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: aiapi
-      color: {{ $color }}
   policyTypes:
     - Ingress
   ingress:
     - from: []
       ports:
         - protocol: TCP
-          port: {{ include "ports.http" $root }}
+          port: {{ include "ports.http" . }}
 
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} AI API deployment.
-# Allows egress traffic for queries to OpenAI and EBI services.
+# NetworkPolicy for {{ $namespace }} AI API.
+# Allows egress for OpenAI and EBI queries.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi-egress
+  name: {{ $namespace }}-aiapi-egress
   namespace: {{ $namespace }}
   labels:
     app: aiapi
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: aiapi
-      color: {{ $color }}
   policyTypes:
     - Egress
   egress:
@@ -84,83 +87,80 @@ spec:
     - to: []
       ports:
         - protocol: UDP
-          port: {{ include "ports.dns" $root }}
+          port: {{ include "ports.dns" . }}
     - to: []
       ports:
         - protocol: TCP
-          port: {{ include "ports.dns" $root }}
+          port: {{ include "ports.dns" . }}
 
 
 ---
-# ServiceAccount for {{ $namespace }}-{{ $color }} AI API deployment.
-# The AI API needs to pull the OpenAI token from Secret Manager, so we have to
-# attach this KSA to the GSA with the Secret Manager Accessor role.
+# ServiceAccount for {{ $namespace }} AI API.
+# On GCP, bound to the GSA with Secret Manager Accessor role via Workload Identity.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi
-  namespace: {{ $namespace }}
-  labels:
-    app: api
-    color: {{ $color }}
-    {{- $labels | nindent 4 }}
-  annotations:
-    iam.gke.io/gcp-service-account: {{ $namespace }}-aiapi@{{ $gcpProject }}.iam.gserviceaccount.com
-
-
----
-# RBAC for {{ $namespace }}-{{ $color }} AI API.
-# The AI API needs to be able to read secrets from Secret Manager.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi-secrets
+  name: {{ $namespace }}-aiapi
   namespace: {{ $namespace }}
   labels:
     app: aiapi
-    color: {{ $color }}
+    {{- $labels | nindent 4 }}
+  {{- if .Values.gcp.enabled }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $namespace }}-aiapi@{{ .Values.gcpProject }}.iam.gserviceaccount.com
+  {{- end }}
+
+{{- if .Values.gcp.enabled }}
+---
+# Role for {{ $namespace }} AI API to read its SecretProviderClass.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $namespace }}-aiapi-secrets
+  namespace: {{ $namespace }}
+  labels:
+    app: aiapi
     {{- $labels | nindent 4 }}
 rules:
 - apiGroups: ["secrets-store.csi.x-k8s.io"]
   resources: ["secretproviderclasses"]
   verbs: ["get"]
-  resourceNames: ["{{ $namespace }}-{{ $color }}-aiapi-openai-token"]
+  resourceNames: ["{{ $namespace }}-aiapi-openai-token"]
 
 
 ---
-# RBAC RoleBinding for {{ $namespace }}-{{ $color }} AI API.
-# Binds the Role above to the ServiceAccount above.
+# RoleBinding for {{ $namespace }} AI API secrets Role.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi-secrets
+  name: {{ $namespace }}-aiapi-secrets
   namespace: {{ $namespace }}
 subjects:
 - kind: ServiceAccount
-  name: {{ $namespace }}-{{ $color }}-aiapi
+  name: {{ $namespace }}-aiapi
   namespace: {{ $namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ $namespace }}-{{ $color }}-aiapi-secrets
+  name: {{ $namespace }}-aiapi-secrets
+{{- end }}
 
 
 ---
-# HorizontalPodAutoscaler for {{ $namespace }}-{{ $color }} AI API deployment.
+# HorizontalPodAutoscaler for {{ $namespace }} AI API.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi-hpa
+  name: {{ $namespace }}-aiapi-hpa
   namespace: {{ $namespace }}
   labels:
     app: aiapi
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ $namespace }}-{{ $color }}-aiapi
+    name: {{ $namespace }}-aiapi
   minReplicas: {{ $resources.minReplicas }}
   maxReplicas: {{ $resources.maxReplicas }}
   metrics:
@@ -180,71 +180,69 @@ spec:
 
 
 ---
-# PodDisruptionBudget for {{ $namespace }}-{{ $color }} AI API deployment.
-# Ensures at least one pod is always running during voluntary disruptions.
+# PodDisruptionBudget for {{ $namespace }} AI API.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi-pdb
+  name: {{ $namespace }}-aiapi-pdb
   namespace: {{ $namespace }}
   labels:
     app: aiapi
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
       app: aiapi
-      color: {{ $color }}
 
 
 ---
-# AI API {{ $namespace }}-{{ $color }} deployment.
+# AI API Deployment for {{ $namespace }}.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $namespace }}-{{ $color }}-aiapi
+  name: {{ $namespace }}-aiapi
   namespace: {{ $namespace }}
   labels:
     app: aiapi
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   selector:
     matchLabels:
       app: aiapi
-      color: {{ $color }}
   template:
     metadata:
       labels:
         app: aiapi
-        color: {{ $color }}
         {{- $labels | nindent 8 }}
     spec:
-      serviceAccountName: {{ $namespace }}-{{ $color }}-aiapi
+      serviceAccountName: {{ $namespace }}-aiapi
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gcp.enabled }}
       affinity:
-        nodeAffinity: # ensure pods are scheduled to the right type of node (production/staging)
+        nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: pool
                     operator: In
                     values:
-                      - {{ $env }}
-        podAntiAffinity: # avoid co-locating pods of the same app+color in the same node
+                      - production
+        podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  product: {{ $product }}
+                  product: {{ .Values.product }}
                   app: aiapi
-                  color: {{ $color }}
               topologyKey: kubernetes.io/hostname
+      {{- end }}
       containers:
         - name: aiapi
-          image: {{ $image }}
+          image: {{ .Values.aiapi.image }}
           ports:
-            - containerPort: {{ include "ports.http" $root }}
+            - containerPort: {{ include "ports.http" . }}
               name: aiapi
           env:
             - name: OPENAI_TOKEN_FILE
@@ -260,28 +258,38 @@ spec:
               cpu: {{ $resources.limits.cpu }}
           livenessProbe:
             httpGet:
-              path: {{ include "paths.health.aiapi" $root }}
+              path: {{ include "paths.health.aiapi" . }}
               port: aiapi
             initialDelaySeconds: 5
           readinessProbe:
             httpGet:
-              path: {{ include "paths.health.aiapi" $root }}
+              path: {{ include "paths.health.aiapi" . }}
               port: aiapi
             initialDelaySeconds: 5
+          {{- if or .Values.gcp.enabled .Values.aiapi.secrets.openai }}
           volumeMounts:
             - mountPath: /mnt/secrets
               name: secrets
               readOnly: true
+          {{- end }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 65534
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+      {{- if or .Values.gcp.enabled .Values.aiapi.secrets.openai }}
       volumes:
         - name: secrets
+          {{- if .Values.gcp.enabled }}
           csi:
             driver: secrets-store-gke.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: {{ $namespace }}-{{ $color }}-aiapi-openai-token
+              secretProviderClass: {{ $namespace }}-aiapi-openai-token
+          {{- else }}
+          secret:
+            secretName: {{ $namespace }}-aiapi-openai-token
+          {{- end }}
+      {{- end }}
+{{- end }}
 {{- end }}

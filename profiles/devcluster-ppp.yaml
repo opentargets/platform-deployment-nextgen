@@ -4,44 +4,26 @@ product: ppp
 domain: opentargets.xyz
 dnsZone: opentargets-xyz
 
-production: blue
-staging: disabled
-
 googleTagManagerId: GTM-XXXXXXX
 
-blue:
-  release: '26.03'
-  webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.9
-  api:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.2-rc.1
-  aiapi:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
-    secrets:
-      openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
-  clickhouse:
-    image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch-rc2
-  opensearch:
-    image: opensearchproject/opensearch:3.5.0
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os-rc1
+gcp:
+  enabled: true
 
-green:
-  release: '25.12'
-  webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.14.9
-  api:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:25.5.0-rc.2
-  aiapi:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
-    secrets:
-      openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
-  clickhouse:
-    image: clickhouse/clickhouse-server:25.8.18.1
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch-rc2
-  opensearch:
-    image: opensearchproject/opensearch:3.5.0
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os-rc1
+release: '26.03'
+webapp:
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.9
+api:
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.2-rc.1
+aiapi:
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
+  secrets:
+    openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
+clickhouse:
+  image: clickhouse/clickhouse-server:25.8.18.1
+  snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch-rc2
+opensearch:
+  image: opensearchproject/opensearch:3.5.0
+  snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os-rc1
 
 resources:
   webapp:

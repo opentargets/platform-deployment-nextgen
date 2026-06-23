@@ -1,30 +1,27 @@
 {{ define "service.webapp" }}
-{{- $root := .root }}
-{{- $env := .env | default "prod" }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $deploymentColor := include "deploymentColor" (dict "root" .root "env" .env) -}}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
 ---
-# Service for {{ $namespace }}-{{ $env }} webapp.
+# Service for {{ $namespace }} WebApp.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $namespace }}-{{ $env }}-webapp
+  name: {{ $namespace }}-webapp
   namespace: {{ $namespace }}
   labels:
     app: webapp
-    environment: {{ $env }}
     {{- $labels | nindent 4 }}
+  {{- if .Values.gcp.enabled }}
   annotations:
     cloud.google.com/neg: '{"ingress": true}'
-    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-cdn"}'
+    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-backendconfig-cdn"}'
+  {{- end }}
 spec:
   selector:
     app: webapp
-    color: {{ $deploymentColor }}
   ports:
-    - port: {{ include "ports.http" $root }}
-      targetPort: {{ include "ports.http" $root }}
+    - port: {{ include "ports.http" . }}
+      targetPort: {{ include "ports.http" . }}
       protocol: TCP
       name: http
   type: NodePort
@@ -32,33 +29,30 @@ spec:
 
 
 {{ define "service.api" }}
-{{- $root := .root }}
-{{- $env := .env | default "prod" }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $deploymentColor := include "deploymentColor" (dict "root" .root "env" .env) -}}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
 ---
-# Service for {{ $namespace }}-{{ $env }} API.
+# Service for {{ $namespace }} API.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $namespace }}-{{ $env }}-api
+  name: {{ $namespace }}-api
   namespace: {{ $namespace }}
   labels:
     app: api
-    environment: {{ $env }}
     {{- $labels | nindent 4 }}
   annotations:
+    {{- if .Values.gcp.enabled }}
     cloud.google.com/neg: '{"ingress": true}'
-    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-no-cdn"}'
-    prometheus.io/scrape: {{ if and (eq $env "prod") (eq .root.Values.product "platform") }}"true"{{ else }}"false"{{ end }}
+    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-backendconfig-no-cdn"}'
+    {{- end }}
+    prometheus.io/scrape: {{ if eq .Values.product "platform" }}"true"{{ else }}"false"{{ end }}
 spec:
   selector:
     app: api
-    color: {{ $deploymentColor }}
   ports:
-    - port: {{ include "ports.http" $root }}
-      targetPort: {{ include "ports.apiproxy" $root }}
+    - port: {{ include "ports.http" . }}
+      targetPort: {{ include "ports.apiproxy" . }}
       protocol: TCP
       name: api
   type: NodePort
@@ -66,104 +60,93 @@ spec:
 
 
 {{ define "service.aiapi" }}
-{{- $root := .root }}
-{{- $env := .env | default "prod" }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $deploymentColor := include "deploymentColor" (dict "root" .root "env" .env) -}}
+{{- if .Values.aiapi.enabled }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
 ---
-# Service for {{ $namespace }}-{{ $env }} AI API.
+# Service for {{ $namespace }} AI API.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $namespace }}-{{ $env }}-aiapi
+  name: {{ $namespace }}-aiapi
   namespace: {{ $namespace }}
   labels:
     app: aiapi
-    environment: {{ $env }}
     {{- $labels | nindent 4 }}
+  {{- if .Values.gcp.enabled }}
   annotations:
     cloud.google.com/neg: '{"ingress": true}'
-    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-{{ $env }}-backendconfig-no-cdn"}'
+    cloud.google.com/backend-config: '{"default": "{{ $namespace }}-backendconfig-no-cdn"}'
+  {{- end }}
 spec:
   selector:
     app: aiapi
-    color: {{ $deploymentColor }}
   ports:
-    - port: {{ include "ports.http" $root }}
-      targetPort: {{ include "ports.http" $root }}
+    - port: {{ include "ports.http" . }}
+      targetPort: {{ include "ports.http" . }}
       protocol: TCP
       name: aiapi
   type: NodePort
 {{- end }}
+{{- end }}
 
 
 {{ define "service.clickhouse" }}
-{{- $root := .root }}
-{{- $env := .env | default "prod" }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $deploymentColor := include "deploymentColor" (dict "root" .root "env" .env) -}}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
 ---
-# Service for {{ $namespace }}-{{ $env }} ClickHouse.
+# Service for {{ $namespace }} ClickHouse.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $namespace }}-{{ $env }}-clickhouse
+  name: {{ $namespace }}-clickhouse
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
-    environment: {{ $env }}
     {{- $labels | nindent 4 }}
   annotations:
-    prometheus.io/scrape: {{ if and (eq $env "prod") (eq .root.Values.product "platform") }}"true"{{ else }}"false"{{ end }}
+    prometheus.io/scrape: {{ if eq .Values.product "platform" }}"true"{{ else }}"false"{{ end }}
 spec:
   type: ClusterIP
   selector:
     app: clickhouse
-    color: {{ $deploymentColor }}
   ports:
-    - port: {{ include "ports.clickhouse" $root }}
-      targetPort: {{ include "ports.clickhouse" $root }}
+    - port: {{ include "ports.clickhouse" . }}
+      targetPort: {{ include "ports.clickhouse" . }}
       name: http
-    - port: {{ include "ports.clickhouse.native" $root }}
-      targetPort: {{ include "ports.clickhouse.native" $root }}
+    - port: {{ include "ports.clickhouse.native" . }}
+      targetPort: {{ include "ports.clickhouse.native" . }}
       name: native
-    - port: {{ include "ports.clickhouse.metrics" $root }}
-      targetPort: {{ include "ports.clickhouse.metrics" $root }}
+    - port: {{ include "ports.clickhouse.metrics" . }}
+      targetPort: {{ include "ports.clickhouse.metrics" . }}
       name: metrics
 {{- end }}
 
 
 {{ define "service.opensearch" }}
-{{- $root := .root }}
-{{- $env := .env | default "prod" }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $deploymentColor := include "deploymentColor" (dict "root" .root "env" .env) -}}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
 ---
-# Service for {{ $namespace }}-{{ $env }} OpenSearch.
+# Service for {{ $namespace }} OpenSearch.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $namespace }}-{{ $env }}-opensearch
+  name: {{ $namespace }}-opensearch
   namespace: {{ $namespace }}
   labels:
     app: opensearch
-    environment: {{ $env }}
     {{- $labels | nindent 4 }}
   annotations:
-    prometheus.io/scrape: {{ if and (eq $env "prod") (eq .root.Values.product "platform") }}"true"{{ else }}"false"{{ end }}
+    prometheus.io/scrape: {{ if eq .Values.product "platform" }}"true"{{ else }}"false"{{ end }}
 spec:
   type: ClusterIP
   selector:
     app: opensearch
-    color: {{ $deploymentColor }}
   ports:
-    - port: {{ include "ports.opensearch" $root }}
-      targetPort: {{ include "ports.opensearch" $root }}
+    - port: {{ include "ports.opensearch" . }}
+      targetPort: {{ include "ports.opensearch" . }}
       name: http
-    - port: {{ include "ports.opensearch.perf" $root }}
-      targetPort: {{ include "ports.opensearch.perf" $root }}
+    - port: {{ include "ports.opensearch.perf" . }}
+      targetPort: {{ include "ports.opensearch.perf" . }}
       name: perfanalyzer
 {{- end }}

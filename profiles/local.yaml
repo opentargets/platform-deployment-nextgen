@@ -1,13 +1,13 @@
-gcpProject: open-targets-eu-dev
-prefix: devcluster
+gcpProject: ""
+prefix: local
 product: platform
-domain: opentargets.xyz
-dnsZone: opentargets-xyz
+domain: "127.0.0.1.nip.io"
+dnsZone: ""
 
 googleTagManagerId: GTM-XXXXXXX
 
 gcp:
-  enabled: true
+  enabled: false
 
 release: '26.03'
 webapp:
@@ -15,21 +15,21 @@ webapp:
 api:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.0
 aiapi:
-  enabled: true
+  enabled: false
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
   secrets:
-    openai: openai-token
+    openai: ""
 clickhouse:
   image: clickhouse/clickhouse-server:25.8.18.1
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch-rc5
+  snapshot: ""  # no snapshot init locally; starts with an empty volume
 opensearch:
   image: opensearchproject/opensearch:3.5.0
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os-rc5
+  snapshot: ""  # no snapshot init locally; starts with an empty volume
 
 resources:
   webapp:
-    minReplicas: 2
-    maxReplicas: 5
+    minReplicas: 1
+    maxReplicas: 1
     requests:
       memory: 32Mi
       cpu: 50m
@@ -37,17 +37,17 @@ resources:
       memory: 256Mi
       cpu: 500m
   api:
-    minReplicas: 2
-    maxReplicas: 5
+    minReplicas: 1
+    maxReplicas: 1
     requests:
-      memory: 20Gi
-      cpu: 2000m
+      memory: 512Mi
+      cpu: 200m
     limits:
-      memory: 20Gi
-      cpu: 7500m
+      memory: 1Gi
+      cpu: 1000m
   aiapi:
-    minReplicas: 2
-    maxReplicas: 5
+    minReplicas: 1
+    maxReplicas: 1
     requests:
       memory: 72Mi
       cpu: 50m
@@ -55,27 +55,28 @@ resources:
       memory: 256Mi
       cpu: 500m
   clickhouse:
-    replicas: 2
-    storageSize: 400Gi
+    replicas: 1
+    storageSize: 10Gi
     requests:
+      memory: 1Gi
+      cpu: 100m
+    limits:
       memory: 2Gi
-      cpu: 1000m
-    limits:
-      memory: 10Gi
-      cpu: 4000m
+      cpu: 500m
   opensearch:
-    replicas: 2
-    storageSize: 400Gi
-    heapSize: 8g
+    replicas: 1
+    storageSize: 10Gi
+    heapSize: 512m
     requests:
-      memory: 4Gi
-      cpu: 1000m
+      memory: 768Mi
+      cpu: 100m
     limits:
-      memory: 16Gi
-      cpu: 4000m
+      memory: 2Gi
+      cpu: 500m
 
 security:
   rateLimiterWhitelist: []
   blacklist: []
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: gcr-pull-secret

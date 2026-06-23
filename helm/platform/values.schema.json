@@ -6,118 +6,116 @@
   "properties": {
     "gcpProject": {
       "type": "string",
-      "description": "The Google Cloud Project ID where the cluster lives.",
-      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+      "description": "The Google Cloud Project ID where the cluster lives."
     },
     "prefix": {
       "type": "string",
-      "description": "The prefix for all resource. This should identify the environment (e.g., `dev`, `production`). Keep in mind, for us, `staging` is not an environment itself."
+      "description": "The prefix for all resources. Identifies the deployment slot (e.g., `production-blue`, `devcluster-green`)."
     },
     "product": {
       "type": "string",
-      "enum": [
-        "platform",
-        "ppp"
-      ],
-      "description": "The product name: either `platform` or `ppp`. This will be appended to the prefix for resource names. It will also affect domain names, resource allocation and some configuration values."
+      "enum": ["platform", "ppp"],
+      "description": "The product name: either `platform` or `ppp`. Affects domain names, resource allocation, and configuration."
     },
     "domain": {
       "type": "string",
-      "description": "The domain name where the application will be exposed",
-      "format": "hostname"
+      "description": "The domain name where the application will be exposed."
     },
     "dnsZone": {
       "type": "string",
-      "description": "The Google Cloud DNS zone name where the domain is managed"
-    },
-    "production": {
-      "type": "string",
-      "enum": [
-        "blue",
-        "green"
-      ],
-      "description": "The production environment selector (blue/green). CAUTION: This setting controls which environment is live!"
-    },
-    "staging": {
-      "type": "string",
-      "enum": [
-        "enabled",
-        "disabled"
-      ],
-      "description": "Whether the staging environment is enabled or disabled. If disabled, staging services will point to production deployments too."
+      "description": "The Google Cloud DNS zone name where the domain is managed."
     },
     "googleTagManagerId": {
       "type": "string",
-      "description": "The Google Tag Manager ID to set in the production Web Application. It should have the format `GTM-XXXXXX`.",
+      "description": "The Google Tag Manager ID for the production WebApp (format: `GTM-XXXXXX`).",
       "pattern": "^GTM-[A-Z0-9]+$"
     },
-    "blue": {
-      "$ref": "#/$defs/deployment",
-      "description": "The config for the blue deployment"
+    "gcp": {
+      "type": "object",
+      "description": "GCP-specific feature flags.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "When false, skips GCP-native resources (Config Connector, ManagedCertificate, SecretProviderClass, VolumeSnapshot) for local testing."
+        }
+      },
+      "required": ["enabled"],
+      "additionalProperties": false
     },
-    "green": {
-      "$ref": "#/$defs/deployment",
-      "description": "The config for the green deployment"
+    "release": {
+      "type": "string",
+      "description": "The data release name (e.g., `25.09`).",
+      "pattern": "^\\d{2}\\.\\d{2}(-.*)?$"
+    },
+    "webapp": {
+      "$ref": "#/$defs/webappService"
+    },
+    "api": {
+      "$ref": "#/$defs/apiService"
+    },
+    "aiapi": {
+      "$ref": "#/$defs/aiapiService"
+    },
+    "clickhouse": {
+      "$ref": "#/$defs/clickhouseConfig"
+    },
+    "opensearch": {
+      "$ref": "#/$defs/opensearchConfig"
     },
     "resources": {
       "type": "object",
-      "description": "The resource allocations",
+      "description": "Resource allocations for each component.",
       "properties": {
         "webapp": {
-          "$ref": "#/$defs/serviceResources",
-          "description": "The WebApp resource configuration"
+          "$ref": "#/$defs/serviceResources"
         },
         "api": {
-          "$ref": "#/$defs/serviceResources",
-          "description": "The API resource configuration"
+          "$ref": "#/$defs/serviceResources"
         },
         "aiapi": {
-          "$ref": "#/$defs/serviceResources",
-          "description": "The AI API resource configuration"
+          "$ref": "#/$defs/serviceResources"
         },
         "clickhouse": {
-          "$ref": "#/$defs/clickhouseResources",
-          "description": "The ClickHouse infrastructure sizing, shared across all colors"
+          "$ref": "#/$defs/clickhouseResources"
         },
         "opensearch": {
-          "$ref": "#/$defs/opensearchResources",
-          "description": "The OpenSearch infrastructure sizing, shared across all colors"
+          "$ref": "#/$defs/opensearchResources"
         }
       },
-      "required": [
-        "webapp",
-        "api",
-        "aiapi",
-        "clickhouse",
-        "opensearch"
-      ],
+      "required": ["webapp", "api", "aiapi", "clickhouse", "opensearch"],
       "additionalProperties": false
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "description": "Image pull secrets for pods to authenticate with private registries.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        },
+        "required": ["name"]
+      }
     },
     "security": {
       "type": "object",
-      "description": "The API security blacklists and whitelists",
+      "description": "API security blacklists and whitelists.",
       "properties": {
         "rateLimiterWhitelist": {
           "type": "array",
-          "description": "List of CIDR blocks to whitelist from API rate limiting",
+          "description": "CIDR blocks exempt from API rate limiting.",
           "items": {
-            "type": "string",
-            "format": "ipv4-cidr"
+            "type": "string"
           }
         },
         "blacklist": {
           "type": "array",
-          "description": "List of CIDR blocks to blacklist from accessing the API",
+          "description": "CIDR blocks blocked from accessing the API.",
           "items": {
-            "type": "string",
-            "format": "ipv4-cidr"
+            "type": "string"
           }
         }
       },
-      "required": [
-        "rateLimiterWhitelist",
-        "blacklist"
-      ],
+      "required": ["rateLimiterWhitelist", "blacklist"],
       "additionalProperties": false
     }
   },
@@ -127,100 +125,58 @@
     "product",
     "domain",
     "dnsZone",
-    "production",
-    "staging",
     "googleTagManagerId",
-    "blue",
-    "green",
+    "gcp",
+    "release",
+    "webapp",
+    "api",
+    "aiapi",
+    "clickhouse",
+    "opensearch",
     "resources"
   ],
   "additionalProperties": false,
   "$defs": {
-    "deployment": {
-      "type": "object",
-      "description": "The deployment configuration for a color (blue/green), which will be mapped to an environment (production/staging)",
-      "properties": {
-        "release": {
-          "type": "string",
-          "description": "The data release name (e.g., `25.09`)",
-          "pattern": "^\\d{2}\\.\\d{2}(-.*)?$"
-        },
-        "clickhouse": {
-          "$ref": "#/$defs/clickhouseConfig",
-          "description": "The ClickHouse database configuration for this deployment"
-        },
-        "opensearch": {
-          "$ref": "#/$defs/opensearchConfig",
-          "description": "The OpenSearch database configuration for this deployment"
-        },
-        "webapp": {
-          "$ref": "#/$defs/webappService"
-        },
-        "api": {
-          "$ref": "#/$defs/apiService"
-        },
-        "aiapi": {
-          "$ref": "#/$defs/aiapiService"
-        }
-      },
-      "required": [
-        "release",
-        "clickhouse",
-        "opensearch",
-        "webapp",
-        "api",
-        "aiapi"
-      ],
-      "additionalProperties": false
-    },
     "clickhouseConfig": {
       "type": "object",
-      "description": "ClickHouse per-release configuration",
+      "description": "ClickHouse release configuration.",
       "properties": {
         "snapshot": {
           "type": "string",
-          "description": "The GCP snapshot name to restore ClickHouse data from"
+          "description": "GCP snapshot path to restore ClickHouse data from. Empty string skips snapshot init (for local testing)."
         },
         "image": {
           "$ref": "#/$defs/imageConfig"
         }
       },
-      "required": [
-        "snapshot",
-        "image"
-      ],
+      "required": ["snapshot", "image"],
       "additionalProperties": false
     },
     "opensearchConfig": {
       "type": "object",
-      "description": "OpenSearch per-release configuration",
+      "description": "OpenSearch release configuration.",
       "properties": {
         "snapshot": {
           "type": "string",
-          "description": "The GCP snapshot name to restore OpenSearch data from"
+          "description": "GCP snapshot path to restore OpenSearch data from. Empty string skips snapshot init (for local testing)."
         },
         "image": {
           "$ref": "#/$defs/imageConfig"
         }
       },
-      "required": [
-        "snapshot",
-        "image"
-      ],
+      "required": ["snapshot", "image"],
       "additionalProperties": false
     },
     "clickhouseResources": {
       "type": "object",
-      "description": "ClickHouse infrastructure sizing (shared across all colors)",
+      "description": "ClickHouse infrastructure sizing.",
       "properties": {
         "replicas": {
           "type": "integer",
-          "minimum": 1,
-          "description": "Number of ClickHouse replicas"
+          "minimum": 1
         },
         "storageSize": {
           "type": "string",
-          "description": "PVC storage size (e.g., 400Gi)",
           "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         },
         "requests": {
@@ -230,31 +186,24 @@
           "$ref": "#/$defs/resourceLimits"
         }
       },
-      "required": [
-        "replicas",
-        "storageSize",
-        "requests",
-        "limits"
-      ],
+      "required": ["replicas", "storageSize", "requests", "limits"],
       "additionalProperties": false
     },
     "opensearchResources": {
       "type": "object",
-      "description": "OpenSearch infrastructure sizing (shared across all colors)",
+      "description": "OpenSearch infrastructure sizing.",
       "properties": {
         "replicas": {
           "type": "integer",
-          "minimum": 1,
-          "description": "Number of OpenSearch replicas"
+          "minimum": 1
         },
         "storageSize": {
           "type": "string",
-          "description": "PVC storage size (e.g., 400Gi)",
           "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         },
         "heapSize": {
           "type": "string",
-          "description": "JVM heap size for OpenSearch (e.g., 15g)"
+          "description": "JVM heap size (e.g., 8g, 512m)."
         },
         "requests": {
           "$ref": "#/$defs/resourceRequirements"
@@ -263,137 +212,103 @@
           "$ref": "#/$defs/resourceLimits"
         }
       },
-      "required": [
-        "replicas",
-        "storageSize",
-        "heapSize",
-        "requests",
-        "limits"
-      ],
+      "required": ["replicas", "storageSize", "heapSize", "requests", "limits"],
       "additionalProperties": false
     },
     "webappService": {
       "type": "object",
-      "description": "The config for the WebApp service",
       "properties": {
         "image": {
           "$ref": "#/$defs/imageConfig"
         }
       },
-      "required": [
-        "image"
-      ],
+      "required": ["image"],
       "additionalProperties": false
     },
     "apiService": {
       "type": "object",
-      "description": "The config for the API service",
       "properties": {
         "image": {
           "$ref": "#/$defs/imageConfig"
         }
       },
-      "required": [
-        "image"
-      ],
+      "required": ["image"],
       "additionalProperties": false
     },
     "aiapiService": {
       "type": "object",
-      "description": "The config for the AI API service",
       "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to deploy the AI API. Set to false to skip the deployment entirely (e.g., for local testing)."
+        },
         "image": {
           "$ref": "#/$defs/imageConfig"
         },
         "secrets": {
           "type": "object",
-          "description": "The secrets for the AI API service",
+          "description": "Secrets for the AI API.",
           "properties": {
             "openai": {
               "type": "string",
-              "description": "The OpenAI token secret name. This secret must exist in the same project as the GKE cluster."
+              "description": "On GCP: full Secret Manager resource path. Locally: the token value itself (or empty string to skip)."
             }
           },
           "additionalProperties": false
         }
       },
-      "required": [
-        "image",
-        "secrets"
-      ],
+      "required": ["image", "secrets"],
       "additionalProperties": false
     },
     "imageConfig": {
       "type": "string",
-      "description": "The full container image reference including tag (e.g., `gcr.io/open-targets-dev/platform/webapp:25.2.2`)"
+      "description": "Full container image reference including tag (e.g., `gcr.io/project/image:tag`)."
     },
     "serviceResources": {
       "type": "object",
-      "description": "The resource allocation for a deployment",
       "properties": {
         "minReplicas": {
           "type": "integer",
-          "minimum": 0,
-          "description": "The minimum number of replicas for the deployment.\nThings to keep in mind:\n * Do not set to 0 for disabling an environment; use the `staging` root property instead.\n * This should be at least 2 for production to allow for rolling updates."
+          "minimum": 0
         },
         "maxReplicas": {
           "type": "integer",
-          "minimum": 1,
-          "description": "The maximum number of replicas for the deployment."
+          "minimum": 1
         },
         "requests": {
-          "$ref": "#/$defs/resourceRequirements",
-          "description": "The resource requests for the deployment. These values decide the scheduling of pods."
+          "$ref": "#/$defs/resourceRequirements"
         },
         "limits": {
-          "$ref": "#/$defs/resourceLimits",
-          "description": "The resource limits for the deployment. These values decide the maximum resources a pod can use."
+          "$ref": "#/$defs/resourceLimits"
         }
       },
-      "required": [
-        "minReplicas",
-        "maxReplicas",
-        "requests",
-        "limits"
-      ],
+      "required": ["minReplicas", "maxReplicas", "requests", "limits"],
       "additionalProperties": false
     },
     "resourceRequirements": {
       "type": "object",
-      "description": "Kubernetes resource requirements",
       "properties": {
         "memory": {
-          "description": "The memory requirement (e.g., 128Mi, 1Gi). A node with at least this available memory will be a candidate for scheduling the pod.",
           "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ki|m)?$"
         },
         "cpu": {
-          "description": "The CPU requirement (e.g., 100m, 1000m, 2). A node with at least this available CPU will be a candidate for scheduling the pod.",
           "pattern": "^\\d+(\\.\\d+)?(m)?$"
         }
       },
-      "required": [
-        "memory",
-        "cpu"
-      ],
+      "required": ["memory", "cpu"],
       "additionalProperties": false
     },
     "resourceLimits": {
       "type": "object",
-      "description": "Kubernetes resource limits",
       "properties": {
         "memory": {
-          "description": "The memory limit (e.g., 256Mi, 2Gi). The pod will be oom-killed if it exceeds this limit.",
           "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ki|m)?$"
         },
         "cpu": {
-          "description": "The CPU limit (e.g., 200m, 2000m, 4). The pod will be throttled if it exceeds this limit.",
           "pattern": "^\\d+(\\.\\d+)?(m)?$"
         }
       },
-      "required": [
-        "memory",
-        "cpu"
-      ],
+      "required": ["memory", "cpu"],
       "additionalProperties": false
     }
   }

@@ -2,6 +2,7 @@
 	deploy-chart-dev-platform deploy-chart-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
 	deploy-observability-dev deploy-observability-prod \
 	port-forward-prometheus port-forward-grafana \
+	create-cluster-local delete-cluster-local deploy-chart-local \
 	help
 
 help:
@@ -20,6 +21,10 @@ help:
 	@echo "  deploy-observability-prod  - HELM — Deploy observability stack to the production cluster using Helm"
 	@echo "  port-forward-prometheus    - Port-forward to Prometheus in the currently active cluster"
 	@echo "  port-forward-grafana       - Port-forward to Grafana in the currently active cluster and display the admin password"
+	@echo
+	@echo "  create-cluster-local       - KIND — Create a local kind cluster with nginx ingress (http :8080, https :8443)"
+	@echo "  delete-cluster-local       - KIND — Delete the local kind cluster"
+	@echo "  deploy-chart-local         - HELM — Deploy the platform chart to the local kind cluster"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Terraform
@@ -107,3 +112,24 @@ port-forward-grafana:
 	@GRAFANA_POD=$$(kubectl get pods --namespace observability -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=observability" -o jsonpath="{.items[0].metadata.name}"); \
 	echo "Port-forwarding to Grafana pod: $$GRAFANA_POD"; \
 	kubectl port-forward --namespace observability $$GRAFANA_POD 3000:3000
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Local development (kind)
+create-cluster-local:
+	kind create cluster --name ot-local --config ./profiles/local-kind-config.yaml
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.3/deploy/static/provider/kind/deploy.yaml
+	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
+	kubectl create namespace local-platform
+	kubectl create secret docker-registry gcr-pull-secret \
+		--docker-server=europe-west1-docker.pkg.dev \
+		--docker-username=oauth2accesstoken \
+		--docker-password="$$(gcloud auth print-access-token)" \
+		--namespace=local-platform
+
+delete-cluster-local:
+	kind delete cluster --name ot-local
+
+deploy-chart-local:
+	helm diff upgrade --allow-unreleased local-platform ./helm/platform -f ./profiles/local.yaml; \
+	read -p "press enter to continue..." nothing; \
+	helm upgrade --install local-platform ./helm/platform -f ./profiles/local.yaml
