@@ -2,7 +2,7 @@
 	deploy-chart-dev-platform deploy-chart-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
 	deploy-observability-dev deploy-observability-prod \
 	port-forward-prometheus port-forward-grafana \
-	create-cluster-local delete-cluster-local deploy-chart-local \
+	create-cluster-local delete-cluster-local tunnel-local deploy-chart-local \
 	help
 
 help:
@@ -22,9 +22,10 @@ help:
 	@echo "  port-forward-prometheus    - Port-forward to Prometheus in the currently active cluster"
 	@echo "  port-forward-grafana       - Port-forward to Grafana in the currently active cluster and display the admin password"
 	@echo
-	@echo "  create-cluster-local       - KIND — Create a local kind cluster with nginx ingress (http :8080, https :8443)"
-	@echo "  delete-cluster-local       - KIND — Delete the local kind cluster"
-	@echo "  deploy-chart-local         - HELM — Deploy the platform chart to the local kind cluster"
+	@echo "  create-cluster-local       - MINK — Create a local minikube cluster with nginx ingress"
+	@echo "  delete-cluster-local       - MINK — Delete the local minikube cluster"
+	@echo "  tunnel-local               - MINK — Run minikube tunnel (sudo, foreground) to expose ingress on platform.localhost"
+	@echo "  deploy-chart-local         - HELM — Deploy the platform chart to the local minikube cluster"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Terraform
@@ -114,12 +115,14 @@ port-forward-grafana:
 	kubectl port-forward --namespace observability $$GRAFANA_POD 3000:3000
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Local development (kind)
+# Local development (minikube)
 create-cluster-local:
-	kind create cluster --name ot-local --config ./profiles/local-kind-config.yaml
-	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.3/deploy/static/provider/kind/deploy.yaml
+	minikube start --driver=docker --cpus=max --memory=max
+	minikube addons enable ingress
 	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
 	kubectl create namespace local-platform
+	kubectl label namespace local-platform app.kubernetes.io/managed-by=Helm
+	kubectl annotate namespace local-platform meta.helm.sh/release-name=local-platform meta.helm.sh/release-namespace=default
 	kubectl create secret docker-registry gcr-pull-secret \
 		--docker-server=europe-west1-docker.pkg.dev \
 		--docker-username=oauth2accesstoken \
@@ -127,7 +130,10 @@ create-cluster-local:
 		--namespace=local-platform
 
 delete-cluster-local:
-	kind delete cluster --name ot-local
+	minikube delete
+
+tunnel-local:
+	minikube tunnel
 
 deploy-chart-local:
 	helm diff upgrade --allow-unreleased local-platform ./helm/platform -f ./profiles/local.yaml; \

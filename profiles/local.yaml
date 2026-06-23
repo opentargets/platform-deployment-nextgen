@@ -1,7 +1,7 @@
 gcpProject: ""
 prefix: local
 product: platform
-domain: "127.0.0.1.nip.io"
+domain: "localhost"
 dnsZone: ""
 
 googleTagManagerId: GTM-XXXXXXX
