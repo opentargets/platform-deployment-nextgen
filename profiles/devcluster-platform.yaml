@@ -10,7 +10,7 @@ staging: disabled
 googleTagManagerId: GTM-XXXXXXX
 
 blue:
-  release: "26.03"
+  release: '26.03'
   webapp:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
   api:
@@ -22,12 +22,14 @@ blue:
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
     snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch
+    storageSize: 400Gi
   opensearch:
     image: opensearchproject/opensearch:3.5.0
     snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os
+    storageSize: 400Gi
 
 green:
-  release: "26.03"
+  release: '26.03'
   webapp:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7
   api:
@@ -39,9 +41,11 @@ green:
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
     snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch-rc5
+    storageSize: 400Gi
   opensearch:
     image: opensearchproject/opensearch:3.5.0
     snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os-rc5
+    storageSize: 400Gi
 
 resources:
   webapp:
@@ -73,7 +77,6 @@ resources:
       cpu: 500m
   clickhouse:
     replicas: 1
-    storageSize: 125Gi
     requests:
       memory: 2Gi
       cpu: 1000m
@@ -82,7 +85,6 @@ resources:
       cpu: 4000m
   opensearch:
     replicas: 1
-    storageSize: 50Gi
     heapSize: 8g
     requests:
       memory: 4Gi

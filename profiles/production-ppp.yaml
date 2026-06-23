@@ -22,9 +22,11 @@ blue:
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
     snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch
+    storageSize: 125Gi
   opensearch:
     image: opensearchproject/opensearch:3.5.0
     snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os
+    storageSize: 50Gi
 
 green:
   release: '26.03'
@@ -39,9 +41,11 @@ green:
   clickhouse:
     image: clickhouse/clickhouse-server:25.8.18.1
     snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-ch
+    storageSize: 125Gi
   opensearch:
     image: opensearchproject/opensearch:3.5.0
     snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2603-os
+    storageSize: 50Gi
 
 resources:
   webapp:
@@ -73,7 +77,6 @@ resources:
       cpu: 500m
   clickhouse:
     replicas: 2
-    storageSize: 125Gi
     requests:
       memory: 2Gi
       cpu: 500m
@@ -82,7 +85,6 @@ resources:
       cpu: 2000m
   opensearch:
     replicas: 2
-    storageSize: 50Gi
     heapSize: 3g
     requests:
       memory: 4Gi

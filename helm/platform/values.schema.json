@@ -177,17 +177,23 @@
       "type": "object",
       "description": "ClickHouse per-release configuration",
       "properties": {
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        },
         "snapshot": {
           "type": "string",
           "description": "The GCP snapshot name to restore ClickHouse data from"
         },
-        "image": {
-          "$ref": "#/$defs/imageConfig"
+        "storageSize": {
+          "type": "string",
+          "description": "PVC storage size (e.g., 400Gi)",
+          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         }
       },
       "required": [
+        "image",
         "snapshot",
-        "image"
+        "storageSize"
       ],
       "additionalProperties": false
     },
@@ -195,17 +201,23 @@
       "type": "object",
       "description": "OpenSearch per-release configuration",
       "properties": {
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        },
         "snapshot": {
           "type": "string",
           "description": "The GCP snapshot name to restore OpenSearch data from"
         },
-        "image": {
-          "$ref": "#/$defs/imageConfig"
+        "storageSize": {
+          "type": "string",
+          "description": "PVC storage size (e.g., 400Gi)",
+          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         }
       },
       "required": [
+        "image",
         "snapshot",
-        "image"
+        "storageSize"
       ],
       "additionalProperties": false
     },
@@ -218,11 +230,6 @@
           "minimum": 1,
           "description": "Number of ClickHouse replicas"
         },
-        "storageSize": {
-          "type": "string",
-          "description": "PVC storage size (e.g., 400Gi)",
-          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
-        },
         "requests": {
           "$ref": "#/$defs/resourceRequirements"
         },
@@ -232,7 +239,6 @@
       },
       "required": [
         "replicas",
-        "storageSize",
         "requests",
         "limits"
       ],
@@ -247,11 +253,6 @@
           "minimum": 1,
           "description": "Number of OpenSearch replicas"
         },
-        "storageSize": {
-          "type": "string",
-          "description": "PVC storage size (e.g., 400Gi)",
-          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
-        },
         "heapSize": {
           "type": "string",
           "description": "JVM heap size for OpenSearch (e.g., 15g)"
@@ -265,7 +266,6 @@
       },
       "required": [
         "replicas",
-        "storageSize",
         "heapSize",
         "requests",
         "limits"

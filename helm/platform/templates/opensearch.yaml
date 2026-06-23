@@ -289,7 +289,7 @@ spec:
           apiGroup: snapshot.storage.k8s.io
         resources:
           requests:
-            storage: {{ $osRes.storageSize | quote }}
+            storage: {{ $os.storageSize | quote }}
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
     whenScaled: Delete
