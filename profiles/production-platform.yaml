@@ -4,7 +4,7 @@ product: platform
 domain: opentargets.org
 dnsZone: opentargets-org
 
-production: blue
+production: green
 staging: enabled
 
 googleTagManagerId: GTM-WPXWRDV
