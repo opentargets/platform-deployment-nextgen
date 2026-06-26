@@ -1,5 +1,5 @@
 gcpProject: ""
-prefix: local
+prefix: local-blue
 product: platform
 domain: "localhost"
 dnsZone: ""
@@ -9,7 +9,7 @@ googleTagManagerId: GTM-XXXXXXX
 gcp:
   enabled: false
 
-release: '26.03'
+release: "26.03"
 webapp:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7
 api:
@@ -21,10 +21,10 @@ aiapi:
     openai: ""
 clickhouse:
   image: clickhouse/clickhouse-server:25.8.18.1
-  snapshot: ""  # no snapshot init locally; starts with an empty volume
+  snapshot: "" # no snapshot init locally; starts with an empty volume
 opensearch:
   image: opensearchproject/opensearch:3.5.0
-  snapshot: ""  # no snapshot init locally; starts with an empty volume
+  snapshot: "" # no snapshot init locally; starts with an empty volume
 
 resources:
   webapp:
