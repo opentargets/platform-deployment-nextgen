@@ -21,6 +21,10 @@
       "type": "string",
       "description": "The domain name where the application will be exposed."
     },
+    "subdomainPrefix": {
+      "type": "string",
+      "description": "Subdomain prefix e.g. staging"
+    },
     "dnsZone": {
       "type": "string",
       "description": "The Google Cloud DNS zone name where the domain is managed."

@@ -7,11 +7,11 @@ spec:
   generators:
     - list:
         elements:
-          - color: blue
-          - color: green
+          - env: prod
+          - env: staging
   template:
     metadata:
-      name: local-platform-{{ color }}
+      name: local-platform-{{ env }}
     spec:
       project: default
       source:
@@ -20,10 +20,10 @@ spec:
         path: helm/platform
         helm:
           valueFiles:
-            - /profiles/local-{{ color }}.yaml
+            - /profiles/local-{{ env }}.yaml
       destination:
         server: https://kubernetes.default.svc
-        namespace: local-{{ color }}-platform
+        namespace: local-{{ env }}-platform
       syncPolicy:
         syncOptions:
           - CreateNamespace=true

@@ -13,12 +13,25 @@ product: {{ .Values.product }}
 {{- define "subdomain" -}}
 {{- $product := .Values.product -}}
 {{- $domain := .Values.domain -}}
+{{- $prefix := .Values.subdomainPrefix | default "" -}}
 {{- if eq $product "platform" -}}
+{{- if $prefix -}}
+{{- printf "%s.platform.%s" $prefix $domain -}}
+{{- else -}}
 {{- printf "platform.%s" $domain -}}
+{{- end -}}
 {{- else if eq $product "ppp" -}}
+{{- if $prefix -}}
+{{- printf "%s.partner-platform.%s" $prefix $domain -}}
+{{- else -}}
 {{- printf "partner-platform.%s" $domain -}}
+{{- end -}}
+{{- else -}}
+{{- if $prefix -}}
+{{- printf "%s.%s.%s" $prefix $product $domain -}}
 {{- else -}}
 {{- printf "%s.%s" $product $domain -}}
+{{- end -}}
 {{- end -}}
 {{- end }}
 
