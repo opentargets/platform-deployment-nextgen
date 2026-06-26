@@ -12,7 +12,7 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: webapp
+  name: webapp-prod
   namespace: {{ $routerNamespace }}
 spec:
   type: ExternalName
@@ -23,7 +23,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: api
+  name: api-prod
   namespace: {{ $routerNamespace }}
 spec:
   type: ExternalName
@@ -72,7 +72,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: webapp
+                name: webapp-prod
                 port:
                   number: 8080
     - host: api.platform.{{ .Values.domain }}
@@ -82,7 +82,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: api
+                name: api-prod
                 port:
                   number: 8080
     - host: staging.platform.{{ .Values.domain }}
