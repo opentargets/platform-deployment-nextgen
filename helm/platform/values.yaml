@@ -8,8 +8,9 @@ googleTagManagerId: GTM-XXXXXXX
 
 gcp:
   enabled: true
+  ingress: true
 
-release: '26.03'
+release: "26.03"
 webapp:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7
 api:

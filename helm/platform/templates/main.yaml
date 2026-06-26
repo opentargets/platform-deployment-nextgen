@@ -17,4 +17,6 @@
 {{ include "service.opensearch" . }}
 
 # Ingress and routing
+{{- if .Values.gcp.ingress }}
 {{ include "common.ingress" . }}
+{{- end }}
