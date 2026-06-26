@@ -1,7 +1,7 @@
 gcpProject: ""
 prefix: local-green
 product: platform
-domain: "localhost"
+domain: green.localhost
 dnsZone: ""
 
 googleTagManagerId: GTM-XXXXXXX
