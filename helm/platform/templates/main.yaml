@@ -1,5 +1,4 @@
 # Common components
-{{ include "common.namespace" . }}
 {{ include "common.networkpolicy" . }}
 
 # Platform components
