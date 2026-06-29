@@ -1,6 +1,6 @@
 # Namespace definition.
 {{ define "common.namespace" }}
-{{- $namespace := include "prefix-product" . }}
+{{- $namespace := include "namespace" . }}
 {{- $labels := include "labels" . }}
 ---
 # Namespace {{ $namespace }} for {{ .Values.product }}.
@@ -18,7 +18,8 @@ metadata:
 
 
 {{ define "common.networkpolicy" }}
-{{- $namespace := include "prefix-product" . }}
+{{- $prefix := include "prefix-product" . }}
+{{- $namespace := include "namespace" . }}
 {{- $labels := include "labels" . }}
 ---
 # NetworkPolicy for {{ $namespace }}.
@@ -26,7 +27,7 @@ metadata:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-default-deny
+  name: {{ $prefix }}-default-deny
   namespace: {{ $namespace }}
   labels:
     {{- $labels | nindent 4 }}
@@ -39,13 +40,13 @@ spec:
 
 
 {{ define "common.ingress" }}
-{{- $namespace := include "prefix-product" . }}
+{{- $prefix := include "prefix-product" . }}
+{{- $namespace := include "namespace" . }}
 {{- $labels := include "labels" . }}
 {{- $subdomain := include "subdomain" . }}
 {{- $domain := .Values.domain }}
 {{- $dnsZone := .Values.dnsZone }}
 {{- $product := .Values.product }}
-{{- $prefix := .Values.prefix }}
 {{- if .Values.gcp.enabled }}
 ---
 # Ingress for {{ $namespace }}.

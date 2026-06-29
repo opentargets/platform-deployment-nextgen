@@ -1,7 +1,8 @@
 gcpProject: ""
-prefix: local-staging
+colour: green
+namespace: local-platform
 product: platform
-subdomainPrefix: staging
+prefix: local-green
 domain: localhost
 dnsZone: ""
 

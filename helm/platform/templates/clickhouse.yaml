@@ -1,5 +1,6 @@
 {{- define "statefulset.clickhouse" -}}
-{{- $namespace := include "prefix-product" . }}
+{{- $prefix := include "prefix-product" . }}
+{{- $namespace := include "namespace" . }}
 {{- $labels := include "labels" . }}
 {{- $ch := .Values.clickhouse }}
 {{- $chRes := .Values.resources.clickhouse }}
@@ -8,7 +9,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $namespace }}-clickhouse-config
+  name: {{ $prefix }}-clickhouse-config
   namespace: {{ $namespace }}
 data:
   config.xml: |
@@ -23,7 +24,7 @@ data:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-clickhouse-ingress
+  name: {{ $prefix }}-clickhouse-ingress
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
@@ -51,7 +52,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-clickhouse-metrics-ingress
+  name: {{ $prefix }}-clickhouse-metrics-ingress
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
@@ -81,7 +82,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-clickhouse-egress
+  name: {{ $prefix }}-clickhouse-egress
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
@@ -108,7 +109,7 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ $namespace }}-clickhouse-pdb
+  name: {{ $prefix }}-clickhouse-pdb
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
@@ -125,14 +126,14 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotContent
 metadata:
-  name: {{ $namespace }}-clickhouse
+  name: {{ $prefix }}-clickhouse
 spec:
   deletionPolicy: Retain
   driver: pd.csi.storage.gke.io
   source:
     snapshotHandle: {{ $ch.snapshot }}
   volumeSnapshotRef:
-    name: {{ $namespace }}-clickhouse
+    name: {{ $prefix }}-clickhouse
     namespace: {{ $namespace }}
 
 
@@ -141,11 +142,11 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
-  name: {{ $namespace }}-clickhouse
+  name: {{ $prefix }}-clickhouse
   namespace: {{ $namespace }}
 spec:
   source:
-    volumeSnapshotContentName: {{ $namespace }}-clickhouse
+    volumeSnapshotContentName: {{ $prefix }}-clickhouse
 {{- end }}
 
 
@@ -154,13 +155,13 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $namespace }}-clickhouse
+  name: {{ $prefix }}-clickhouse
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
     {{- $labels | nindent 4 }}
 spec:
-  serviceName: {{ $namespace }}-clickhouse
+  serviceName: {{ $prefix }}-clickhouse
   replicas: {{ $chRes.replicas }}
   selector:
     matchLabels:
@@ -252,7 +253,7 @@ spec:
           emptyDir: {}
         - name: config
           configMap:
-            name: {{ $namespace }}-clickhouse-config
+            name: {{ $prefix }}-clickhouse-config
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -263,7 +264,7 @@ spec:
         storageClassName: hyperdisk-balanced
         {{- if $ch.snapshot }}
         dataSource:
-          name: {{ $namespace }}-clickhouse
+          name: {{ $prefix }}-clickhouse
           kind: VolumeSnapshot
           apiGroup: snapshot.storage.k8s.io
         {{- end }}

@@ -15,6 +15,3 @@
 {{ include "service.webapp" . }}
 {{ include "service.clickhouse" . }}
 {{ include "service.opensearch" . }}
-
-# Ingress and routing
-{{ include "common.ingress" . }}

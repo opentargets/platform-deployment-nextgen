@@ -1,6 +1,7 @@
 {{ define "deployment.aiapi" }}
 {{- if .Values.aiapi.enabled }}
-{{- $namespace := include "prefix-product" . }}
+{{- $prefix := include "prefix-product" . }}
+{{- $namespace := include "namespace" . }}
 {{- $labels := include "labels" . }}
 {{- $subdomain := include "subdomain" . }}
 {{- $resources := .Values.resources.aiapi }}
@@ -10,7 +11,7 @@
 apiVersion: secrets-store.csi.x-k8s.io/v1
 kind: SecretProviderClass
 metadata:
-  name: {{ $namespace }}-aiapi-openai-token
+  name: {{ $prefix }}-aiapi-openai-token
   namespace: {{ $namespace }}
   labels:
     app: aiapi
@@ -27,7 +28,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ $namespace }}-aiapi-openai-token
+  name: {{ $prefix }}-aiapi-openai-token
   namespace: {{ $namespace }}
   labels:
     app: aiapi
@@ -44,7 +45,7 @@ stringData:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-aiapi-ingress
+  name: {{ $prefix }}-aiapi-ingress
   namespace: {{ $namespace }}
   labels:
     app: aiapi
@@ -68,7 +69,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-aiapi-egress
+  name: {{ $prefix }}-aiapi-egress
   namespace: {{ $namespace }}
   labels:
     app: aiapi
@@ -100,14 +101,14 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $namespace }}-aiapi
+  name: {{ $prefix }}-aiapi
   namespace: {{ $namespace }}
   labels:
     app: aiapi
     {{- $labels | nindent 4 }}
   {{- if .Values.gcp.enabled }}
   annotations:
-    iam.gke.io/gcp-service-account: {{ $namespace }}-aiapi@{{ .Values.gcpProject }}.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: {{ $prefix }}-aiapi@{{ .Values.gcpProject }}.iam.gserviceaccount.com
   {{- end }}
 
 {{- if .Values.gcp.enabled }}
@@ -116,7 +117,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ $namespace }}-aiapi-secrets
+  name: {{ $prefix }}-aiapi-secrets
   namespace: {{ $namespace }}
   labels:
     app: aiapi
@@ -125,7 +126,7 @@ rules:
 - apiGroups: ["secrets-store.csi.x-k8s.io"]
   resources: ["secretproviderclasses"]
   verbs: ["get"]
-  resourceNames: ["{{ $namespace }}-aiapi-openai-token"]
+  resourceNames: ["{{ $prefix }}-aiapi-openai-token"]
 
 
 ---
@@ -133,16 +134,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ $namespace }}-aiapi-secrets
+  name: {{ $prefix }}-aiapi-secrets
   namespace: {{ $namespace }}
 subjects:
 - kind: ServiceAccount
-  name: {{ $namespace }}-aiapi
+  name: {{ $prefix }}-aiapi
   namespace: {{ $namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ $namespace }}-aiapi-secrets
+  name: {{ $prefix }}-aiapi-secrets
 {{- end }}
 
 
@@ -151,7 +152,7 @@ roleRef:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $namespace }}-aiapi-hpa
+  name: {{ $prefix }}-aiapi-hpa
   namespace: {{ $namespace }}
   labels:
     app: aiapi
@@ -160,7 +161,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ $namespace }}-aiapi
+    name: {{ $prefix }}-aiapi
   minReplicas: {{ $resources.minReplicas }}
   maxReplicas: {{ $resources.maxReplicas }}
   metrics:
@@ -184,7 +185,7 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ $namespace }}-aiapi-pdb
+  name: {{ $prefix }}-aiapi-pdb
   namespace: {{ $namespace }}
   labels:
     app: aiapi
@@ -201,7 +202,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $namespace }}-aiapi
+  name: {{ $prefix }}-aiapi
   namespace: {{ $namespace }}
   labels:
     app: aiapi
@@ -216,7 +217,7 @@ spec:
         app: aiapi
         {{- $labels | nindent 8 }}
     spec:
-      serviceAccountName: {{ $namespace }}-aiapi
+      serviceAccountName: {{ $prefix }}-aiapi
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{ toYaml . | nindent 8 }}
       {{- end }}
@@ -285,10 +286,10 @@ spec:
             driver: secrets-store-gke.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: {{ $namespace }}-aiapi-openai-token
+              secretProviderClass: {{ $prefix }}-aiapi-openai-token
           {{- else }}
           secret:
-            secretName: {{ $namespace }}-aiapi-openai-token
+            secretName: {{ $prefix }}-aiapi-openai-token
           {{- end }}
       {{- end }}
 {{- end }}

@@ -1,0 +1,118 @@
+{{- $activeColor := .Values.activeColor }}
+{{- $inactiveColor := ternary "green" "blue" (eq .Values.activeColor "blue") }}
+{{- $namespace := .Values.namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-prod
+  namespace: {{ $namespace }}
+spec:
+  selector:
+    app: webapp
+    color: {{ $activeColor }}
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-prod
+  namespace: {{ $namespace }}
+spec:
+  selector:
+    app: api
+    color: {{ $activeColor }}
+  ports:
+    - port: 8080
+      targetPort: 8081
+      protocol: TCP
+      name: api
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-staging
+  namespace: {{ $namespace }}
+spec:
+  selector:
+    app: webapp
+    color: {{ $inactiveColor }}
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-staging
+  namespace: {{ $namespace }}
+spec:
+  selector:
+    app: api
+    color: {{ $inactiveColor }}
+  ports:
+    - port: 8080
+      targetPort: 8081
+      protocol: TCP
+      name: api
+  type: NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-ingress
+  namespace: {{ $namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-prod
+                port:
+                  number: 8080
+    - host: api.platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-prod
+                port:
+                  number: 8080
+    - host: staging.platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-staging
+                port:
+                  number: 8080
+    - host: api.staging.platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-staging
+                port:
+                  number: 8080

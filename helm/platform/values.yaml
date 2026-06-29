@@ -3,6 +3,8 @@ prefix: devcluster
 product: platform
 domain: opentargets.xyz
 dnsZone: opentargets-xyz
+colour: ""
+namespace: ""
 
 googleTagManagerId: GTM-XXXXXXX
 

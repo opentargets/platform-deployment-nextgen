@@ -1,5 +1,7 @@
 gcpProject: ""
-prefix: local-prod
+colour: blue
+namespace: local-platform
+prefix: local-blue
 product: platform
 domain: localhost
 dnsZone: ""

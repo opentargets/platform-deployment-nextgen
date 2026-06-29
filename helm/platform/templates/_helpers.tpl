@@ -3,10 +3,17 @@
 {{- printf "%s-%s" .Values.prefix .Values.product -}}
 {{- end -}}
 
+# namespace returns the Kubernetes namespace for this deployment.
+# Uses .Values.namespace if set, otherwise falls back to prefix-product.
+{{- define "namespace" -}}
+{{- .Values.namespace | default (include "prefix-product" .) -}}
+{{- end -}}
+
 # labels returns the common labels for all resources.
 {{- define "labels" -}}
 prefix:  {{ .Values.prefix }}
 product: {{ .Values.product }}
+color:   {{ .Values.color }}
 {{- end -}}
 
 # subdomain returns the public subdomain for this product.

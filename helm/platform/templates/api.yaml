@@ -1,5 +1,6 @@
 {{ define "deployment.api" }}
-{{- $namespace := include "prefix-product" . }}
+{{- $prefix := include "prefix-product" . }}
+{{- $namespace := include "namespace" . }}
 {{- $labels := include "labels" . }}
 {{- $resources := .Values.resources.api }}
 ---
@@ -8,7 +9,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $namespace }}-api
+  name: {{ $prefix }}-api
   namespace: {{ $namespace }}
   labels:
     app: api
@@ -22,7 +23,7 @@ automountServiceAccountToken: false
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-api-egress
+  name: {{ $prefix }}-api-egress
   namespace: {{ $namespace }}
   labels:
     app: api
@@ -58,7 +59,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-api-ingress
+  name: {{ $prefix }}-api-ingress
   namespace: {{ $namespace }}
   labels:
     app: api
@@ -81,7 +82,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $namespace }}-api-hpa
+  name: {{ $prefix }}-api-hpa
   namespace: {{ $namespace }}
   labels:
     app: api
@@ -90,7 +91,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ $namespace }}-api
+    name: {{ $prefix }}-api
   minReplicas: {{ $resources.minReplicas }}
   maxReplicas: {{ $resources.maxReplicas }}
   metrics:
@@ -114,7 +115,7 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ $namespace }}-api-pdb
+  name: {{ $prefix }}-api-pdb
   namespace: {{ $namespace }}
   labels:
     app: api
@@ -131,7 +132,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $namespace }}-nginx-config
+  name: {{ $prefix }}-nginx-config
   namespace: {{ $namespace }}
 data:
   nginx.conf: |
@@ -180,7 +181,7 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $namespace }}-api
+  name: {{ $prefix }}-api
   namespace: {{ $namespace }}
   labels:
     app: api
@@ -195,7 +196,7 @@ spec:
         app: api
         {{- $labels | nindent 8 }}
     spec:
-      serviceAccountName: {{ $namespace }}-api
+      serviceAccountName: {{ $prefix }}-api
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{ toYaml . | nindent 8 }}
       {{- end }}
@@ -244,9 +245,9 @@ spec:
               name: api
           env:
             - name: SLICK_CLICKHOUSE_URL
-              value: jdbc:clickhouse://{{ $namespace }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" . }}
+              value: jdbc:clickhouse://{{ $prefix }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" . }}
             - name: ELASTICSEARCH_HOST
-              value: {{ $namespace }}-opensearch.{{ $namespace }}.svc.cluster.local
+              value: {{ $prefix }}-opensearch.{{ $namespace }}.svc.cluster.local
             - name: META_DATA_RELEASE
               value: {{ .Values.release | quote }}
             - name: META_API_VERSION
@@ -294,5 +295,5 @@ spec:
       volumes:
         - name: nginx-config
           configMap:
-            name: {{ $namespace }}-nginx-config
+            name: {{ $prefix }}-nginx-config
 {{- end }}

@@ -17,6 +17,14 @@
       "enum": ["platform", "ppp"],
       "description": "The product name: either `platform` or `ppp`. Affects domain names, resource allocation, and configuration."
     },
+    "colour": {
+      "type": "string",
+      "description": "Deployment colour"
+    },
+    "namespace": {
+      "type": "string",
+      "description": "Namespace"
+    },
     "domain": {
       "type": "string",
       "description": "The domain name where the application will be exposed."
