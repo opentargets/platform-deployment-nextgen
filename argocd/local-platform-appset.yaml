@@ -11,7 +11,7 @@ spec:
           - colour: green
   template:
     metadata:
-      name: local-platform-{{ colour }
+      name: local-platform-{{ colour }}
     spec:
       project: default
       source:

@@ -114,7 +114,7 @@ spec:
   type: ClusterIP
   selector:
     app: clickhouse
-    color: {{ .Values.color }}
+    colour: {{ .Values.colour }}
   ports:
     - port: {{ include "ports.clickhouse" . }}
       targetPort: {{ include "ports.clickhouse" . }}
@@ -148,7 +148,7 @@ spec:
   type: ClusterIP
   selector:
     app: opensearch
-    color: {{ .Values.color }}
+    colour: {{ .Values.colour }}
   ports:
     - port: {{ include "ports.opensearch" . }}
       targetPort: {{ include "ports.opensearch" . }}

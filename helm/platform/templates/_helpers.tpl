@@ -13,7 +13,7 @@
 {{- define "labels" -}}
 prefix:  {{ .Values.prefix }}
 product: {{ .Values.product }}
-color:   {{ .Values.color }}
+colour:   {{ .Values.colour }}
 {{- end -}}
 
 # subdomain returns the public subdomain for this product.
