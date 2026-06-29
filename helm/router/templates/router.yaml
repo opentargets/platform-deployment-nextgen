@@ -1,5 +1,5 @@
-{{- $activeColor := .Values.activeColor }}
-{{- $inactiveColor := ternary "green" "blue" (eq .Values.activeColor "blue") }}
+{{- $activeColour := .Values.activeColour }}
+{{- $inactiveColour := ternary "green" "blue" (eq .Values.activeColour "blue") }}
 {{- $namespace := .Values.namespace }}
 ---
 apiVersion: v1
@@ -10,7 +10,7 @@ metadata:
 spec:
   selector:
     app: webapp
-    color: {{ $activeColor }}
+    colour: {{ $activeColour }}
   ports:
     - port: 8080
       targetPort: 8080
@@ -26,7 +26,7 @@ metadata:
 spec:
   selector:
     app: api
-    color: {{ $activeColor }}
+    colour: {{ $activeColour }}
   ports:
     - port: 8080
       targetPort: 8081
@@ -42,7 +42,7 @@ metadata:
 spec:
   selector:
     app: webapp
-    color: {{ $inactiveColor }}
+    colour: {{ $inactiveColour }}
   ports:
     - port: 8080
       targetPort: 8080
@@ -58,7 +58,7 @@ metadata:
 spec:
   selector:
     app: api
-    color: {{ $inactiveColor }}
+    colour: {{ $inactiveColour }}
   ports:
     - port: 8080
       targetPort: 8081
