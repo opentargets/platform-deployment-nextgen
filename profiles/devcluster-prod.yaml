@@ -1,5 +1,5 @@
 gcpProject: open-targets-eu-dev
-prefix: devcluster-green
+prefix: devcluster-prod
 product: platform
 domain: opentargets.xyz
 dnsZone: opentargets-xyz
@@ -8,7 +8,6 @@ googleTagManagerId: GTM-XXXXXXX
 
 gcp:
   enabled: true
-  ingress: false
 
 release: "26.03"
 webapp:

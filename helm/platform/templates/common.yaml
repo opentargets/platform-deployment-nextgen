@@ -105,7 +105,7 @@ spec:
                 port:
                   number: {{ include "ports.http" . }}
     {{- end }}
-    {{- if eq $product "platform" }}
+    {{- if and (eq $product "platform") (not .Values.subdomainPrefix) }}
     # Entries for old genetics app redirection (production platform only).
     - host: genetics.{{ $domain }}
       http:
@@ -226,7 +226,7 @@ spec:
       namespace: {{ $namespace }}
 
 
-{{- if eq $product "platform" }}
+{{- if and (eq $product "platform") (not .Values.subdomainPrefix) }}
 ---
 # DNSRecordSet type A for {{ $namespace }} old genetics app.
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
@@ -281,7 +281,7 @@ spec:
     - www.{{ $subdomain }}
     - api.{{ $subdomain }}
     - ai.{{ $subdomain }}
-    {{- if eq $product "platform" }}
+    {{- if and (eq $product "platform") (not .Values.subdomainPrefix) }}
     - genetics.{{ $domain }}
     - www.genetics.{{ $domain }}
     {{- end }}
@@ -302,7 +302,7 @@ spec:
     - www.{{ $subdomain }}
     - api.{{ $subdomain }}
     - ai.{{ $subdomain }}
-    {{- if eq $product "platform" }}
+    {{- if and (eq $product "platform") (not .Values.subdomainPrefix) }}
     - genetics.{{ $domain }}
     - www.genetics.{{ $domain }}
     {{- end }}

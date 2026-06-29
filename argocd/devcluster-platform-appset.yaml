@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: devcluster-platform
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: prod
+          - env: staging
+  template:
+    metadata:
+      name: devcluster-platform-{{ env }}
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+        targetRevision: argocd
+        path: helm/platform
+        helm:
+          valueFiles:
+            - /profiles/devcluster-{{ env }}.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: devcluster-{{ env }}-platform
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true

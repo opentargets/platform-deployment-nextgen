@@ -8,7 +8,6 @@ googleTagManagerId: GTM-XXXXXXX
 
 gcp:
   enabled: true
-  ingress: true
 
 release: "26.03"
 webapp:

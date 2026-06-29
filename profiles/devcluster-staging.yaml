@@ -1,14 +1,14 @@
 gcpProject: open-targets-eu-dev
-prefix: devcluster-blue
+prefix: devcluster-staging
 product: platform
 domain: opentargets.xyz
 dnsZone: opentargets-xyz
+subdomainPrefix: staging
 
 googleTagManagerId: GTM-XXXXXXX
 
 gcp:
   enabled: true
-  ingress: false
 
 release: "26.03"
 webapp:

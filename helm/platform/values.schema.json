@@ -41,9 +41,6 @@
         "enabled": {
           "type": "boolean",
           "description": "When false, skips GCP-native resources (Config Connector, ManagedCertificate, SecretProviderClass, VolumeSnapshot) for local testing."
-        },
-        "ingress": {
-          "type": "boolean"
         }
       },
       "required": ["enabled"],
