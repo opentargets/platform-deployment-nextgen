@@ -1,0 +1,4 @@
+gcp:
+  enabled: false
+aiapi:
+  enabled: false

@@ -56,7 +56,10 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    - from: []
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              role: router
       ports:
         - protocol: TCP
           port: {{ include "ports.http" . }}

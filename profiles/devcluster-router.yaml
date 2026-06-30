@@ -1,0 +1,10 @@
+activeColour: blue
+envPrefix: devcluster
+product: platform
+domain: opentargets.xyz
+dnsZone: opentargets-xyz
+gcpProject: open-targets-eu-dev
+gcp:
+  enabled: true
+aiapi:
+  enabled: true
