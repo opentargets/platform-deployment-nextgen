@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
-    targetRevision: argocd
+    targetRevision: argocd-nginx-router
     path: helm/router
     helm:
       valueFiles:
