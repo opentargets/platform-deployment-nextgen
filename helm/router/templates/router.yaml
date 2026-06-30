@@ -1,7 +1,7 @@
-{{- $activeNamespace := printf "%s-%s-%s" .Values.envPrefix .Values.activeColor .Values.product }}
+{{- $activeNamespace := printf "%s-%s-%s" .Values.envPrefix .Values.activeColour .Values.product }}
 {{- $routerNamespace := printf "%s-%s" .Values.envPrefix .Values.product }}
-{{- $inactiveColor := ternary "green" "blue" (eq .Values.activeColor "blue") }}
-{{- $inactiveNamespace := printf "%s-%s-%s" .Values.envPrefix $inactiveColor .Values.product }}
+{{- $inactiveColour := ternary "green" "blue" (eq .Values.activeColour "blue") }}
+{{- $inactiveNamespace := printf "%s-%s-%s" .Values.envPrefix $inactiveColour .Values.product }}
 ---
 apiVersion: v1
 kind: Namespace
