@@ -93,7 +93,6 @@ spec:
                 name: {{ $namespace }}-api
                 port:
                   number: {{ include "ports.http" . }}
-    {{- if .Values.aiapi.enabled }}
     - host: ai.{{ $subdomain }}
       http:
         paths:
@@ -104,7 +103,6 @@ spec:
                 name: {{ $namespace }}-aiapi
                 port:
                   number: {{ include "ports.http" . }}
-    {{- end }}
     {{- if eq $product "platform" }}
     # Entries for old genetics app redirection (production platform only).
     - host: genetics.{{ $domain }}
@@ -424,7 +422,6 @@ spec:
                 name: {{ $namespace }}-api
                 port:
                   number: {{ include "ports.http" . }}
-    {{- if .Values.aiapi.enabled }}
     - host: ai.{{ $subdomain }}
       http:
         paths:
@@ -435,6 +432,5 @@ spec:
                 name: {{ $namespace }}-aiapi
                 port:
                   number: {{ include "ports.http" . }}
-    {{- end }}
 {{- end }}
 {{- end }}

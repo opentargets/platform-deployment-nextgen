@@ -1,4 +1,4 @@
 gcp:
   enabled: false
-aiapi:
-  enabled: false
+security:
+  rateLimiterWhitelist: []

@@ -16,7 +16,6 @@ webapp:
 api:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.0
 aiapi:
-  enabled: false
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
   secrets:
     openai: ""

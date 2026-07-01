@@ -7,10 +7,12 @@
 {{- $noCdnBackend := printf "%s-backendconfig-no-cdn" $routerNamespace }}
 
 {{- range list
-  (dict "name" "webapp-prod"    "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $activeNamespace $activeNamespace)   "backend" $cdnBackend)
-  (dict "name" "api-prod"       "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $activeNamespace $activeNamespace)      "backend" $noCdnBackend)
+  (dict "name" "webapp-prod"    "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $activeNamespace $activeNamespace)     "backend" $cdnBackend)
+  (dict "name" "api-prod"       "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $activeNamespace $activeNamespace)        "backend" $noCdnBackend)
   (dict "name" "webapp-staging" "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $inactiveNamespace $inactiveNamespace) "backend" $cdnBackend)
   (dict "name" "api-staging"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $inactiveNamespace $inactiveNamespace)    "backend" $noCdnBackend)
+  (dict "name" "aiapi-prod"     "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $activeNamespace $activeNamespace)      "backend" $noCdnBackend)
+  (dict "name" "aiapi-staging"  "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $inactiveNamespace $inactiveNamespace)  "backend" $noCdnBackend)
 }}
 ---
 apiVersion: v1
@@ -22,9 +24,26 @@ data:
   nginx.conf: |
     events {}
     http {
+      geo $real_client_ip $limit {
+        default 1;
+        {{- range $ip := $.Values.security.rateLimiterWhitelist }}
+        {{ $ip }} 0;
+        {{- end }}
+      }
+      map $http_x_forwarded_for $real_client_ip {
+        ~^(\S+),\s  $1;
+        default     $http_x_forwarded_for;
+      }
+      map $limit $limit_key {
+        0 "";
+        1 $real_client_ip;
+      }
+      limit_req_zone $limit_key zone=api_limit:10m rate=40r/s;
       server {
         listen 8080;
         location / {
+          limit_req zone=api_limit burst=80 nodelay;
+          limit_req_status 429;
           proxy_pass http://{{ .upstream }};
           proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
@@ -84,83 +103,6 @@ spec:
   type: ClusterIP
 {{- end }}
 
-{{- if .Values.aiapi.enabled }}
-{{- range list
-  (dict "name" "aiapi-prod"    "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $activeNamespace $activeNamespace))
-  (dict "name" "aiapi-staging" "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $inactiveNamespace $inactiveNamespace))
-}}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .name }}-proxy-config
-  namespace: {{ $routerNamespace }}
-data:
-  nginx.conf: |
-    events {}
-    http {
-      server {
-        listen 8080;
-        location / {
-          proxy_pass http://{{ .upstream }};
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-        }
-      }
-    }
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ .name }}-proxy
-  namespace: {{ $routerNamespace }}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: {{ .name }}-proxy
-  template:
-    metadata:
-      annotations:
-        checksum/config: "{{ .upstream | sha256sum }}"
-      labels:
-        app: {{ .name }}-proxy
-    spec:
-      containers:
-        - name: nginx
-          image: nginx:alpine
-          ports:
-            - containerPort: 8080
-          volumeMounts:
-            - name: config
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-      volumes:
-        - name: config
-          configMap:
-            name: {{ .name }}-proxy-config
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .name }}
-  namespace: {{ $routerNamespace }}
-  {{- if $.Values.gcp.enabled }}
-  annotations:
-    cloud.google.com/neg: '{"ingress": true}'
-    cloud.google.com/backend-config: '{"default": "{{ $noCdnBackend }}"}'
-  {{- end }}
-spec:
-  selector:
-    app: {{ .name }}-proxy
-  ports:
-    - port: 8080
-      targetPort: 8080
-  type: ClusterIP
-{{- end }}
-{{- end }}
 
 {{- if not .Values.gcp.enabled }}
 ---
@@ -214,7 +156,6 @@ spec:
                 name: api-staging
                 port:
                   number: 8080
-    {{- if .Values.aiapi.enabled }}
     - host: ai.platform.{{ .Values.domain }}
       http:
         paths:
@@ -235,5 +176,4 @@ spec:
                 name: aiapi-staging
                 port:
                   number: 8080
-    {{- end }}
 {{- end }}

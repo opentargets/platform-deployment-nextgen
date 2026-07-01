@@ -1,5 +1,4 @@
 {{ define "deployment.aiapi" }}
-{{- if .Values.aiapi.enabled }}
 {{- $namespace := include "prefix-product" . }}
 {{- $labels := include "labels" . }}
 {{- $subdomain := include "subdomain" . }}
@@ -294,5 +293,4 @@ spec:
             secretName: {{ $namespace }}-aiapi-openai-token
           {{- end }}
       {{- end }}
-{{- end }}
 {{- end }}

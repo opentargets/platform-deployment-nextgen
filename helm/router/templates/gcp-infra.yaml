@@ -58,7 +58,6 @@ spec:
     - kind: ComputeAddress
       name: {{ $routerNamespace }}-computeaddress-global
       namespace: {{ $routerNamespace }}
-{{- if .Values.aiapi.enabled }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
@@ -75,7 +74,6 @@ spec:
     - kind: ComputeAddress
       name: {{ $routerNamespace }}-computeaddress-global
       namespace: {{ $routerNamespace }}
-{{- end }}
 {{- if eq .Values.product "platform" }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
@@ -154,7 +152,6 @@ spec:
     - kind: ComputeAddress
       name: {{ $routerNamespace }}-computeaddress-global
       namespace: {{ $routerNamespace }}
-{{- if .Values.aiapi.enabled }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
@@ -171,7 +168,6 @@ spec:
     - kind: ComputeAddress
       name: {{ $routerNamespace }}-computeaddress-global
       namespace: {{ $routerNamespace }}
-{{- end }}
 ---
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
@@ -183,15 +179,11 @@ spec:
     - {{ $prodSubdomain }}
     - www.{{ $prodSubdomain }}
     - api.{{ $prodSubdomain }}
-    {{- if .Values.aiapi.enabled }}
     - ai.{{ $prodSubdomain }}
-    {{- end }}
     - {{ $stagingSubdomain }}
     - www.{{ $stagingSubdomain }}
     - api.{{ $stagingSubdomain }}
-    {{- if .Values.aiapi.enabled }}
     - ai.{{ $stagingSubdomain }}
-    {{- end }}
     {{- if eq .Values.product "platform" }}
     - genetics.{{ .Values.domain }}
     - www.genetics.{{ .Values.domain }}
@@ -207,15 +199,11 @@ spec:
     - {{ $prodSubdomain }}
     - www.{{ $prodSubdomain }}
     - api.{{ $prodSubdomain }}
-    {{- if .Values.aiapi.enabled }}
     - ai.{{ $prodSubdomain }}
-    {{- end }}
     - {{ $stagingSubdomain }}
     - www.{{ $stagingSubdomain }}
     - api.{{ $stagingSubdomain }}
-    {{- if .Values.aiapi.enabled }}
     - ai.{{ $stagingSubdomain }}
-    {{- end }}
     {{- if eq .Values.product "platform" }}
     - genetics.{{ .Values.domain }}
     - www.genetics.{{ .Values.domain }}
@@ -312,7 +300,6 @@ spec:
                 name: api-prod
                 port:
                   number: 8080
-    {{- if .Values.aiapi.enabled }}
     - host: ai.{{ $prodSubdomain }}
       http:
         paths:
@@ -323,7 +310,6 @@ spec:
                 name: aiapi-prod
                 port:
                   number: 8080
-    {{- end }}
     {{- if eq .Values.product "platform" }}
     - host: genetics.{{ .Values.domain }}
       http:
@@ -376,7 +362,6 @@ spec:
                 name: api-staging
                 port:
                   number: 8080
-    {{- if .Values.aiapi.enabled }}
     - host: ai.{{ $stagingSubdomain }}
       http:
         paths:
@@ -387,5 +372,4 @@ spec:
                 name: aiapi-staging
                 port:
                   number: 8080
-    {{- end }}
 {{- end }}

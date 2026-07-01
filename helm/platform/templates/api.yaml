@@ -54,7 +54,7 @@ spec:
 
 ---
 # NetworkPolicy for {{ $namespace }} API.
-# Allows ingress from all sources to the proxy port (API is browser-called).
+# Allows ingress from all sources to the http port (API is browser-called).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -76,7 +76,7 @@ spec:
               role: router
       ports:
         - protocol: TCP
-          port: {{ include "ports.apiproxy" . }}
+          port: {{ include "ports.http" . }}
 
 
 ---
@@ -128,56 +128,6 @@ spec:
     matchLabels:
       app: api
 
-
----
-# ConfigMap for {{ $namespace }} API rate-limiter nginx sidecar.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ $namespace }}-nginx-config
-  namespace: {{ $namespace }}
-data:
-  nginx.conf: |
-    worker_processes auto;
-    events {
-      worker_connections 4096;
-    }
-    http {
-      include /etc/nginx/conf.d/*.conf;
-    }
-  default.conf: |
-    geo $real_client_ip $limit {
-      default 1;
-      {{- range $ip := .Values.security.rateLimiterWhitelist }}
-      {{ $ip }} 0;
-      {{- end }}
-    }
-
-    map $http_x_forwarded_for $real_client_ip {
-      ~^(\S+),\s  $1;
-      default     $http_x_forwarded_for;
-    }
-
-    map $limit $limit_key {
-      0 "";
-      1 $real_client_ip;
-    }
-
-    limit_req_zone $limit_key zone=api_limit:10m rate=40r/s;
-    server {
-      listen {{ include "ports.apiproxy" . }};
-      location /nginx-health {
-        access_log off;
-        return 200;
-      }
-      location / {
-        limit_req zone=api_limit burst=80 nodelay;
-        limit_req_status 429;
-        proxy_pass http://127.0.0.1:{{ include "ports.http" . }};
-      }
-    }
-
-
 ---
 # API Deployment for {{ $namespace }}.
 apiVersion: apps/v1
@@ -221,25 +171,6 @@ spec:
               topologyKey: kubernetes.io/hostname
       {{- end }}
       containers:
-        - name: nginx-ratelimit
-          image: nginx:alpine
-          ports:
-            - containerPort: {{ include "ports.apiproxy" . }}
-              name: apiproxy
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-            - name: nginx-config
-              mountPath: /etc/nginx/conf.d/default.conf
-              subPath: default.conf
-          resources:
-            requests:
-              cpu: 20m
-              memory: 32Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
         - name: api
           image: {{ .Values.api.image }}
           ports:
@@ -294,8 +225,4 @@ spec:
             failureThreshold: 3
           securityContext:
             allowPrivilegeEscalation: false
-      volumes:
-        - name: nginx-config
-          configMap:
-            name: {{ $namespace }}-nginx-config
 {{- end }}

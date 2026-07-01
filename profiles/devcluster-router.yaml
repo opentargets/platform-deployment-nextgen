@@ -6,5 +6,3 @@ dnsZone: opentargets-xyz
 gcpProject: open-targets-eu-dev
 gcp:
   enabled: true
-aiapi:
-  enabled: true

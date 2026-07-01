@@ -52,7 +52,7 @@ spec:
     app: api
   ports:
     - port: {{ include "ports.http" . }}
-      targetPort: {{ include "ports.apiproxy" . }}
+      targetPort: {{ include "ports.http" . }}
       protocol: TCP
       name: api
   type: NodePort
@@ -60,7 +60,6 @@ spec:
 
 
 {{ define "service.aiapi" }}
-{{- if .Values.aiapi.enabled }}
 {{- $namespace := include "prefix-product" . }}
 {{- $labels := include "labels" . }}
 ---
@@ -87,7 +86,6 @@ spec:
       protocol: TCP
       name: aiapi
   type: NodePort
-{{- end }}
 {{- end }}
 
 
