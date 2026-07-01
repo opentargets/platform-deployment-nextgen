@@ -18,7 +18,7 @@ api:
 aiapi:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
   secrets:
-    openai: ""
+    openai: "dummy"
 clickhouse:
   image: clickhouse/clickhouse-server:25.8.18.1
   snapshot: "" # no snapshot init locally; starts with an empty volume
