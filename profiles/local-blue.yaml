@@ -40,10 +40,10 @@ resources:
     minReplicas: 1
     maxReplicas: 1
     requests:
-      memory: 512Mi
+      memory: 256Mi
       cpu: 200m
     limits:
-      memory: 1Gi
+      memory: 512Mi
       cpu: 1000m
   aiapi:
     minReplicas: 1
@@ -56,22 +56,22 @@ resources:
       cpu: 500m
   clickhouse:
     replicas: 1
-    storageSize: 10Gi
+    storageSize: 1Gi
     requests:
-      memory: 1Gi
+      memory: 512Mi
       cpu: 100m
     limits:
-      memory: 2Gi
+      memory: 1Gi
       cpu: 500m
   opensearch:
     replicas: 1
-    storageSize: 10Gi
-    heapSize: 512m
+    storageSize: 1Gi
+    heapSize: 256m
     requests:
-      memory: 768Mi
+      memory: 512Mi
       cpu: 100m
     limits:
-      memory: 2Gi
+      memory: 1Gi
       cpu: 500m
 
 security:
