@@ -46,6 +46,8 @@ spec:
       app: {{ .name }}-proxy
   template:
     metadata:
+      annotations:
+        checksum/config: "{{ .upstream | sha256sum }}"
       labels:
         app: {{ .name }}-proxy
     spec:
@@ -121,6 +123,8 @@ spec:
       app: {{ .name }}-proxy
   template:
     metadata:
+      annotations:
+        checksum/config: "{{ .upstream | sha256sum }}"
       labels:
         app: {{ .name }}-proxy
     spec:
