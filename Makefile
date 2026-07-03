@@ -2,7 +2,7 @@
 	deploy-chart-dev-platform deploy-chart-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
 	deploy-observability-dev deploy-observability-prod \
 	port-forward-prometheus port-forward-grafana \
-	create-cluster-local delete-cluster-local tunnel-local deploy-chart-local \
+	create-cluster-local delete-cluster-local tunnel-local refresh-secrets-local \
 	help
 
 help:
@@ -24,8 +24,9 @@ help:
 	@echo
 	@echo "  create-cluster-local       - MINK — Create a local minikube cluster with nginx ingress"
 	@echo "  delete-cluster-local       - MINK — Delete the local minikube cluster"
-	@echo "  tunnel-local               - MINK — Run minikube tunnel (sudo, foreground) to expose ingress on platform.localhost"
-	@echo "  deploy-chart-local         - HELM — Deploy the platform chart to the local minikube cluster"
+	@echo "  tunnel-local               - MINK — Run minikube tunnel to expose ingress on platform.localhost"
+	@echo "  refresh-secrets-local      - MINK — Refresh the GCR pull secret for the local minikube cluster"
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Terraform
@@ -120,14 +121,23 @@ create-cluster-local:
 	minikube start --driver=docker --cpus=max --memory=max
 	minikube addons enable ingress
 	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
-	kubectl create namespace local-platform
-	kubectl label namespace local-platform app.kubernetes.io/managed-by=Helm
-	kubectl annotate namespace local-platform meta.helm.sh/release-name=local-platform meta.helm.sh/release-namespace=default
+	kubectl create namespace argocd
+	kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	kubectl wait --namespace argocd --for=condition=ready pod --selector=app.kubernetes.io/name=argocd-server --timeout=300s
+	kubectl create namespace local-blue-platform
+	kubectl create namespace local-green-platform
 	kubectl create secret docker-registry gcr-pull-secret \
 		--docker-server=europe-west1-docker.pkg.dev \
 		--docker-username=oauth2accesstoken \
 		--docker-password="$$(gcloud auth print-access-token)" \
-		--namespace=local-platform
+		--namespace=local-blue-platform
+	kubectl create secret docker-registry gcr-pull-secret \
+		--docker-server=europe-west1-docker.pkg.dev \
+		--docker-username=oauth2accesstoken \
+		--docker-password="$$(gcloud auth print-access-token)" \
+		--namespace=local-green-platform
+	kubectl apply -f ./argocd/local-platform-router.yaml
+	kubectl apply -f ./argocd/local-platform-appset.yaml
 
 delete-cluster-local:
 	minikube delete
@@ -135,7 +145,16 @@ delete-cluster-local:
 tunnel-local:
 	minikube tunnel
 
-deploy-chart-local:
-	helm diff upgrade --allow-unreleased local-platform ./helm/platform -f ./profiles/local.yaml; \
-	read -p "press enter to continue..." nothing; \
-	helm upgrade --install local-platform ./helm/platform -f ./profiles/local.yaml
+refresh-secrets-local:
+	kubectl delete secret gcr-pull-secret --namespace=local-blue-platform --ignore-not-found
+	kubectl delete secret gcr-pull-secret --namespace=local-green-platform --ignore-not-found
+	kubectl create secret docker-registry gcr-pull-secret \
+		--docker-server=europe-west1-docker.pkg.dev \
+		--docker-username=oauth2accesstoken \
+		--docker-password="$$(gcloud auth print-access-token)" \
+		--namespace=local-blue-platform
+	kubectl create secret docker-registry gcr-pull-secret \
+		--docker-server=europe-west1-docker.pkg.dev \
+		--docker-username=oauth2accesstoken \
+		--docker-password="$$(gcloud auth print-access-token)" \
+		--namespace=local-green-platform
