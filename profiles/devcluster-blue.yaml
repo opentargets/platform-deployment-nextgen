@@ -10,11 +10,11 @@ gcp:
   enabled: true
   ingress: false
 
-release: "26.06"
+release: "26.03"
 webapp:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.16.6
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
 api:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.6.0
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.2-dev.4156.4
 aiapi:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
   gcpServiceAccount: devcluster-platform-aiapi
@@ -22,10 +22,10 @@ aiapi:
     openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
 clickhouse:
   image: clickhouse/clickhouse-server:25.8.18.1
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2606-ch
+  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch
 opensearch:
   image: opensearchproject/opensearch:3.5.0
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2606-os
+  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-os
 
 resources:
   webapp:
