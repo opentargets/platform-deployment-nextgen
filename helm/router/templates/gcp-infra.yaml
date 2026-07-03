@@ -240,6 +240,10 @@ metadata:
   name: {{ $routerNamespace }}-backendconfig-no-cdn
   namespace: {{ $routerNamespace }}
 spec:
+  healthCheck:
+    requestPath: /health
+    port: 8080
+    type: HTTP
   customResponseHeaders:
     headers:
       - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"

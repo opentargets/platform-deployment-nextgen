@@ -79,6 +79,10 @@ spec:
             - name: config
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sleep", "15"]
       volumes:
         - name: config
           configMap:
