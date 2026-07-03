@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devcluster-platform-router
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+    targetRevision: argocd-nginx-router
+    path: helm/router
+    helm:
+      valueFiles:
+        - /profiles/devcluster-router.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devcluster-platform
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
