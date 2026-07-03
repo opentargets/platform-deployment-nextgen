@@ -109,7 +109,7 @@ metadata:
     {{- $labels | nindent 4 }}
   {{- if .Values.gcp.enabled }}
   annotations:
-    iam.gke.io/gcp-service-account: {{ $namespace }}-aiapi@{{ .Values.gcpProject }}.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: {{ .Values.aiapi.gcpServiceAccount }}@{{ .Values.gcpProject }}.iam.gserviceaccount.com
   {{- end }}
 
 {{- if .Values.gcp.enabled }}
