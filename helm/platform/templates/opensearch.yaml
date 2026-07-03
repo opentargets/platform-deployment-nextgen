@@ -110,14 +110,14 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotContent
 metadata:
-  name: {{ $namespace }}-opensearch
+  name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
 spec:
   deletionPolicy: Retain
   driver: pd.csi.storage.gke.io
   source:
     snapshotHandle: {{ $os.snapshot }}
   volumeSnapshotRef:
-    name: {{ $namespace }}-opensearch
+    name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
     namespace: {{ $namespace }}
 
 
@@ -126,14 +126,30 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
-  name: {{ $namespace }}-opensearch
+  name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
   namespace: {{ $namespace }}
 spec:
   source:
-    volumeSnapshotContentName: {{ $namespace }}-opensearch
+    volumeSnapshotContentName: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
 {{- end }}
 
-
+---
+# PersistentVolumeClaim for {{ $namespace }} OpenSearch.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
+  namespace: {{ $namespace }}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: hyperdisk-balanced
+  dataSource:
+    name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+  resources:
+      requests:
+        storage: {{ $osRes.storageSize | quote }}
 ---
 # StatefulSet for {{ $namespace }} OpenSearch.
 apiVersion: apps/v1
@@ -261,29 +277,15 @@ spec:
             periodSeconds: 20
             failureThreshold: 6
       volumes:
+        - name: data
+          {{- if and .Values.gcp.enabled $os.snapshot }}
+          persistentVolumeClaim:
+            claimName: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         - name: logs
           emptyDir: {}
         - name: plugins
           emptyDir: {}
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        {{- if .Values.gcp.enabled }}
-        storageClassName: hyperdisk-balanced
-        {{- if $os.snapshot }}
-        dataSource:
-          name: {{ $namespace }}-opensearch
-          kind: VolumeSnapshot
-          apiGroup: snapshot.storage.k8s.io
-        {{- end }}
-        {{- end }}
-        resources:
-          requests:
-            storage: {{ $osRes.storageSize | quote }}
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: Delete
-    whenScaled: Delete
 {{- end }}

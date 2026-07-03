@@ -125,14 +125,14 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotContent
 metadata:
-  name: {{ $namespace }}-clickhouse
+  name: {{ $namespace }}-clickhouse-{{ $ch.snapshot | sha256sum | trunc 8 }}
 spec:
   deletionPolicy: Retain
   driver: pd.csi.storage.gke.io
   source:
     snapshotHandle: {{ $ch.snapshot }}
   volumeSnapshotRef:
-    name: {{ $namespace }}-clickhouse
+    name: {{ $namespace }}-clickhouse-{{ $ch.snapshot | sha256sum | trunc 8 }}
     namespace: {{ $namespace }}
 
 
@@ -141,14 +141,30 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
-  name: {{ $namespace }}-clickhouse
+  name: {{ $namespace }}-clickhouse-{{ $ch.snapshot | sha256sum | trunc 8 }}
   namespace: {{ $namespace }}
 spec:
   source:
-    volumeSnapshotContentName: {{ $namespace }}-clickhouse
+    volumeSnapshotContentName: {{ $namespace }}-clickhouse-{{ $ch.snapshot | sha256sum | trunc 8 }}
 {{- end }}
 
-
+---
+# PersistentVolumeClaim for {{ $namespace }} ClickHouse.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $namespace }}-clickhouse-{{ $ch.snapshot | sha256sum | trunc 8 }}
+  namespace: {{ $namespace }}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: hyperdisk-balanced
+  dataSource:
+    name: {{ $namespace }}-clickhouse-{{ $ch.snapshot | sha256sum | trunc 8 }}
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+  resources:
+      requests:
+        storage: {{ $chRes.storageSize | quote }}
 ---
 # StatefulSet for {{ $namespace }} ClickHouse.
 apiVersion: apps/v1
@@ -248,30 +264,16 @@ spec:
             failureThreshold: 3
             successThreshold: 1
       volumes:
+        - name: data
+          {{- if and .Values.gcp.enabled $ch.snapshot }}
+          persistentVolumeClaim:
+            claimName: {{ $namespace }}-clickhouse-{{ $ch.snapshot | sha256sum | trunc 8 }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         - name: tmp
           emptyDir: {}
         - name: config
           configMap:
             name: {{ $namespace }}-clickhouse-config
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        {{- if .Values.gcp.enabled }}
-        storageClassName: hyperdisk-balanced
-        {{- if $ch.snapshot }}
-        dataSource:
-          name: {{ $namespace }}-clickhouse
-          kind: VolumeSnapshot
-          apiGroup: snapshot.storage.k8s.io
-        {{- end }}
-        {{- end }}
-        resources:
-          requests:
-            storage: {{ $chRes.storageSize | quote }}
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: Delete
-    whenScaled: Delete
 {{- end }}
