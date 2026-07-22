@@ -25,6 +25,12 @@ apps_machine_type   = "c4d-standard-4"
 apps_disk_size_gb   = 64
 apps_labels         = {}
 
+# OBSERVABILITY VARIABLES
+observability_machine_type   = "c4d-standard-4"
+observability_min_node_count = 1
+observability_max_node_count = 2
+observability_disk_size_gb   = 30
+
 # CLICKHOUSE VARIABLES
 clickhouse_machine_type   = "c4d-standard-4"
 clickhouse_min_node_count = 1

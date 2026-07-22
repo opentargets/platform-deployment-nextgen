@@ -77,6 +77,26 @@ variable "apps_labels" {
   type        = map(string)
 }
 
+# OBSERVABILITY VARIABLES
+variable "observability_min_node_count" {
+  description = "The minimum (and initial) number of nodes in the Observability node pool"
+  type        = number
+}
+
+variable "observability_max_node_count" {
+  description = "The maximum number of nodes in the Observability node pool"
+  type        = number
+}
+
+variable "observability_machine_type" {
+  description = "The machine type to use for the Observability nodes"
+  type        = string
+}
+
+variable "observability_disk_size_gb" {
+  description = "The disk size in GB for each node in the observability node pool"
+  type        = number
+}
 
 # CLICKHOUSE VARIABLES
 variable "clickhouse_machine_type" {

@@ -1,12 +1,40 @@
 prometheus:
   alertmanager:
     enabled: false
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
   server:
     persistentVolume:
       enabled: true
       size: 30Gi
       storageClass: hyperdisk-balanced
     retention: 30d
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
 
   serverFiles:
     prometheus.yml:
@@ -24,11 +52,7 @@ prometheus:
           bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
           relabel_configs:
             - source_labels:
-                [
-                  __meta_kubernetes_namespace,
-                  __meta_kubernetes_service_name,
-                  __meta_kubernetes_endpoint_port_name,
-                ]
+                [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
               action: keep
               regex: default;kubernetes;https
 
@@ -73,29 +97,21 @@ prometheus:
           relabel_configs:
             - source_labels: [__meta_kubernetes_endpoint_node_name]
               target_label: nodename
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
               action: keep
               regex: true
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scrape_slow]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape_slow]
               action: drop
               regex: true
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
               action: replace
               target_label: __scheme__
               regex: (https?)
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_path]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
               regex: (.+)
-            - source_labels:
-                [
-                  __address__,
-                  __meta_kubernetes_service_annotation_prometheus_io_port,
-                ]
+            - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
               action: replace
               target_label: __address__
               regex: (.+?)(?::\d+)?;(\d+)
@@ -121,25 +137,18 @@ prometheus:
           kubernetes_sd_configs:
             - role: endpoints
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scrape_slow]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape_slow]
               action: keep
               regex: true
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
               action: replace
               target_label: __scheme__
               regex: (https?)
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_path]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
               regex: (.+)
-            - source_labels:
-                [
-                  __address__,
-                  __meta_kubernetes_service_annotation_prometheus_io_port,
-                ]
+            - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
               action: replace
               target_label: __address__
               regex: (.+?)(?::\d+)?;(\d+)
@@ -168,8 +177,7 @@ prometheus:
           kubernetes_sd_configs:
             - role: service
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_probe]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
               action: keep
               regex: pushgateway
 
@@ -181,8 +189,7 @@ prometheus:
           kubernetes_sd_configs:
             - role: service
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_probe]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
               action: keep
               regex: true
             - source_labels: [__address__]
@@ -203,38 +210,26 @@ prometheus:
           kubernetes_sd_configs:
             - role: pod
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
               action: keep
               regex: true
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
               action: drop
               regex: true
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
               action: replace
               regex: (https?)
               target_label: __scheme__
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
               regex: (.+)
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_annotation_prometheus_io_port,
-                  __meta_kubernetes_pod_ip,
-                ]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
               action: replace
               regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
-              replacement: "[$2]:$1"
+              replacement: '[$2]:$1'
               target_label: __address__
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_annotation_prometheus_io_port,
-                  __meta_kubernetes_pod_ip,
-                ]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
               action: replace
               regex: (\d+);((([0-9]+?)(\.|$)){4})
               replacement: $2:$1
@@ -264,34 +259,23 @@ prometheus:
           kubernetes_sd_configs:
             - role: pod
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
               action: keep
               regex: true
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
               action: replace
               regex: (https?)
               target_label: __scheme__
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
               regex: (.+)
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_annotation_prometheus_io_port,
-                  __meta_kubernetes_pod_ip,
-                ]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
               action: replace
               regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
-              replacement: "[$2]:$1"
+              replacement: '[$2]:$1'
               target_label: __address__
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_annotation_prometheus_io_port,
-                  __meta_kubernetes_pod_ip,
-                ]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
               action: replace
               regex: (\d+);((([0-9]+?)(\.|$)){4})
               replacement: $2:$1
@@ -315,8 +299,22 @@ prometheus:
               target_label: node
 
 grafana:
+  tolerations:
+    - key: 'workload'
+      operator: 'Equal'
+      value: 'observability'
+      effect: 'NoSchedule'
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: pool
+                operator: In
+                values:
+                  - observability
   env:
-    TZ: "Europe/London"
+    TZ: 'Europe/London'
   sidecar:
     dashboards:
       enabled: true
@@ -326,12 +324,79 @@ grafana:
       label: grafana_datasource
 
 loki:
+  gateway:
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    nodeSelector:
+      pool: observability
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+  chunksCache:
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    nodeSelector:
+      pool: observability
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+  resultsCache:
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    nodeSelector:
+      pool: observability
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+  lokiCanary:
+    replicas: 1
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
   loki:
     commonConfig:
       replication_factor: 3
     schemaConfig:
       configs:
-        - from: "2024-04-01"
+        - from: '2024-04-01'
           store: tsdb
           object_store: gcs
           schema: v13
@@ -346,7 +411,11 @@ loki:
     limits_config:
       allow_structured_metadata: true
       volume_enabled: true
-
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
     ruler:
       enable_api: true
       storage_config:
@@ -375,6 +444,20 @@ loki:
     replicas: 3
     persistence:
       storageClass: hyperdisk-balanced
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
 
   # Zero out replica counts of other deployment modes
   backend:
@@ -421,7 +504,7 @@ alloy:
     initContainers:
       - name: geoip-init
         image: gcr.io/google.com/cloudsdktool/cloud-sdk:567.0.0-stable
-        command: ["sh", "-c"]
+        command: ['sh', '-c']
         args:
           - |
             for i in {1..5}; do

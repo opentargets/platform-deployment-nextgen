@@ -158,6 +158,67 @@ resource "google_container_node_pool" "pools" {
   }
 }
 
+# OBSERVABILITY NODE POOL
+resource "google_container_node_pool" "observability" {
+  name               = "${var.global_prefix}-observability"
+  project            = var.project_id
+  location           = var.zone
+  cluster            = google_container_cluster.cluster.name
+  initial_node_count = 1
+
+  autoscaling {
+    min_node_count = var.observability_min_node_count
+    max_node_count = var.observability_max_node_count
+  }
+
+  node_config {
+    machine_type    = var.observability_machine_type
+    disk_type       = var.cluster_disk_type
+    disk_size_gb    = var.observability_disk_size_gb
+    image_type      = "COS_CONTAINERD"
+    service_account = google_service_account.node.email
+    labels          = merge(var.base_labels, var.cluster_labels, { pool = "observability" })
+    tags            = ["cluster", "node", "observability"]
+    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    boot_disk {
+      provisioned_iops       = strcontains(var.cluster_disk_type, "hyperdisk-") ? var.cluster_disk_iops : null
+      provisioned_throughput = strcontains(var.cluster_disk_type, "hyperdisk-") ? var.cluster_disk_throughput : null
+    }
+
+    taint {
+      key    = "workload"
+      value  = "observability"
+      effect = "NO_SCHEDULE"
+    }
+
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+  }
+
+  upgrade_settings {
+    strategy        = "SURGE"
+    max_surge       = 1
+    max_unavailable = 0
+  }
+
+  lifecycle {
+    ignore_changes = [
+      initial_node_count,
+    ]
+  }
+}
+
 # CLICKHOUSE NODE POOL
 resource "google_container_node_pool" "databases_clickhouse" {
   name               = "${var.global_prefix}-clickhouse"
