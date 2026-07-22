@@ -158,6 +158,67 @@ resource "google_container_node_pool" "pools" {
   }
 }
 
+# OPS NODE POOL
+resource "google_container_node_pool" "ops" {
+  name               = "${var.global_prefix}-ops"
+  project            = var.project_id
+  location           = var.zone
+  cluster            = google_container_cluster.cluster.name
+  initial_node_count = 1
+
+  autoscaling {
+    min_node_count = var.ops_min_node_count
+    max_node_count = var.ops_max_node_count
+  }
+
+  node_config {
+    machine_type    = var.ops_machine_type
+    disk_type       = var.cluster_disk_type
+    disk_size_gb    = var.ops_disk_size_gb
+    image_type      = "COS_CONTAINERD"
+    service_account = google_service_account.node.email
+    labels          = merge(var.base_labels, var.cluster_labels, { pool = "ops" })
+    tags            = ["cluster", "node", "ops"]
+    oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    boot_disk {
+      provisioned_iops       = strcontains(var.cluster_disk_type, "hyperdisk-") ? var.cluster_disk_iops : null
+      provisioned_throughput = strcontains(var.cluster_disk_type, "hyperdisk-") ? var.cluster_disk_throughput : null
+    }
+
+    taint {
+      key    = "workload"
+      value  = "ops"
+      effect = "NO_SCHEDULE"
+    }
+
+    shielded_instance_config {
+      enable_secure_boot          = true
+      enable_integrity_monitoring = true
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+  }
+
+  upgrade_settings {
+    strategy        = "SURGE"
+    max_surge       = 1
+    max_unavailable = 0
+  }
+
+  lifecycle {
+    ignore_changes = [
+      initial_node_count,
+    ]
+  }
+}
+
 # CLICKHOUSE NODE POOL
 resource "google_container_node_pool" "databases_clickhouse" {
   name               = "${var.global_prefix}-clickhouse"
@@ -363,6 +424,8 @@ resource "google_storage_bucket" "loki_chunks" {
   name     = "${var.global_prefix}-loki-gcp-chunks"
   location = var.region
 
+  force_destroy = true
+
   lifecycle_rule {
     condition {
       age = 30
@@ -379,6 +442,8 @@ resource "google_storage_bucket" "loki_chunks" {
 resource "google_storage_bucket" "loki_ruler" {
   name     = "${var.global_prefix}-loki-gcp-ruler"
   location = var.region
+
+  force_destroy = true
 
   lifecycle_rule {
     condition {
