@@ -76,7 +76,9 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -89,7 +91,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_replace((min(up{nodename!=''}) by (nodename) * max(up{nodename!=''}) by (nodename)),\n  \"short_node\",\n  \"$1\",\n  \"nodename\",\n  \".*-([^-]+)$\"\n)",
+          "expr": "label_replace((min(up{nodename!='', nodename!~\".*staging.*\"}) by (nodename) * max(up{nodename!='', nodename!~\".*staging.*\"}) by (nodename)),\n  \"short_node\",\n  \"$1\",\n  \"nodename\",\n  \".*-([^-]+)$\"\n)",
           "instant": true,
           "legendFormat": "{{ short_node }}",
           "range": false,
@@ -139,7 +141,9 @@
         "minVizWidth": 0,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -152,7 +156,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_replace(\n  (1 - avg by(node) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))),\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)",
+          "expr": "label_replace(\n  (1 - avg by(node) (rate(node_cpu_seconds_total{mode=\"idle\", nodename!~\".*staging.*\"}[5m]))),\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -204,7 +208,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -216,7 +222,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "label_replace(\n  (\n    (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)/node_memory_MemTotal_bytes\n    and on(nodename) (up @ end() == 1)\n  ),\n  \"short_node\",\n  \"$1\",\n  \"nodename\",\n  \".*-([^-]+)$\"\n)",
+          "expr": "label_replace(\n  (\n    (node_memory_MemTotal_bytes{nodename!~\".*staging.*\"} - node_memory_MemAvailable_bytes{nodename!~\".*staging.*\"})/node_memory_MemTotal_bytes{nodename!~\".*staging.*\"}\n    and on(nodename) (up @ end() == 1)\n  ),\n  \"short_node\",\n  \"$1\",\n  \"nodename\",\n  \".*-([^-]+)$\"\n)",
           "legendFormat": "{{short_node}}",
           "range": true,
           "refId": "A"
@@ -382,7 +388,9 @@
           "options": {
             "fields": {
               "Line": {
-                "aggregations": ["count"],
+                "aggregations": [
+                  "count"
+                ],
                 "operation": "groupby"
               }
             }
@@ -436,7 +444,9 @@
         "namePlacement": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "limit": 10,
           "values": true
@@ -449,9 +459,9 @@
       "targets": [
         {
           "disableTextWrap": false,
-          "editorMode": "builder",
+          "editorMode": "code",
           "exemplar": false,
-          "expr": "sort_desc(topk(10, sum by(query_name) (increase(platform_api_graphql_requests_total{node_environment=\"$environment\", query_name!=\"\"}[$__range]))))",
+          "expr": "sort_desc(topk(10, sum by(query_name) (increase(platform_api_graphql_requests_total{node_environment=\"production\", query_name!=\"\"}[$__range]))))",
           "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -590,7 +600,9 @@
         "namePlacement": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -677,7 +689,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "topk(5, count by(geoip_continent_code) (rate({container=\"api\"} |= `client_ip` | json | line_format `{{.geoip_country_code}}` [$__auto])))",
+          "expr": "topk(5, sum by(geoip_continent_code) (count_over_time({container=\"api\"} |= `client_ip` | json [$__auto])))",
           "legendFormat": "",
           "queryType": "instant",
           "refId": "A"
@@ -689,7 +701,9 @@
           "id": "filterFieldsByName",
           "options": {
             "include": {
-              "names": ["geoip_continent_code"]
+              "names": [
+                "geoip_continent_code"
+              ]
             }
           }
         },
@@ -758,7 +772,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -771,7 +787,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_replace(\n  jvm_memory_used_bytes{area=\"heap\", node_environment=\"$environment\"} / jvm_memory_max_bytes{area=\"heap\", node_environment=\"$environment\"},\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)\n",
+          "expr": "label_replace(\n  jvm_memory_used_bytes{area=\"heap\", node_environment=\"production\"} / jvm_memory_max_bytes{area=\"heap\", node_environment=\"production\"},\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)\n",
           "instant": true,
           "legendFormat": "{{ short_node }}",
           "range": false,
@@ -819,7 +835,9 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -832,7 +850,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "\n\nlabel_replace(\n  jvm_memory_max_bytes{area=\"heap\", node_environment=\"$environment\"},\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)\n",
+          "expr": "\n\nlabel_replace(\n  jvm_memory_max_bytes{area=\"heap\", node_environment=\"production\"},\n  \"short_node\",\n  \"$1\",\n  \"node\",\n  \".*-([^-]+)$\"\n)\n",
           "instant": true,
           "legendFormat": "{{ short_node }}",
           "range": false,
@@ -932,8 +950,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "label_replace(\n    irate(\n        process_cpu_seconds_total{app=\"api\"}[5m]) / on() group_left() count(node_cpu_seconds_total{mode=\"idle\"}\n    ) * 100,\n    \"instance_no_port\",\n    \"$1\",\n    \"instance\",\n    \"([^:]+):.*\"\n)",
-          "legendFormat": "{{instance_no_port}}",
+          "exemplar": false,
+          "expr": "label_replace(\n    irate(\n        process_cpu_seconds_total{app=\"api\",node_environment=\"production\"}[5m]) / on() group_left() count(node_cpu_seconds_total{mode=\"idle\",node_environment=\"production\"}\n    ) * 100,\n    \"instance_no_port\",\n    \"$1\",\n    \"instance\",\n    \"([^:]+):.*\"\n)",
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -1030,7 +1049,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "jvm_memory_used_bytes{area=\"heap\", node_environment=\"$environment\"} / jvm_memory_max_bytes{area=\"heap\", node_environment=\"$environment\"}",
+          "expr": "jvm_memory_used_bytes{area=\"heap\", node_environment=\"production\"} / jvm_memory_max_bytes{area=\"heap\", node_environment=\"production\"}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -1125,7 +1144,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by(instance)(rate(platform_api_graphql_requests_total{node_environment=\"$environment\"}[5m]))\n  and on(instance) up == 1",
+          "expr": "sum by(instance)(rate(platform_api_graphql_requests_total{node_environment=\"production\"}[5m]))\n  and on(instance) up == 1",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -1220,7 +1239,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (database)(rate(platform_api_db_query_total{node_environment=\"$environment\"}[5m]))",
+          "expr": "sum by (database)(rate(platform_api_db_query_total{node_environment=\"production\"}[5m]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -1296,7 +1315,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "topk(10,\n  (1 - \n    sum by(query_name) (rate(platform_api_cache_missed_total{query_name!=\"\", node_environment=\"$environment\"}[$__range]))\n    /\n    sum by(query_name) (rate(platform_api_graphql_requests_total{query_name!=\"\", node_environment=\"$environment\"}[$__range]))\n  ) * 100\n)",
+          "expr": "topk(10,\n  (1 - \n    sum by(query_name) (rate(platform_api_cache_missed_total{query_name!=\"\", node_environment=\"production\"}[$__range]))\n    /\n    sum by(query_name) (rate(platform_api_graphql_requests_total{query_name!=\"\", node_environment=\"production\"}[$__range]))\n  ) * 100\n)",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -1412,7 +1431,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(1 - \n  sum(rate(platform_api_cache_missed_total{node_environment=\"$environment\"}[5m]))\n  /\n  sum(rate(platform_api_graphql_requests_total{node_environment=\"$environment\"}[5m]))\n) * 100",
+          "expr": "(1 - \n  sum(rate(platform_api_cache_missed_total{node_environment=\"production\"}[5m]))\n  /\n  sum(rate(platform_api_graphql_requests_total{node_environment=\"production\"}[5m]))\n) * 100",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -1857,29 +1876,7 @@
   "schemaVersion": 42,
   "tags": [],
   "templating": {
-    "list": [
-      {
-        "current": {
-          "text": "staging",
-          "value": "staging"
-        },
-        "name": "environment",
-        "options": [
-          {
-            "selected": false,
-            "text": "production",
-            "value": "production"
-          },
-          {
-            "selected": true,
-            "text": "staging",
-            "value": "staging"
-          }
-        ],
-        "query": "production,staging",
-        "type": "custom"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-1h",
@@ -1889,5 +1886,5 @@
   "timezone": "browser",
   "title": "OT Dash",
   "uid": "dde21982-294c-47be-b5ee-032de07f75a6",
-  "version": 2
+  "version": 1
 }
