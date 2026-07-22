@@ -36,6 +36,51 @@ prometheus:
                   values:
                     - observability
 
+  prometheus-pushgateway:
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+    podAntiAffinity: soft
+    podAntiAffinityTopologyKey: kubernetes.io/hostname
+
+  kube-state-metrics:
+    nodeSelector:
+      pool: observability
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: kube-state-metrics
+                  app.kubernetes.io/instance: observability
+              topologyKey: kubernetes.io/hostname
+
   serverFiles:
     prometheus.yml:
       scrape_configs:
