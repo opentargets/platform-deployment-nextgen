@@ -36,6 +36,51 @@ prometheus:
                   values:
                     - observability
 
+  prometheus-pushgateway:
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+    podAntiAffinity: soft
+    podAntiAffinityTopologyKey: kubernetes.io/hostname
+
+  kube-state-metrics:
+    nodeSelector:
+      pool: observability
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: kube-state-metrics
+                  app.kubernetes.io/instance: observability
+              topologyKey: kubernetes.io/hostname
+
   serverFiles:
     prometheus.yml:
       scrape_configs:
@@ -349,6 +394,8 @@ grafana:
                 operator: In
                 values:
                   - observability
+  env:
+    TZ: 'Europe/London'
   sidecar:
     dashboards:
       enabled: true
@@ -411,6 +458,7 @@ loki:
     replicas: 1
     persistence:
       storageClass: hyperdisk-balanced
+      size: 12Gi
     tolerations:
       - key: 'workload'
         operator: 'Equal'
@@ -505,7 +553,7 @@ alloy:
               __path__  = "/var/log/syslog",
               job       = "node/syslog",
               node_name = sys.env("HOSTNAME"),
-              cluster   = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
+              cluster   = "dev_cluster",
           }]
         }
 
@@ -530,7 +578,7 @@ alloy:
 
           stage.static_labels {
               values = {
-                cluster = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
+                cluster = "dev_cluster",
                 log_source = "node_logs",
               }
           }

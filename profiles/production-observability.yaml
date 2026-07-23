@@ -36,6 +36,51 @@ prometheus:
                   values:
                     - observability
 
+  prometheus-pushgateway:
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+    podAntiAffinity: soft
+    podAntiAffinityTopologyKey: kubernetes.io/hostname
+
+  kube-state-metrics:
+    nodeSelector:
+      pool: observability
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'observability'
+        effect: 'NoSchedule'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: In
+                  values:
+                    - observability
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: kube-state-metrics
+                  app.kubernetes.io/instance: observability
+              topologyKey: kubernetes.io/hostname
+
   serverFiles:
     prometheus.yml:
       scrape_configs:
@@ -52,11 +97,7 @@ prometheus:
           bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
           relabel_configs:
             - source_labels:
-                [
-                  __meta_kubernetes_namespace,
-                  __meta_kubernetes_service_name,
-                  __meta_kubernetes_endpoint_port_name,
-                ]
+                [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
               action: keep
               regex: default;kubernetes;https
 
@@ -102,38 +143,26 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_label_app]
               action: drop
               regex: opensearch
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_label_app,
-                  __meta_kubernetes_pod_container_port_number,
-                ]
+            - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_port_number]
               action: drop
-              regex: "clickhouse;(8123|9000)"
+              regex: 'clickhouse;(8123|9000)'
             - source_labels: [__meta_kubernetes_endpoint_node_name]
               target_label: nodename
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
               action: keep
               regex: true
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scrape_slow]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape_slow]
               action: drop
               regex: true
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
               action: replace
               target_label: __scheme__
               regex: (https?)
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_path]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
               regex: (.+)
-            - source_labels:
-                [
-                  __address__,
-                  __meta_kubernetes_service_annotation_prometheus_io_port,
-                ]
+            - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
               action: replace
               target_label: __address__
               regex: (.+?)(?::\d+)?;(\d+)
@@ -164,25 +193,18 @@ prometheus:
           kubernetes_sd_configs:
             - role: endpoints
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scrape_slow]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape_slow]
               action: keep
               regex: true
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
               action: replace
               target_label: __scheme__
               regex: (https?)
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_path]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
               regex: (.+)
-            - source_labels:
-                [
-                  __address__,
-                  __meta_kubernetes_service_annotation_prometheus_io_port,
-                ]
+            - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
               action: replace
               target_label: __address__
               regex: (.+?)(?::\d+)?;(\d+)
@@ -211,8 +233,7 @@ prometheus:
           kubernetes_sd_configs:
             - role: service
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_probe]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
               action: keep
               regex: pushgateway
 
@@ -224,8 +245,7 @@ prometheus:
           kubernetes_sd_configs:
             - role: service
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_service_annotation_prometheus_io_probe]
+            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
               action: keep
               regex: true
             - source_labels: [__address__]
@@ -246,38 +266,26 @@ prometheus:
           kubernetes_sd_configs:
             - role: pod
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
               action: keep
               regex: true
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
               action: drop
               regex: true
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
               action: replace
               regex: (https?)
               target_label: __scheme__
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
               regex: (.+)
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_annotation_prometheus_io_port,
-                  __meta_kubernetes_pod_ip,
-                ]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
               action: replace
               regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
-              replacement: "[$2]:$1"
+              replacement: '[$2]:$1'
               target_label: __address__
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_annotation_prometheus_io_port,
-                  __meta_kubernetes_pod_ip,
-                ]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
               action: replace
               regex: (\d+);((([0-9]+?)(\.|$)){4})
               replacement: $2:$1
@@ -307,34 +315,23 @@ prometheus:
           kubernetes_sd_configs:
             - role: pod
           relabel_configs:
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
               action: keep
               regex: true
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
               action: replace
               regex: (https?)
               target_label: __scheme__
-            - source_labels:
-                [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
               regex: (.+)
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_annotation_prometheus_io_port,
-                  __meta_kubernetes_pod_ip,
-                ]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
               action: replace
               regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
-              replacement: "[$2]:$1"
+              replacement: '[$2]:$1'
               target_label: __address__
-            - source_labels:
-                [
-                  __meta_kubernetes_pod_annotation_prometheus_io_port,
-                  __meta_kubernetes_pod_ip,
-                ]
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
               action: replace
               regex: (\d+);((([0-9]+?)(\.|$)){4})
               replacement: $2:$1
@@ -397,6 +394,8 @@ grafana:
                 operator: In
                 values:
                   - observability
+  env:
+    TZ: 'Europe/London'
   sidecar:
     dashboards:
       enabled: true
@@ -408,10 +407,10 @@ grafana:
 loki:
   loki:
     commonConfig:
-      replication_factor: 3
+      replication_factor: 1
     schemaConfig:
       configs:
-        - from: "2024-04-01"
+        - from: '2024-04-01'
           store: tsdb
           object_store: gcs
           schema: v13
@@ -431,7 +430,6 @@ loki:
         operator: 'Equal'
         value: 'observability'
         effect: 'NoSchedule'
-
     ruler:
       enable_api: true
       storage_config:
@@ -457,7 +455,7 @@ loki:
   deploymentMode: SingleBinary
 
   singleBinary:
-    replicas: 3
+    replicas: 1
     persistence:
       storageClass: hyperdisk-balanced
       size: 12Gi
@@ -520,7 +518,7 @@ alloy:
     initContainers:
       - name: geoip-init
         image: gcr.io/google.com/cloudsdktool/cloud-sdk:567.0.0-stable
-        command: ["sh", "-c"]
+        command: ['sh', '-c']
         args:
           - |
             for i in {1..5}; do
