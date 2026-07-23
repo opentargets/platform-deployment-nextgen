@@ -438,7 +438,7 @@ loki:
                     - observability
   loki:
     commonConfig:
-      replication_factor: 3
+      replication_factor: 1
     schemaConfig:
       configs:
         - from: '2024-04-01'
@@ -486,7 +486,7 @@ loki:
   deploymentMode: SingleBinary
 
   singleBinary:
-    replicas: 3
+    replicas: 1
     persistence:
       storageClass: hyperdisk-balanced
     tolerations:
@@ -596,9 +596,20 @@ alloy:
         }
 
         loki.process "node_logs" {
+          stage.drop {
+            source = "app,container"
+            expression  = "^(?:loki|manager|grafana|alloy|konnectivity-agent|gke-metadata-server|calico-node|prom-to-sd|recorder|secrets-store|calico-typha|netd|gce-pd-driver|kubedns|dnsmasq|collector)$"
+            drop_counter_reason = "excluded_source"
+          }
+          stage.drop {
+            source = "job"
+            value  = "observability/loki"
+            drop_counter_reason = "excluded_source"
+          }
+
           stage.static_labels {
               values = {
-                cluster = "2gke_open-targets-eu-dev_europe-west1-b_devcluster",
+                cluster = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
                 log_source = "node_logs",
               }
           }
@@ -689,6 +700,17 @@ alloy:
         // loki.process receives log entries from other Loki components, applies one or more processing stages,
         // and forwards the results to the list of receivers in the component's arguments.
         loki.process "pod_logs" {
+          stage.drop {
+            source = "app,container"
+            expression  = "^(?:loki|manager|grafana|alloy|konnectivity-agent|gke-metadata-server|calico-node|prom-to-sd|recorder|secrets-store|calico-typha|netd|gce-pd-driver|kubedns|dnsmasq|collector)$"
+            drop_counter_reason = "excluded_source"
+          }
+          stage.drop {
+            source = "job"
+            value  = "observability/loki"
+            drop_counter_reason = "excluded_source"
+          }
+
           stage.static_labels {
               values = {
                 cluster = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
