@@ -81,6 +81,17 @@ prometheus:
                   app.kubernetes.io/instance: observability
               topologyKey: kubernetes.io/hostname
 
+  prometheus-node-exporter:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: NotIn
+                  values:
+                    - staging
+
   serverFiles:
     prometheus.yml:
       scrape_configs:
@@ -540,6 +551,15 @@ alloy:
   controller:
     nodeSelector:
       kubernetes.io/os: linux
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pool
+                  operator: NotIn
+                  values:
+                    - staging
     tolerations:
       - operator: Exists
     volumes:
