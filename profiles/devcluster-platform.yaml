@@ -5,7 +5,7 @@ domain: opentargets.xyz
 dnsZone: opentargets-xyz
 
 production: blue
-staging: enabled
+staging: disabled
 
 googleTagManagerId: GTM-XXXXXXX
 

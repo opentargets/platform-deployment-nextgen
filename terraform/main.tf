@@ -424,6 +424,8 @@ resource "google_storage_bucket" "loki_chunks" {
   name     = "${var.global_prefix}-loki-gcp-chunks"
   location = var.region
 
+  deletion_policy = "ABANDON"
+
   lifecycle_rule {
     condition {
       age = 30
@@ -440,6 +442,8 @@ resource "google_storage_bucket" "loki_chunks" {
 resource "google_storage_bucket" "loki_ruler" {
   name     = "${var.global_prefix}-loki-gcp-ruler"
   location = var.region
+
+  deletion_policy = "ABANDON"
 
   lifecycle_rule {
     condition {
