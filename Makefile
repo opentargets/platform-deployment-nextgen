@@ -1,7 +1,7 @@
 .PHONY: deploy-cluster-dev destroy-cluster-dev deploy-cluster-prod \
-	deploy-chart-dev-platform deploy-chart-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
+	bootstrap-argocd-dev deploy-argocd-dev-platform deploy-chart-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
 	deploy-observability-dev deploy-observability-prod \
-	port-forward-prometheus port-forward-grafana \
+	port-forward-prometheus port-forward-grafana port-forward-argocd \
 	create-cluster-local delete-cluster-local tunnel-local refresh-secrets-local \
 	help
 
@@ -12,7 +12,8 @@ help:
 	@echo "  deploy-cluster-prod        - TF   — Deploy  the production GKE cluster"
 	@echo "  destroy-cluster-dev        - TF   — Destroy the development GKE cluster"
 	@echo
-	@echo "  deploy-chart-dev-platform  - HELM — Deploy the platform flavor on the dev  cluster"
+	@echo "  bootstrap-argocd-dev       - ARGO — Install ArgoCD onto the dev cluster (run once per fresh cluster)"
+	@echo "  deploy-argocd-dev-platform - ARGO — Bootstrap + sync the platform blue/green ArgoCD apps on the dev cluster"
 	@echo "  deploy-chart-dev-ppp       - HELM — Deploy the PPP      flavor on the dev  cluster"
 	@echo "  deploy-chart-prod-platform - HELM — Deploy the platform flavor on the prod cluster"
 	@echo "  deploy-chart-prod-ppp      - HELM — Deploy the PPP      flavor on the prod cluster"
@@ -21,6 +22,7 @@ help:
 	@echo "  deploy-observability-prod  - HELM — Deploy observability stack to the production cluster using Helm"
 	@echo "  port-forward-prometheus    - Port-forward to Prometheus in the currently active cluster"
 	@echo "  port-forward-grafana       - Port-forward to Grafana in the currently active cluster and display the admin password"
+	@echo "  port-forward-argocd        - Port-forward to ArgoCD in the currently active cluster and display the admin password"
 	@echo
 	@echo "  create-cluster-local       - MINK — Create a local minikube cluster with nginx ingress"
 	@echo "  delete-cluster-local       - MINK — Delete the local minikube cluster"
@@ -50,13 +52,27 @@ define CLUSTER_CONTEXT_CHECK
 endef
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Helm
-deploy-chart-dev-platform:
+# ArgoCD
+#
+# Requires `argocd login localhost:8080` against a `port-forward-argocd` tunnel first.
+# The router + platform ApplicationSet are applied (picking up any manifest changes),
+# then each app is synced with --prune since automated sync/prune is intentionally off.
+bootstrap-argocd-dev:
 	@$(call CLUSTER_CONTEXT_CHECK,dev)
-	helm diff upgrade --allow-unreleased devcluster-platform ./helm/platform -f ./profiles/devcluster-platform.yaml; \
-	read -p "press enter to continue..." nothing; \
-	helm upgrade --install devcluster-platform ./helm/platform -f ./profiles/devcluster-platform.yaml
+	kubectl create namespace argocd
+	kubectl apply -n argocd --server-side -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	kubectl wait --namespace argocd --for=condition=ready pod --selector=app.kubernetes.io/name=argocd-server --timeout=300s
 
+deploy-argocd-dev-platform:
+	@$(call CLUSTER_CONTEXT_CHECK,dev)
+	kubectl apply -f ./argocd/devcluster-platform-router.yaml
+	kubectl apply -f ./argocd/devcluster-platform-appset.yaml
+	argocd app sync devcluster-platform-router --prune
+	argocd app sync devcluster-platform-blue --prune
+	argocd app sync devcluster-platform-green --prune
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Helm
 deploy-chart-dev-ppp:
 	@$(call CLUSTER_CONTEXT_CHECK,dev)
 	helm diff upgrade --allow-unreleased devcluster-ppp ./helm/platform -f ./profiles/devcluster-ppp.yaml; \
@@ -114,6 +130,11 @@ port-forward-grafana:
 	@GRAFANA_POD=$$(kubectl get pods --namespace observability -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=observability" -o jsonpath="{.items[0].metadata.name}"); \
 	echo "Port-forwarding to Grafana pod: $$GRAFANA_POD"; \
 	kubectl port-forward --namespace observability $$GRAFANA_POD 3000:3000
+
+port-forward-argocd:
+	@echo "ArgoCD admin password:"
+	@kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode; echo
+	@kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Local development (minikube)
