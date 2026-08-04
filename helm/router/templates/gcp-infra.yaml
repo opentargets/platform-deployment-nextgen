@@ -106,7 +106,6 @@ spec:
   rrdatas:
     - genetics.{{ .Values.domain }}.
 {{- end }}
-{{- if .Values.stagingEnabled }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
@@ -169,7 +168,6 @@ spec:
     - kind: ComputeAddress
       name: {{ $routerNamespace }}-computeaddress-global
       namespace: {{ $routerNamespace }}
-{{- end }}
 ---
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
@@ -338,7 +336,6 @@ spec:
                 port:
                   number: 8080
     {{- end }}
-    {{- if .Values.stagingEnabled }}
     - host: {{ $stagingSubdomain }}
       http:
         paths:
@@ -379,5 +376,4 @@ spec:
                 name: aiapi-staging
                 port:
                   number: 8080
-    {{- end }}
 {{- end }}

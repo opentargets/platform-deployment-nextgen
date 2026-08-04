@@ -1,5 +1,11 @@
 gcp:
   enabled: false
+# Not read by this chart's own templates — the router's routing surface
+# (proxies, DNS, Ingress rules, cert domains) stays static regardless, since
+# toggling GCLB-attached resources on/off is slow and races with GKE's NEG
+# controller. It's declared here purely so the devcluster ApplicationSet can
+# read it via a git-file generator and pass it through to the platform
+# chart's `paused` computation for the non-prod colour.
 stagingEnabled: true
 security:
   rateLimiterWhitelist: []

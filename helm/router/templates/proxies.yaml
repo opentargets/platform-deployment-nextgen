@@ -7,14 +7,13 @@
 {{- $noCdnBackend := printf "%s-backendconfig-no-cdn" $routerNamespace }}
 
 {{- range list
-  (dict "name" "webapp-prod"    "stage" "prod"    "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)       "backend" $cdnBackend)
-  (dict "name" "api-prod"       "stage" "prod"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)          "backend" $noCdnBackend)
-  (dict "name" "webapp-staging" "stage" "staging" "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace) "backend" $cdnBackend)
-  (dict "name" "api-staging"    "stage" "staging" "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)    "backend" $noCdnBackend)
-  (dict "name" "aiapi-prod"     "stage" "prod"    "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)         "backend" $noCdnBackend)
-  (dict "name" "aiapi-staging"  "stage" "staging" "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)   "backend" $noCdnBackend)
+  (dict "name" "webapp-prod"    "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)       "backend" $cdnBackend)
+  (dict "name" "api-prod"       "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)          "backend" $noCdnBackend)
+  (dict "name" "webapp-staging" "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace) "backend" $cdnBackend)
+  (dict "name" "api-staging"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)    "backend" $noCdnBackend)
+  (dict "name" "aiapi-prod"     "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)         "backend" $noCdnBackend)
+  (dict "name" "aiapi-staging"  "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)   "backend" $noCdnBackend)
 }}
-{{- if or (eq .stage "prod") $.Values.stagingEnabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -103,7 +102,6 @@ spec:
       targetPort: 8080
   type: ClusterIP
 {{- end }}
-{{- end }}
 
 
 {{- if not .Values.gcp.enabled }}
@@ -138,7 +136,6 @@ spec:
                 name: api-prod
                 port:
                   number: 8080
-    {{- if .Values.stagingEnabled }}
     - host: staging.platform.{{ .Values.domain }}
       http:
         paths:
@@ -159,7 +156,6 @@ spec:
                 name: api-staging
                 port:
                   number: 8080
-    {{- end }}
     - host: ai.platform.{{ .Values.domain }}
       http:
         paths:
@@ -170,7 +166,6 @@ spec:
                 name: aiapi-prod
                 port:
                   number: 8080
-    {{- if .Values.stagingEnabled }}
     - host: ai.staging.platform.{{ .Values.domain }}
       http:
         paths:
@@ -181,5 +176,4 @@ spec:
                 name: aiapi-staging
                 port:
                   number: 8080
-    {{- end }}
 {{- end }}
