@@ -3,6 +3,7 @@
 {{- $labels := include "labels" . }}
 {{- $subdomain := include "subdomain" . }}
 {{- $resources := .Values.resources.webapp }}
+{{- $paused := or .Values.paused (and .Values.colour (ne .Values.colour .Values.prodColour) (not .Values.stagingEnabled)) }}
 ---
 # ServiceAccount for {{ $namespace }} WebApp.
 # Kubernetes API access is disabled; the WebApp does not need it.
@@ -44,6 +45,7 @@ spec:
           port: {{ include "ports.http" . }}
 
 
+{{- if not $paused }}
 ---
 # HorizontalPodAutoscaler for {{ $namespace }} WebApp.
 apiVersion: autoscaling/v2
@@ -92,6 +94,7 @@ spec:
   selector:
     matchLabels:
       app: webapp
+{{- end }}
 
 
 ---
@@ -105,6 +108,9 @@ metadata:
     app: webapp
     {{- $labels | nindent 4 }}
 spec:
+  {{- if $paused }}
+  replicas: 0
+  {{- end }}
   selector:
     matchLabels:
       app: webapp

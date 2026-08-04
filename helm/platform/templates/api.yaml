@@ -2,6 +2,7 @@
 {{- $namespace := include "prefix-product" . }}
 {{- $labels := include "labels" . }}
 {{- $resources := .Values.resources.api }}
+{{- $paused := or .Values.paused (and .Values.colour (ne .Values.colour .Values.prodColour) (not .Values.stagingEnabled)) }}
 ---
 # ServiceAccount for {{ $namespace }} API.
 # Kubernetes API access is disabled; the API does not need it.
@@ -79,6 +80,7 @@ spec:
           port: {{ include "ports.http" . }}
 
 
+{{- if not $paused }}
 ---
 # HorizontalPodAutoscaler for {{ $namespace }} API.
 apiVersion: autoscaling/v2
@@ -127,6 +129,7 @@ spec:
   selector:
     matchLabels:
       app: api
+{{- end }}
 
 ---
 # API Deployment for {{ $namespace }}.
@@ -139,6 +142,9 @@ metadata:
     app: api
     {{- $labels | nindent 4 }}
 spec:
+  {{- if $paused }}
+  replicas: 0
+  {{- end }}
   selector:
     matchLabels:
       app: api

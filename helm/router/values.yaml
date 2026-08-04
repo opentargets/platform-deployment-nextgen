@@ -1,4 +1,5 @@
 gcp:
   enabled: false
+stagingEnabled: true
 security:
   rateLimiterWhitelist: []

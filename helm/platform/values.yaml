@@ -10,6 +10,15 @@ gcp:
   enabled: true
   ingress: true
 
+paused: false
+
+# Set by the ApplicationSet from profiles/devcluster-router.yaml so this
+# colour can tell whether it's the one currently serving prod traffic,
+# and whether the router even wants a staging colour running at all.
+colour: ""
+prodColour: ""
+stagingEnabled: true
+
 release: "26.03"
 webapp:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7

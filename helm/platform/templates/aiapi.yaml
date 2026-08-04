@@ -3,6 +3,7 @@
 {{- $labels := include "labels" . }}
 {{- $subdomain := include "subdomain" . }}
 {{- $resources := .Values.resources.aiapi }}
+{{- $paused := or .Values.paused (and .Values.colour (ne .Values.colour .Values.prodColour) (not .Values.stagingEnabled)) }}
 {{- if .Values.gcp.enabled }}
 ---
 # SecretProviderClass for {{ $namespace }} OpenAI token (GCP Secret Manager).
@@ -148,6 +149,7 @@ roleRef:
 {{- end }}
 
 
+{{- if not $paused }}
 ---
 # HorizontalPodAutoscaler for {{ $namespace }} AI API.
 apiVersion: autoscaling/v2
@@ -196,6 +198,7 @@ spec:
   selector:
     matchLabels:
       app: aiapi
+{{- end }}
 
 
 ---
@@ -209,6 +212,9 @@ metadata:
     app: aiapi
     {{- $labels | nindent 4 }}
 spec:
+  {{- if $paused }}
+  replicas: 0
+  {{- end }}
   selector:
     matchLabels:
       app: aiapi

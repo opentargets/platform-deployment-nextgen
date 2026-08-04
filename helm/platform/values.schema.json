@@ -45,6 +45,22 @@
       "required": ["enabled"],
       "additionalProperties": false
     },
+    "paused": {
+      "type": "boolean",
+      "description": "When true, scales webapp/api/aiapi Deployments and the ClickHouse/OpenSearch StatefulSets to 0 replicas and drops their HPAs/PDBs, while keeping the namespace, Services, and PVCs (data) intact. Also true implicitly when `colour` differs from `prodColour` and `stagingEnabled` is false."
+    },
+    "colour": {
+      "type": "string",
+      "description": "This deployment's colour (e.g. `blue`, `green`), passed in by the ApplicationSet. Empty string means \"not part of a router-managed blue/green pair\" (e.g. local, production without the flag wired up), which disables the auto-pause behaviour."
+    },
+    "prodColour": {
+      "type": "string",
+      "description": "The colour the router currently treats as prod, mirrored from the router profile's prodColour. Used only to compare against `colour`."
+    },
+    "stagingEnabled": {
+      "type": "boolean",
+      "description": "Mirrors the router profile's stagingEnabled. When false, the colour that isn't `prodColour` is paused automatically."
+    },
     "release": {
       "type": "string",
       "description": "The data release name (e.g., `25.09`).",
