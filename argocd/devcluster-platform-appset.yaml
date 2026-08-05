@@ -23,6 +23,8 @@ spec:
   template:
     metadata:
       name: devcluster-platform-{{ .colour }}
+      labels:
+        role: "{{ if eq .colour .prodColour }}prod{{ else }}staging{{ end }}"
     spec:
       project: default
       source:
