@@ -1,4 +1,4 @@
-prodColour: green
+prodColour: blue
 envPrefix: devcluster
 product: platform
 domain: opentargets.xyz
@@ -6,4 +6,4 @@ dnsZone: opentargets-xyz
 gcpProject: open-targets-eu-dev
 gcp:
   enabled: true
-stagingEnabled: true
+stagingEnabled: false
