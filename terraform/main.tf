@@ -424,7 +424,7 @@ resource "google_storage_bucket" "loki_chunks" {
   name     = "${var.global_prefix}-loki-gcp-chunks"
   location = var.region
 
-  deletion_policy = "ABANDON"
+  force_destroy = true
 
   lifecycle_rule {
     condition {
@@ -443,7 +443,7 @@ resource "google_storage_bucket" "loki_ruler" {
   name     = "${var.global_prefix}-loki-gcp-ruler"
   location = var.region
 
-  deletion_policy = "ABANDON"
+  force_destroy = true
 
   lifecycle_rule {
     condition {

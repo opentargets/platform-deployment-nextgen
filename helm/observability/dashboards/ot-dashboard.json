@@ -689,7 +689,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "topk(5, count by(geoip_continent_code) (rate({container=\"api\"} |= `client_ip` | json | line_format `{{.geoip_country_code}}` [$__auto])))",
+          "expr": "topk(5, sum by(geoip_continent_code) (count_over_time({container=\"api\"} |= `client_ip` | json [$__auto])))",
           "legendFormat": "",
           "queryType": "instant",
           "refId": "A"

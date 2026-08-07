@@ -707,21 +707,21 @@ alloy:
           }
 
           stage.json {
-              expressions = {ip = "client_ip"}
+              expressions = {client_ip = "client_ip"}
           }
 
           stage.geoip {
-              source  = "ip"
+              source  = "client_ip"
               db      = "/geoip/location.mmdb"
               db_type = "country"
           }
 
-          stage.labels {
+          stage.structured_metadata {
               values = {
-                  geoip_country_name       = "geoip_country_name",
-                  geoip_country_code       = "geoip_country_code",
-                  geoip_continent_name     = "geoip_continent_name",
-                  geoip_continent_code     = "geoip_continent_code",
+                  geoip_country_name     = "",
+                  geoip_country_code     = "",
+                  geoip_continent_name   = "",
+                  geoip_continent_code   = "",
               }
           }
 
