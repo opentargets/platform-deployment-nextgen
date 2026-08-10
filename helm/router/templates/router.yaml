@@ -1,0 +1,12 @@
+{{- $routerNamespace := printf "%s-%s" .Values.envPrefix .Values.product }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $routerNamespace }}
+  labels:
+    role: router
+  {{- if .Values.gcp.enabled }}
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ .Values.gcpProject }}
+  {{- end }}

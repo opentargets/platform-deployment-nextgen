@@ -1,110 +1,101 @@
 {{ define "deployment.api" }}
-{{- $root := .root }}
-{{- $color := .color | default "blue" }}
-{{- $env := include "env" (dict "root" $root "color" $color ) }}
-{{- $prefix := $root.Values.prefix }}
-{{- $product := .root.Values.product }}
-{{- $namespace := include "prefix-product" .root }}
-{{- $labels := include "labels" .root }}
-{{- $image := index .root.Values $color "api" "image" }}
-{{- $release := index .root.Values $color "release" }}
-{{- $resources := index .root.Values.resources "api" }}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
+{{- $resources := .Values.resources.api }}
+{{- $paused := or .Values.paused (and .Values.colour (ne .Values.colour .Values.prodColour) (not .Values.stagingEnabled)) }}
 ---
-# ServiceAccount for {{ $namespace }}-{{ $color }} API deployment.
-# We disable kubernetes API completely here, the API does not need it.
+# ServiceAccount for {{ $namespace }} API.
+# Kubernetes API access is disabled; the API does not need it.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $namespace }}-{{ $color }}-api
+  name: {{ $namespace }}-api
   namespace: {{ $namespace }}
   labels:
     app: api
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 automountServiceAccountToken: false
 
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} API deployment.
-# Allows egress traffic to ClickHouse and OpenSearch only.
+# NetworkPolicy for {{ $namespace }} API.
+# Allows egress to ClickHouse, OpenSearch, and DNS only.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-api-egress
+  name: {{ $namespace }}-api-egress
   namespace: {{ $namespace }}
   labels:
     app: api
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: api
-      color: {{ $color }}
   policyTypes:
     - Egress
   egress:
     - to: []
       ports:
         - protocol: TCP
-          port: {{ include "ports.clickhouse" $root }}
+          port: {{ include "ports.clickhouse" . }}
     - to: []
       ports:
         - protocol: TCP
-          port: {{ include "ports.opensearch" $root }}
+          port: {{ include "ports.opensearch" . }}
     - to: []
       ports:
         - protocol: UDP
-          port: {{ include "ports.dns" $root }}
+          port: {{ include "ports.dns" . }}
     - to: []
       ports:
         - protocol: TCP
-          port: {{ include "ports.dns" $root }}
+          port: {{ include "ports.dns" . }}
 
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} API deployment.
-# Allows ingress traffic from all sources to the HTTP port.
-# API is called from the clients' browsers.
+# NetworkPolicy for {{ $namespace }} API.
+# Allows ingress from all sources to the http port (API is browser-called).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-api-ingress
+  name: {{ $namespace }}-api-ingress
   namespace: {{ $namespace }}
   labels:
     app: api
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: api
-      color: {{ $color }}
   policyTypes:
     - Ingress
   ingress:
-    - from: []
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              role: router
       ports:
         - protocol: TCP
-          port: {{ include "ports.apiproxy" $root }}
+          port: {{ include "ports.http" . }}
 
 
+{{- if not $paused }}
 ---
-# HorizontalPodAutoscaler for {{ $namespace }}-{{ $color }} API deployment.
+# HorizontalPodAutoscaler for {{ $namespace }} API.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $namespace }}-{{ $color }}-api-hpa
+  name: {{ $namespace }}-api-hpa
   namespace: {{ $namespace }}
   labels:
     app: api
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ $namespace }}-{{ $color }}-api
+    name: {{ $namespace }}-api
   minReplicas: {{ $resources.minReplicas }}
   maxReplicas: {{ $resources.maxReplicas }}
   metrics:
@@ -124,151 +115,84 @@ spec:
 
 
 ---
-# PodDisruptionBudget for {{ $namespace }}-{{ $color }} API deployment.
-# Ensures at least one pod is always running during voluntary disruptions.
+# PodDisruptionBudget for {{ $namespace }} API.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ $namespace }}-{{ $color }}-api-pdb
+  name: {{ $namespace }}-api-pdb
   namespace: {{ $namespace }}
   labels:
     app: api
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
       app: api
-      color: {{ $color }}
-
-
----
-# ConfigMap for {{ $namespace }}-{{ $color }} API rate-limiter nginx sidecar.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ $namespace }}-{{ $color }}-nginx-config
-  namespace: {{ $namespace }}
-data:
-  nginx.conf: |
-    worker_processes auto;
-    events {
-      worker_connections 4096;
-    }
-    http {
-      include /etc/nginx/conf.d/*.conf;
-    }
-  default.conf: |
-    geo $real_client_ip $limit {
-      default 1;
-      {{- range $ip := .root.Values.security.rateLimiterWhitelist }}
-      {{ $ip }} 0;
-      {{- end }}
-    }
-
-    map $http_x_forwarded_for $real_client_ip {
-      ~^(\S+),\s  $1;
-      default     $http_x_forwarded_for;
-    }
-
-    map $limit $limit_key {
-      0 "";
-      1 $real_client_ip;
-    }
-
-    limit_req_zone $limit_key zone=api_limit:10m rate=40r/s;
-    server {
-      listen {{ include "ports.apiproxy" $root }};
-      location /nginx-health {
-        access_log off;
-        return 200;
-      }
-      location / {
-        limit_req zone=api_limit burst=80 nodelay;
-        limit_req_status 429;
-        proxy_pass http://127.0.0.1:{{ include "ports.http" $root }};
-      }
-    }
-
+{{- end }}
 
 ---
-# API {{ $namespace }}-{{ $color }} deployment.
+# API Deployment for {{ $namespace }}.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $namespace }}-{{ $color }}-api
+  name: {{ $namespace }}-api
   namespace: {{ $namespace }}
   labels:
     app: api
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
+  {{- if $paused }}
+  replicas: 0
+  {{- end }}
   selector:
     matchLabels:
       app: api
-      color: {{ $color }}
   template:
     metadata:
       labels:
         app: api
-        color: {{ $color }}
         {{- $labels | nindent 8 }}
     spec:
-      serviceAccountName: {{ $namespace }}-{{ $color }}-api
+      serviceAccountName: {{ $namespace }}-api
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gcp.enabled }}
       affinity:
-        nodeAffinity: # ensure pods are scheduled to the right type of node (production/staging)
+        nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: pool
                     operator: In
                     values:
-                      - {{ $env }}
-        podAntiAffinity: # avoid co-locating pods of the same app+color in the same node
+                      - production
+        podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  product: {{ $product }}
+                  product: {{ .Values.product }}
                   app: api
-                  color: {{ $color }}
               topologyKey: kubernetes.io/hostname
+      {{- end }}
       containers:
-        - name: nginx-ratelimit
-          image: nginx:alpine
-          ports:
-            - containerPort: {{ include "ports.apiproxy" $root }}
-              name: apiproxy
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-            - name: nginx-config
-              mountPath: /etc/nginx/conf.d/default.conf
-              subPath: default.conf
-          resources:
-            requests:
-              cpu: 20m
-              memory: 32Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
         - name: api
-          image: {{ $image }}
+          image: {{ .Values.api.image }}
           ports:
-            - containerPort: {{ include "ports.http" $root }}
+            - containerPort: {{ include "ports.http" . }}
               name: api
           env:
             - name: SLICK_CLICKHOUSE_URL
-              value: jdbc:clickhouse://{{ $namespace }}-{{ $env | replace "production" "prod" }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" $root }}
+              value: jdbc:clickhouse://{{ $namespace }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" . }}
             - name: ELASTICSEARCH_HOST
-              value: {{ $namespace }}-{{ $env | replace "production" "prod" }}-opensearch.{{ $namespace }}.svc.cluster.local
+              value: {{ $namespace }}-opensearch.{{ $namespace }}.svc.cluster.local
             - name: META_DATA_RELEASE
-              value: {{ $release | quote }}
+              value: {{ .Values.release | quote }}
             - name: META_API_VERSION
-              value: {{ $image | splitList ":" | last | quote }}
+              value: {{ .Values.api.image | splitList ":" | last | quote }}
             - name: META_PRODUCT_NAME
-              value: {{ $product | quote }}
+              value: {{ .Values.product | quote }}
             - name: JAVA_OPTS
               value: >-
                 -XX:+UseContainerSupport
@@ -286,29 +210,25 @@ spec:
               cpu: {{ $resources.limits.cpu }}
           startupProbe:
             httpGet:
-              path: {{ include "paths.health.api" $root }}
+              path: {{ include "paths.health.api" . }}
               port: api
             failureThreshold: 30
             periodSeconds: 10
             timeoutSeconds: 10
           livenessProbe:
             httpGet:
-              path: {{ include "paths.health.api" $root }}
+              path: {{ include "paths.health.api" . }}
               port: api
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: {{ include "paths.health.api" $root }}
+              path: {{ include "paths.health.api" . }}
               port: api
             periodSeconds: 10
             timeoutSeconds: 10
             failureThreshold: 3
           securityContext:
             allowPrivilegeEscalation: false
-      volumes:
-        - name: nginx-config
-          configMap:
-            name: {{ $namespace }}-{{ $color }}-nginx-config
 {{- end }}

@@ -37,7 +37,7 @@ resource "google_service_account_iam_member" "aiapi_to_global_gsa_workload_ident
 
   service_account_id = google_service_account.aiapi[split("-", each.value)[0]].name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "serviceAccount:${var.project_id}.svc.id.goog[${var.global_prefix}-${split("-", each.value)[0]}/${var.global_prefix}-${each.value}-aiapi]"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[${var.global_prefix}-${split("-", each.value)[1]}-${split("-", each.value)[0]}/${var.global_prefix}-${split("-", each.value)[1]}-${split("-", each.value)[0]}-aiapi]"
 }
 
 # This service account is used by Config Connector. It needs permissions to create
