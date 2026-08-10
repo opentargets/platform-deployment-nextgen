@@ -77,24 +77,24 @@ variable "apps_labels" {
   type        = map(string)
 }
 
-# OBSERVABILITY VARIABLES
-variable "observability_min_node_count" {
-  description = "The minimum (and initial) number of nodes in the Observability node pool"
+# OPS VARIABLES
+variable "ops_min_node_count" {
+  description = "The minimum (and initial) number of nodes in the Ops node pool"
   type        = number
 }
 
-variable "observability_max_node_count" {
-  description = "The maximum number of nodes in the Observability node pool"
+variable "ops_max_node_count" {
+  description = "The maximum number of nodes in the Ops node pool"
   type        = number
 }
 
-variable "observability_machine_type" {
-  description = "The machine type to use for the Observability nodes"
+variable "ops_machine_type" {
+  description = "The machine type to use for the Ops nodes"
   type        = string
 }
 
-variable "observability_disk_size_gb" {
-  description = "The disk size in GB for each node in the observability node pool"
+variable "ops_disk_size_gb" {
+  description = "The disk size in GB for each node in the Ops node pool"
   type        = number
 }
 

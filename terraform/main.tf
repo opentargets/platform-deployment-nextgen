@@ -158,27 +158,27 @@ resource "google_container_node_pool" "pools" {
   }
 }
 
-# OBSERVABILITY NODE POOL
-resource "google_container_node_pool" "observability" {
-  name               = "${var.global_prefix}-observability"
+# OPS NODE POOL
+resource "google_container_node_pool" "ops" {
+  name               = "${var.global_prefix}-ops"
   project            = var.project_id
   location           = var.zone
   cluster            = google_container_cluster.cluster.name
   initial_node_count = 1
 
   autoscaling {
-    min_node_count = var.observability_min_node_count
-    max_node_count = var.observability_max_node_count
+    min_node_count = var.ops_min_node_count
+    max_node_count = var.ops_max_node_count
   }
 
   node_config {
-    machine_type    = var.observability_machine_type
+    machine_type    = var.ops_machine_type
     disk_type       = var.cluster_disk_type
-    disk_size_gb    = var.observability_disk_size_gb
+    disk_size_gb    = var.ops_disk_size_gb
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
-    labels          = merge(var.base_labels, var.cluster_labels, { pool = "observability" })
-    tags            = ["cluster", "node", "observability"]
+    labels          = merge(var.base_labels, var.cluster_labels, { pool = "ops" })
+    tags            = ["cluster", "node", "ops"]
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
     boot_disk {
@@ -188,7 +188,7 @@ resource "google_container_node_pool" "observability" {
 
     taint {
       key    = "workload"
-      value  = "observability"
+      value  = "ops"
       effect = "NO_SCHEDULE"
     }
 

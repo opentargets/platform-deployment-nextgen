@@ -4,7 +4,7 @@ prometheus:
     tolerations:
       - key: 'workload'
         operator: 'Equal'
-        value: 'observability'
+        value: 'ops'
         effect: 'NoSchedule'
     affinity:
       nodeAffinity:
@@ -14,7 +14,7 @@ prometheus:
                 - key: pool
                   operator: In
                   values:
-                    - observability
+                    - ops
   server:
     persistentVolume:
       enabled: true
@@ -24,7 +24,7 @@ prometheus:
     tolerations:
       - key: 'workload'
         operator: 'Equal'
-        value: 'observability'
+        value: 'ops'
         effect: 'NoSchedule'
     affinity:
       nodeAffinity:
@@ -34,13 +34,13 @@ prometheus:
                 - key: pool
                   operator: In
                   values:
-                    - observability
+                    - ops
 
   prometheus-pushgateway:
     tolerations:
       - key: 'workload'
         operator: 'Equal'
-        value: 'observability'
+        value: 'ops'
         effect: 'NoSchedule'
     affinity:
       nodeAffinity:
@@ -50,17 +50,17 @@ prometheus:
                 - key: pool
                   operator: In
                   values:
-                    - observability
+                    - ops
     podAntiAffinity: soft
     podAntiAffinityTopologyKey: kubernetes.io/hostname
 
   kube-state-metrics:
     nodeSelector:
-      pool: observability
+      pool: ops
     tolerations:
       - key: 'workload'
         operator: 'Equal'
-        value: 'observability'
+        value: 'ops'
         effect: 'NoSchedule'
     affinity:
       nodeAffinity:
@@ -70,7 +70,7 @@ prometheus:
                 - key: pool
                   operator: In
                   values:
-                    - observability
+                    - ops
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
@@ -394,7 +394,7 @@ grafana:
   tolerations:
     - key: 'workload'
       operator: 'Equal'
-      value: 'observability'
+      value: 'ops'
       effect: 'NoSchedule'
   affinity:
     nodeAffinity:
@@ -404,7 +404,7 @@ grafana:
               - key: pool
                 operator: In
                 values:
-                  - observability
+                  - ops
   env:
     TZ: 'Europe/London'
   sidecar:
@@ -439,7 +439,7 @@ loki:
     tolerations:
       - key: 'workload'
         operator: 'Equal'
-        value: 'observability'
+        value: 'ops'
         effect: 'NoSchedule'
     ruler:
       enable_api: true
@@ -473,7 +473,7 @@ loki:
     tolerations:
       - key: 'workload'
         operator: 'Equal'
-        value: 'observability'
+        value: 'ops'
         effect: 'NoSchedule'
     affinity:
       nodeAffinity:
@@ -483,7 +483,7 @@ loki:
                 - key: pool
                   operator: In
                   values:
-                    - observability
+                    - ops
 
   # Zero out replica counts of other deployment modes
   backend:
