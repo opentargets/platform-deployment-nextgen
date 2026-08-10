@@ -1,30 +1,29 @@
 {{- define "statefulset.opensearch" -}}
-{{- $root := .root }}
-{{- $color := .color }}
-{{- $namespace := include "prefix-product" $root }}
-{{- $labels := include "labels" $root }}
-{{- $os := index $root.Values $color "opensearch" }}
-{{- $osRes := $root.Values.resources.opensearch }}
-{{- $svc := ternary "os" "opensearch" (eq $color "green") -}}
-{{- $osName := printf "%s-%s-%s-%s" $namespace $color $svc (splitList "/" $os.snapshot | last) -}}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
+{{- $os := .Values.opensearch }}
+{{- $osRes := .Values.resources.opensearch }}
+{{- $paused := or .Values.paused (and .Values.colour (ne .Values.colour .Values.prodColour) (not .Values.stagingEnabled)) }}
+{{- $snapshotName := printf "%s-opensearch-%s" $namespace ($os.snapshot | default "" | sha256sum | trunc 8) }}
+{{- /* volumeClaimTemplates are immutable: a new snapshot or disk size needs a new StatefulSet. */}}
+{{- $stsName := printf "%s-opensearch-%s" $namespace (printf "%s|%s" ($os.snapshot | default "") $osRes.storageSize | sha256sum | trunc 8) }}
+{{- $restore := and .Values.gcp.enabled $os.snapshot }}
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
-# Allows ingress from API pods of the same color.
+# NetworkPolicy for {{ $namespace }} OpenSearch.
+# Allows ingress from API pods only.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-opensearch-ingress
+  name: {{ $namespace }}-opensearch-ingress
   namespace: {{ $namespace }}
   labels:
     app: opensearch
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: opensearch
-      color: {{ $color }}
   policyTypes:
     - Ingress
   ingress:
@@ -32,28 +31,25 @@ spec:
         - podSelector:
             matchLabels:
               app: api
-              color: {{ $color }}
       ports:
         - protocol: TCP
-          port: {{ include "ports.opensearch" $root }}
+          port: {{ include "ports.opensearch" . }}
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
+# NetworkPolicy for {{ $namespace }} OpenSearch.
 # Allows ingress from Prometheus pods.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-opensearch-metrics-ingress
+  name: {{ $namespace }}-opensearch-metrics-ingress
   namespace: {{ $namespace }}
   labels:
     app: opensearch
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: opensearch
-      color: {{ $color }}
   policyTypes:
     - Ingress
   ingress:
@@ -66,124 +62,125 @@ spec:
               app.kubernetes.io/name: prometheus
       ports:
         - protocol: TCP
-          port: {{ include "ports.opensearch" $root }}
+          port: {{ include "ports.opensearch" . }}
 
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} OpenSearch.
+# NetworkPolicy for {{ $namespace }} OpenSearch.
 # Allows egress for DNS and HTTPS.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-opensearch-egress
+  name: {{ $namespace }}-opensearch-egress
   namespace: {{ $namespace }}
   labels:
     app: opensearch
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: opensearch
-      color: {{ $color }}
   policyTypes:
     - Egress
   egress:
     - ports:
         - protocol: UDP
-          port: {{ include "ports.dns" $root }}
+          port: {{ include "ports.dns" . }}
         - protocol: TCP
-          port: {{ include "ports.dns" $root }}
+          port: {{ include "ports.dns" . }}
     - ports:
         - protocol: TCP
           port: 443
 
 
+{{- if not $paused }}
 ---
-# PodDisruptionBudget for {{ $namespace }}-{{ $color }} OpenSearch StatefulSet.
+# PodDisruptionBudget for {{ $namespace }} OpenSearch.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ $namespace }}-{{ $color }}-opensearch-pdb
+  name: {{ $namespace }}-opensearch-pdb
   namespace: {{ $namespace }}
   labels:
     app: opensearch
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
       app: opensearch
-      color: {{ $color }}
+{{- end }}
 
-
+{{- if $restore }}
 ---
-# VolumeSnapshotContent containing the {{ $namespace }}-{{ $color }} OpenSearch data.
+# VolumeSnapshotContent with the {{ $namespace }} OpenSearch data snapshot.
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotContent
 metadata:
-  name: {{ $osName }}
+  name: {{ $snapshotName }}
 spec:
   deletionPolicy: Retain
   driver: pd.csi.storage.gke.io
   source:
     snapshotHandle: {{ $os.snapshot }}
   volumeSnapshotRef:
-    name: {{ $osName }}
+    name: {{ $snapshotName }}
     namespace: {{ $namespace }}
 
 
 ---
-# VolumeSnapshot to reference the {{ $namespace }}-{{ $color }} OpenSearch snapshot content.
+# VolumeSnapshot referencing the {{ $namespace }} OpenSearch snapshot content.
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
-  name: {{ $osName }}
+  name: {{ $snapshotName }}
   namespace: {{ $namespace }}
 spec:
   source:
-    volumeSnapshotContentName: {{ $osName }}
-
+    volumeSnapshotContentName: {{ $snapshotName }}
+{{- end }}
 
 ---
-# StatefulSet for {{ $namespace }}-{{ $color }} OpenSearch.
+# StatefulSet for {{ $namespace }} OpenSearch.
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $osName }}
+  name: {{ $stsName }}
   namespace: {{ $namespace }}
   labels:
     app: opensearch
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
-  serviceName: {{ $osName }}
-  replicas: {{ $osRes.replicas }}
+  serviceName: {{ $namespace }}-opensearch
+  replicas: {{ if $paused }}0{{ else }}{{ $osRes.replicas }}{{ end }}
   selector:
     matchLabels:
       app: opensearch
-      color: {{ $color }}
   template:
     metadata:
       labels:
         app: opensearch
-        color: {{ $color }}
         {{- $labels | nindent 8 }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
       tolerations:
         - key: workload
           value: opensearch
           effect: NoSchedule
-        # Lets these pods run on the opensearch ComputeClass pools (terraform/computeclasses.tf on
-        # the ArgoCD branch), which carry this taint. Harmless where the taint is absent.
         - key: cloud.google.com/compute-class
           value: opensearch
           effect: NoSchedule
+      {{- if and .Values.gcp.enabled .Values.gcp.computeClasses }}
+      nodeSelector:
+        cloud.google.com/compute-class: opensearch
+      {{- end }}
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      {{- if .Values.gcp.enabled }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -198,8 +195,8 @@ spec:
             - labelSelector:
                 matchLabels:
                   app: opensearch
-                  color: {{ $color }}
               topologyKey: kubernetes.io/hostname
+      {{- end }}
       initContainers:
         - name: install-plugins
           image: {{ $os.image }}
@@ -221,7 +218,7 @@ spec:
         - name: opensearch
           image: {{ $os.image }}
           ports:
-            - containerPort: {{ include "ports.opensearch" $root }}
+            - containerPort: {{ include "ports.opensearch" . }}
               name: http
             - containerPort: 9600
               name: metrics
@@ -231,13 +228,13 @@ spec:
             - name: network.host
               value: "0.0.0.0"
             - name: bootstrap.memory_lock
-              value: "true"
+              value: {{ if .Values.gcp.enabled }}"true"{{ else }}"false"{{ end }}
             - name: DISABLE_SECURITY_PLUGIN
               value: "true"
             - name: path.data
               value: /usr/share/opensearch/data/data
             - name: OPENSEARCH_JAVA_OPTS
-              value: "-Xms{{ $osRes.heapSize }} -Xmx{{ $osRes.heapSize }} -XX:+UseTransparentHugePages"
+              value: "-Xms{{ $osRes.heapSize }} -Xmx{{ $osRes.heapSize }}{{ if .Values.gcp.enabled }} -XX:+UseTransparentHugePages{{ end }}"
             - name: OPENSEARCH_PATH_CONF
               value: /usr/share/opensearch/config
             - name: prometheus.indices
@@ -265,37 +262,44 @@ spec:
           readinessProbe:
             httpGet:
               path: /_cluster/health
-              port: {{ include "ports.opensearch" $root }}
+              port: {{ include "ports.opensearch" . }}
             initialDelaySeconds: 30
             periodSeconds: 10
-            failureThreshold: 6
+            failureThreshold: {{ if .Values.gcp.enabled }}6{{ else }}12{{ end }}
           livenessProbe:
             httpGet:
               path: /_cluster/health
-              port: {{ include "ports.opensearch" $root }}
-            initialDelaySeconds: 60
+              port: {{ include "ports.opensearch" . }}
+            initialDelaySeconds: {{ if .Values.gcp.enabled }}60{{ else }}120{{ end }}
             periodSeconds: 20
-            failureThreshold: 3
+            failureThreshold: 6
       volumes:
+        {{- if not $restore }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
         - name: logs
           emptyDir: {}
         - name: plugins
           emptyDir: {}
+  {{- if $restore }}
+  # One disk per replica, each restored from the snapshot. Deleted with the StatefulSet
+  # (e.g. when a new snapshot or size renames it) and when the colour is scaled down.
   volumeClaimTemplates:
     - metadata:
         name: data
       spec:
-        accessModes:
-          - ReadWriteOnce
+        accessModes: [ReadWriteOnce]
         storageClassName: hyperdisk-balanced
         dataSource:
-          name: {{ $osName }}
+          name: {{ $snapshotName }}
           kind: VolumeSnapshot
           apiGroup: snapshot.storage.k8s.io
         resources:
           requests:
-            storage: {{ $os.storageSize | quote }}
+            storage: {{ $osRes.storageSize | quote }}
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
     whenScaled: Delete
+  {{- end }}
 {{- end }}

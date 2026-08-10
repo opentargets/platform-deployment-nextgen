@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devcluster-platform-router
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+    targetRevision: argocd-rebase-observability
+    path: helm/router
+    helm:
+      valueFiles:
+        - /profiles/devcluster/platform/router.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devcluster-platform-router
+  # GKE's managed-certificate controller writes the router's certificates into this
+  # annotation. The chart doesn't set it, so ignore it, and keep the live value on sync
+  # (RespectIgnoreDifferences) rather than stripping it from the load balancer.
+  ignoreDifferences:
+    - group: networking.k8s.io
+      kind: Ingress
+      jsonPointers:
+        - /metadata/annotations/ingress.gcp.kubernetes.io~1pre-shared-cert
+  # Manual sync during the migration window — restore automated{prune,selfHeal} once
+  # DNS has been cut over and the legacy release is retired.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+      # Detect another ArgoCD Application's ownership (not Helm ownership).
+      - FailOnSharedResource=true

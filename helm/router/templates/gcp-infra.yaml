@@ -1,0 +1,333 @@
+{{- if and .Values.gcp.enabled .Values.frontend.enabled }}
+{{- $routerNamespace := printf "%s-%s" .Values.envPrefix .Values.product }}
+{{- $namespace := include "router.namespace" . }}
+{{/* Lets DNSRecordSets be adopted in place from a different (e.g. legacy) namespace
+     without moving the rest of the frontend. Defaults to this release's own namespace. */}}
+{{- $dnsNamespace := .Values.dnsNamespaceOverride | default $namespace }}
+{{- $prodSubdomain := include "subdomain" . }}
+{{- $stagingSubdomain := printf "staging.%s" $prodSubdomain }}
+{{/* Only computeAddress is a real Config Connector adoption target; cert/ingress names aren't. */}}
+{{- $computeAddressName := (.Values.names).computeAddress | default (printf "%s-computeaddress-global" $routerNamespace) }}
+{{- $sslCertName := printf "%s-ssl-cert" $routerNamespace }}
+{{- $sslCertFallbackName := printf "%s-ssl-cert-fallback" $routerNamespace }}
+{{- $ingressName := printf "%s-ingress" $routerNamespace }}
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  name: {{ $computeAddressName }}
+  namespace: {{ $namespace }}
+spec:
+  location: global
+  description: Global IP address for {{ $routerNamespace }} router
+  resourceID: {{ $computeAddressName }}
+{{/* Gated separately so DNS can stay off while the rest is provisioned and verified. */}}
+{{- if ne .Values.gcp.dns false }}
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-webapp
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: {{ $prodSubdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-webapp-www
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: www.{{ $prodSubdomain }}.
+  type: CNAME
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+  rrdatas:
+    - {{ $prodSubdomain }}.
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-api
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: api.{{ $prodSubdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-aiapi
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: ai.{{ $prodSubdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
+{{/* geneticsDns=false leaves the genetics names to records managed elsewhere (in production
+     genetics.opentargets.org is a CNAME to platform.opentargets.org, which an A record can't replace). */}}
+{{- if and (eq .Values.product "platform") (ne .Values.gcp.geneticsDns false) }}
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-genetics
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: genetics.{{ .Values.domain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-genetics-www
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: www.genetics.{{ .Values.domain }}.
+  type: CNAME
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+  rrdatas:
+    - genetics.{{ .Values.domain }}.
+{{- end }}
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-webapp-staging
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: {{ $stagingSubdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-webapp-staging-www
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: www.{{ $stagingSubdomain }}.
+  type: CNAME
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+  rrdatas:
+    - {{ $stagingSubdomain }}.
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-api-staging
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: api.{{ $stagingSubdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: {{ $routerNamespace }}-dnsrecordset-aiapi-staging
+  namespace: {{ $dnsNamespace }}
+spec:
+  name: ai.{{ $stagingSubdomain }}.
+  type: A
+  ttl: 300
+  managedZoneRef:
+    external: {{ .Values.dnsZone }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
+{{- end }}
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ $sslCertName }}
+  namespace: {{ $namespace }}
+spec:
+  domains:
+    - {{ $prodSubdomain }}
+    - www.{{ $prodSubdomain }}
+    - api.{{ $prodSubdomain }}
+    - ai.{{ $prodSubdomain }}
+    - {{ $stagingSubdomain }}
+    - www.{{ $stagingSubdomain }}
+    - api.{{ $stagingSubdomain }}
+    - ai.{{ $stagingSubdomain }}
+    {{- if eq .Values.product "platform" }}
+    - genetics.{{ .Values.domain }}
+    - www.genetics.{{ .Values.domain }}
+    {{- end }}
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ $sslCertFallbackName }}
+  namespace: {{ $namespace }}
+spec:
+  domains:
+    - {{ $prodSubdomain }}
+    - www.{{ $prodSubdomain }}
+    - api.{{ $prodSubdomain }}
+    - ai.{{ $prodSubdomain }}
+    - {{ $stagingSubdomain }}
+    - www.{{ $stagingSubdomain }}
+    - api.{{ $stagingSubdomain }}
+    - ai.{{ $stagingSubdomain }}
+    {{- if eq .Values.product "platform" }}
+    - genetics.{{ .Values.domain }}
+    - www.genetics.{{ .Values.domain }}
+    {{- end }}
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: {{ $routerNamespace }}-frontendconfig-http-redirect
+  namespace: {{ $namespace }}
+spec:
+  redirectToHttps:
+    enabled: true
+    responseCodeName: MOVED_PERMANENTLY_DEFAULT
+  sslPolicy: {{ .Values.envPrefix }}-tls12-policy
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $ingressName }}
+  namespace: {{ $namespace }}
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: {{ $computeAddressName }}
+    networking.gke.io/managed-certificates: {{ $sslCertName }},{{ $sslCertFallbackName }}
+    {{- if .Values.preSharedCerts }}
+    ingress.gcp.kubernetes.io/pre-shared-cert: {{ join "," .Values.preSharedCerts }}
+    {{- end }}
+    networking.gke.io/v1beta1.FrontendConfig: {{ $routerNamespace }}-frontendconfig-http-redirect
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  rules:
+    - host: {{ $prodSubdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-prod
+                port:
+                  number: 8080
+    - host: www.{{ $prodSubdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-prod
+                port:
+                  number: 8080
+    - host: api.{{ $prodSubdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-prod
+                port:
+                  number: 8080
+    - host: ai.{{ $prodSubdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aiapi-prod
+                port:
+                  number: 8080
+    {{- if eq .Values.product "platform" }}
+    - host: genetics.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-prod
+                port:
+                  number: 8080
+    - host: www.genetics.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-prod
+                port:
+                  number: 8080
+    {{- end }}
+    - host: {{ $stagingSubdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-staging
+                port:
+                  number: 8080
+    - host: www.{{ $stagingSubdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-staging
+                port:
+                  number: 8080
+    - host: api.{{ $stagingSubdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-staging
+                port:
+                  number: 8080
+    - host: ai.{{ $stagingSubdomain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aiapi-staging
+                port:
+                  number: 8080
+{{- end }}

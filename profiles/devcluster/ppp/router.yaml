@@ -1,0 +1,12 @@
+prodColour: blue
+envPrefix: devcluster
+product: ppp
+domain: opentargets.xyz
+dnsZone: opentargets-xyz
+gcpProject: open-targets-eu-dev
+gcp:
+  enabled: true
+stagingEnabled: false
+# Keep PPP's existing frontend untouched until its cutover is planned separately.
+frontend:
+  enabled: true

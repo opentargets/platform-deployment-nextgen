@@ -1,0 +1,19 @@
+prodColour: blue
+envPrefix: devcluster
+product: platform
+domain: opentargets.xyz
+dnsZone: opentargets-xyz
+gcpProject: open-targets-eu-dev
+gcp:
+  enabled: true
+  # The router owns its DNSRecordSets in its own namespace, pointing at its own
+  # ComputeAddress. On first sync, Config Connector takes over the existing Cloud DNS
+  # records (same data, so no change); the legacy objects are then released with
+  # deletion-policy=abandon. See the runbook's step 7.
+  dns: true
+# No preSharedCerts: GKE attaches the router's own ManagedCertificates through the Ingress's
+# pre-shared-cert annotation, which the router Application ignores (argocd/*-router.yaml).
+# Keep both colours available for validation and rollback during migration.
+stagingEnabled: false
+frontend:
+  enabled: true

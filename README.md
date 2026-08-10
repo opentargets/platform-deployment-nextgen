@@ -1,9 +1,12 @@
 # Open Targets nextgen deployment
 
-Release process documentation:
+Moving an environment from its legacy Helm releases to ArgoCD (per-colour Applications
+plus a router per product) is done with a staged runbook. The new stack comes up beside
+the legacy release on its own IP, borrows the legacy certificates, and takes traffic by
+repointing DNS:
 
-https://opentargets.org/technical-knowledge-base/platform/release-process/
-
+- [Devcluster platform cutover](docs/devcluster-platform-cutover.md)
+- [Production cutover](docs/production-cutover.md) (platform, then ppp)
 
 ## Copyright
 

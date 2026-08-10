@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: production-platform-router
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+    targetRevision: argocd-rebase-observability
+    path: helm/router
+    helm:
+      valueFiles:
+        - /profiles/production/platform/router.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production-platform-router
+  # GKE's managed-certificate controller writes the router's certificates into this
+  # annotation. The chart doesn't set it, so ignore it, and keep the live value on sync
+  # (RespectIgnoreDifferences) rather than stripping it from the load balancer.
+  ignoreDifferences:
+    - group: networking.k8s.io
+      kind: Ingress
+      jsonPointers:
+        - /metadata/annotations/ingress.gcp.kubernetes.io~1pre-shared-cert
+  # Manual sync only, like the colour Applications: production shares its branch with devcluster.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+      # Detect another ArgoCD Application's ownership (not Helm ownership).
+      - FailOnSharedResource=true

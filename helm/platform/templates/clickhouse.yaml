@@ -1,43 +1,42 @@
 {{- define "statefulset.clickhouse" -}}
-{{- $root := .root }}
-{{- $color := .color }}
-{{- $namespace := include "prefix-product" $root }}
-{{- $labels := include "labels" $root }}
-{{- $ch := index $root.Values $color "clickhouse" }}
-{{- $chRes := $root.Values.resources.clickhouse }}
-{{- $svc := ternary "ch" "clickhouse" (eq $color "green") -}}
-{{- $chName := printf "%s-%s-%s-%s" $namespace $color $svc (splitList "/" $ch.snapshot | last) -}}
+{{- $namespace := include "prefix-product" . }}
+{{- $labels := include "labels" . }}
+{{- $ch := .Values.clickhouse }}
+{{- $chRes := .Values.resources.clickhouse }}
+{{- $paused := or .Values.paused (and .Values.colour (ne .Values.colour .Values.prodColour) (not .Values.stagingEnabled)) }}
+{{- $snapshotName := printf "%s-clickhouse-%s" $namespace ($ch.snapshot | default "" | sha256sum | trunc 8) }}
+{{- /* volumeClaimTemplates are immutable: a new snapshot or disk size needs a new StatefulSet. */}}
+{{- $stsName := printf "%s-clickhouse-%s" $namespace (printf "%s|%s" ($ch.snapshot | default "") $chRes.storageSize | sha256sum | trunc 8) }}
+{{- $restore := and .Values.gcp.enabled $ch.snapshot }}
 ---
-# ConfigMap with ClickHouse config for {{ $namespace }}-{{ $color }} StatefulSet.
+# ConfigMap with ClickHouse config for {{ $namespace }}.
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse-config
+  name: {{ $namespace }}-clickhouse-config
   namespace: {{ $namespace }}
 data:
   config.xml: |
-{{ $root.Files.Get "files/clickhouse/config.xml" | indent 4 }}
+{{ .Files.Get "files/clickhouse/config.xml" | indent 4 }}
   users.xml: |
-{{ $root.Files.Get "files/clickhouse/users.xml" | indent 4 }}
+{{ .Files.Get "files/clickhouse/users.xml" | indent 4 }}
 
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} ClickHouse.
-# Allows ingress from API pods of the same color.
+# NetworkPolicy for {{ $namespace }} ClickHouse.
+# Allows ingress from API pods only.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse-ingress
+  name: {{ $namespace }}-clickhouse-ingress
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: clickhouse
-      color: {{ $color }}
   policyTypes:
     - Ingress
   ingress:
@@ -45,30 +44,27 @@ spec:
         - podSelector:
             matchLabels:
               app: api
-              color: {{ $color }}
       ports:
         - protocol: TCP
-          port: {{ include "ports.clickhouse" $root }}
+          port: {{ include "ports.clickhouse" . }}
         - protocol: TCP
           port: 9000
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} ClickHouse.
+# NetworkPolicy for {{ $namespace }} ClickHouse.
 # Allows ingress from Prometheus pods.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse-metrics-ingress
+  name: {{ $namespace }}-clickhouse-metrics-ingress
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: clickhouse
-      color: {{ $color }}
   policyTypes:
     - Ingress
   ingress:
@@ -81,127 +77,127 @@ spec:
               app.kubernetes.io/name: prometheus
       ports:
         - protocol: TCP
-          port: {{ include "ports.clickhouse.metrics" $root }}
+          port: {{ include "ports.clickhouse.metrics" . }}
 
 
 ---
-# NetworkPolicy for {{ $namespace }}-{{ $color }} ClickHouse.
-# Allows egress for DNS and HTTPS (GCS access for backups, etc).
+# NetworkPolicy for {{ $namespace }} ClickHouse.
+# Allows egress for DNS and HTTPS (GCS access).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse-egress
+  name: {{ $namespace }}-clickhouse-egress
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: clickhouse
-      color: {{ $color }}
   policyTypes:
     - Egress
   egress:
     - ports:
         - protocol: UDP
-          port: {{ include "ports.dns" $root }}
+          port: {{ include "ports.dns" . }}
         - protocol: TCP
-          port: {{ include "ports.dns" $root }}
+          port: {{ include "ports.dns" . }}
     - ports:
         - protocol: TCP
           port: 443
 
 
+{{- if not $paused }}
 ---
-# PodDisruptionBudget for {{ $namespace }}-{{ $color }} ClickHouse StatefulSet.
+# PodDisruptionBudget for {{ $namespace }} ClickHouse.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ $namespace }}-{{ $color }}-clickhouse-pdb
+  name: {{ $namespace }}-clickhouse-pdb
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
       app: clickhouse
-      color: {{ $color }}
+{{- end }}
 
-
+{{- if $restore }}
 ---
-# VolumeSnapshotContent containing the {{ $namespace }}-{{ $color }} ClickHouse data.
+# VolumeSnapshotContent with the {{ $namespace }} ClickHouse data snapshot.
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotContent
 metadata:
-  name: {{ $chName }}
+  name: {{ $snapshotName }}
 spec:
   deletionPolicy: Retain
   driver: pd.csi.storage.gke.io
   source:
     snapshotHandle: {{ $ch.snapshot }}
   volumeSnapshotRef:
-    name: {{ $chName }}
+    name: {{ $snapshotName }}
     namespace: {{ $namespace }}
 
 
 ---
-# VolumeSnapshot to reference the {{ $namespace }}-{{ $color }} ClickHouse snapshot content.
+# VolumeSnapshot referencing the {{ $namespace }} ClickHouse snapshot content.
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
-  name: {{ $chName }}
+  name: {{ $snapshotName }}
   namespace: {{ $namespace }}
 spec:
   source:
-    volumeSnapshotContentName: {{ $chName }}
-
+    volumeSnapshotContentName: {{ $snapshotName }}
+{{- end }}
 
 ---
-# StatefulSet for {{ $namespace }}-{{ $color }} ClickHouse.
+# StatefulSet for {{ $namespace }} ClickHouse.
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $chName }}
+  name: {{ $stsName }}
   namespace: {{ $namespace }}
   labels:
     app: clickhouse
-    color: {{ $color }}
     {{- $labels | nindent 4 }}
 spec:
-  serviceName: {{ $chName }}
-  replicas: {{ $chRes.replicas }}
+  serviceName: {{ $namespace }}-clickhouse
+  replicas: {{ if $paused }}0{{ else }}{{ $chRes.replicas }}{{ end }}
   selector:
     matchLabels:
       app: clickhouse
-      color: {{ $color }}
   template:
     metadata:
       labels:
         app: clickhouse
-        color: {{ $color }}
         {{- $labels | nindent 8 }}
       annotations:
-        # Trigger a rolling update if the config changes.
-        checksum/config: {{ print ($root.Files.Get "files/clickhouse/config.xml") ($root.Files.Get "files/clickhouse/users.xml") | sha256sum }}
+        checksum/config: {{ print (.Files.Get "files/clickhouse/config.xml") (.Files.Get "files/clickhouse/users.xml") | sha256sum }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
       tolerations:
         - key: workload
           value: clickhouse
           effect: NoSchedule
-        # Lets these pods run on the clickhouse ComputeClass pools (terraform/computeclasses.tf on
-        # the ArgoCD branch), which carry this taint. Harmless where the taint is absent.
         - key: cloud.google.com/compute-class
           value: clickhouse
           effect: NoSchedule
+      {{- if and .Values.gcp.enabled .Values.gcp.computeClasses }}
+      nodeSelector:
+        cloud.google.com/compute-class: clickhouse
+      {{- end }}
       securityContext:
         runAsUser: 101
         runAsGroup: 101
         fsGroup: 101
+      {{- if .Values.gcp.enabled }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -216,15 +212,15 @@ spec:
             - labelSelector:
                 matchLabels:
                   app: clickhouse
-                  color: {{ $color }}
               topologyKey: kubernetes.io/hostname
+      {{- end }}
       containers:
         - name: clickhouse
           image: {{ $ch.image }}
           ports:
-            - containerPort: {{ include "ports.clickhouse" $root }}
+            - containerPort: {{ include "ports.clickhouse" . }}
               name: http
-            - containerPort: {{ include "ports.clickhouse.metrics" $root}}
+            - containerPort: {{ include "ports.clickhouse.metrics" . }}
               name: metrics
             - containerPort: 9000
               name: native
@@ -265,26 +261,33 @@ spec:
             failureThreshold: 3
             successThreshold: 1
       volumes:
+        {{- if not $restore }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
         - name: tmp
           emptyDir: {}
         - name: config
           configMap:
-            name: {{ $namespace }}-{{ $color }}-clickhouse-config
+            name: {{ $namespace }}-clickhouse-config
+  {{- if $restore }}
+  # One disk per replica, each restored from the snapshot. Deleted with the StatefulSet
+  # (e.g. when a new snapshot or size renames it) and when the colour is scaled down.
   volumeClaimTemplates:
     - metadata:
         name: data
       spec:
-        accessModes:
-          - ReadWriteOnce
+        accessModes: [ReadWriteOnce]
         storageClassName: hyperdisk-balanced
         dataSource:
-          name: {{ $chName }}
+          name: {{ $snapshotName }}
           kind: VolumeSnapshot
           apiGroup: snapshot.storage.k8s.io
         resources:
           requests:
-            storage: {{ $ch.storageSize | quote }}
+            storage: {{ $chRes.storageSize | quote }}
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
     whenScaled: Delete
+  {{- end }}
 {{- end }}
