@@ -1,0 +1,14 @@
+{{- if .Values.manageNamespace }}
+{{- $namespace := include "router.namespace" . }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $namespace }}
+  labels:
+    role: router
+  {{- if .Values.gcp.enabled }}
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ .Values.gcpProject }}
+  {{- end }}
+{{- end }}

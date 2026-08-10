@@ -1,0 +1,198 @@
+{{- $prodColour := .Values.prodColour }}
+{{- $stagingColour := ternary "green" "blue" (eq .Values.prodColour "blue") }}
+{{- $prodNamespace := printf "%s-%s-%s" .Values.envPrefix $prodColour .Values.product }}
+{{- $stagingNamespace := printf "%s-%s-%s" .Values.envPrefix $stagingColour .Values.product }}
+{{- $routerNamespace := printf "%s-%s" .Values.envPrefix .Values.product }}
+{{- $namespace := include "router.namespace" . }}
+{{- $cdnBackend := printf "%s-backendconfig-cdn" $routerNamespace }}
+{{- $noCdnBackend := printf "%s-backendconfig-no-cdn" $routerNamespace }}
+{{- $stagingCdnBackend := printf "%s-backendconfig-staging-cdn" $routerNamespace }}
+{{- $stagingNoCdnBackend := printf "%s-backendconfig-staging-no-cdn" $routerNamespace }}
+
+{{- range list
+  (dict "name" "webapp-prod"    "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)       "backend" $cdnBackend)
+  (dict "name" "api-prod"       "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)          "backend" $noCdnBackend "rejectNodeUserAgent" true)
+  (dict "name" "webapp-staging" "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace) "backend" $stagingCdnBackend)
+  (dict "name" "api-staging"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)    "backend" $stagingNoCdnBackend "rejectNodeUserAgent" true)
+  (dict "name" "aiapi-prod"     "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)         "backend" $noCdnBackend "streaming" true)
+  (dict "name" "aiapi-staging"  "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)   "backend" $stagingNoCdnBackend "streaming" true)
+}}
+{{- $config := include "router.proxyConfig" (dict "upstream" .upstream "security" $.Values.security "streaming" (.streaming | default false) "rejectNodeUserAgent" (.rejectNodeUserAgent | default false)) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}-proxy-config
+  namespace: {{ $namespace }}
+data:
+  nginx.conf: |
+{{ $config | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}-proxy
+  namespace: {{ $namespace }}
+spec:
+  replicas: {{ $.Values.replicas | default 2 }}
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}-proxy
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ $config | sha256sum | quote }}
+      labels:
+        app: {{ .name }}-proxy
+        app.kubernetes.io/component: router-proxy
+    spec:
+      # Keep replicas on different nodes. maxSkew 1 still lets a rollout surge onto a node
+      # that already has one; Honor stops tainted data-store nodes counting as empty.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app: {{ .name }}-proxy
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              {{- if and (hasSuffix "-staging" .name) (not $.Values.stagingEnabled) }}
+              path: /nginx-health
+              {{- else }}
+              path: /health
+              {{- end }}
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /nginx-health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .name }}-proxy-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  namespace: {{ $namespace }}
+  {{- if $.Values.gcp.enabled }}
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/backend-config: '{"default": "{{ .backend }}"}'
+  {{- end }}
+spec:
+  selector:
+    app: {{ .name }}-proxy
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}-proxy-pdb
+  namespace: {{ $namespace }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}-proxy
+{{- end }}
+
+
+{{- if and (not .Values.gcp.enabled) .Values.frontend.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $routerNamespace }}-ingress
+  namespace: {{ $namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-prod
+                port:
+                  number: 8080
+    - host: api.platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-prod
+                port:
+                  number: 8080
+    - host: staging.platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-staging
+                port:
+                  number: 8080
+    - host: api.staging.platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-staging
+                port:
+                  number: 8080
+    - host: ai.platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aiapi-prod
+                port:
+                  number: 8080
+    - host: ai.staging.platform.{{ .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aiapi-staging
+                port:
+                  number: 8080
+{{- end }}
