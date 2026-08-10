@@ -1,23 +1,25 @@
-gcpProject: open-targets-prod
-prefix: production
+gcpProject: open-targets-eu-dev
+prefix: devcluster-green
 product: platform
-domain: opentargets.org
-dnsZone: opentargets-org
+domain: opentargets.xyz
+dnsZone: opentargets-xyz
 
-googleTagManagerId: GTM-WPXWRDV
+googleTagManagerId: GTM-XXXXXXX
 
 gcp:
   enabled: true
+  ingress: false
 
-release: '26.03'
+release: "26.03"
 webapp:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.11
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.16.11
 api:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.1-rc.5
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.03.2-dev.4156.4
 aiapi:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
+  gcpServiceAccount: devcluster-platform-aiapi
   secrets:
-    openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
+    openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
 clickhouse:
   image: clickhouse/clickhouse-server:25.8.18.1
   snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2603-ch
@@ -27,7 +29,7 @@ opensearch:
 
 resources:
   webapp:
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 5
     requests:
       memory: 32Mi
@@ -36,16 +38,16 @@ resources:
       memory: 256Mi
       cpu: 500m
   api:
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 5
     requests:
-      memory: 10Gi
-      cpu: 2000m
+      memory: 4Gi
+      cpu: 1000m
     limits:
-      memory: 10Gi
+      memory: 20Gi
       cpu: 7500m
   aiapi:
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 5
     requests:
       memory: 72Mi
@@ -54,7 +56,8 @@ resources:
       memory: 256Mi
       cpu: 500m
   clickhouse:
-    replicas: 2
+    replicas: 1
+    storageSize: 150Gi
     requests:
       memory: 2Gi
       cpu: 1000m
@@ -62,14 +65,15 @@ resources:
       memory: 10Gi
       cpu: 4000m
   opensearch:
-    replicas: 2
-    heapSize: 4g
+    replicas: 1
+    storageSize: 60Gi
+    heapSize: 8g
     requests:
-      memory: 6Gi
-      cpu: 500m
+      memory: 4Gi
+      cpu: 1000m
     limits:
-      memory: 8Gi
-      cpu: 2000m
+      memory: 16Gi
+      cpu: 4000m
 
 security:
   rateLimiterWhitelist: []

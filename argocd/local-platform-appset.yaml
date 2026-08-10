@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: local-platform
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - colour: blue
+          - colour: green
+  template:
+    metadata:
+      name: local-platform-{{ colour }}
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+        targetRevision: argocd-nginx-router
+        path: helm/platform
+        helm:
+          valueFiles:
+            - /profiles/local-{{ colour }}.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: local-{{ colour }}-platform
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
