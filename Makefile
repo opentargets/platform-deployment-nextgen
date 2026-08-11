@@ -59,8 +59,10 @@ endef
 # then each app is synced with --prune since automated sync/prune is intentionally off.
 bootstrap-argocd-dev:
 	@$(call CLUSTER_CONTEXT_CHECK,dev)
-	kubectl create namespace argocd
-	kubectl apply -n argocd --server-side -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	@helm dependency build ./helm/argocd
+	@helm diff upgrade --allow-unreleased argocd ./helm/argocd --namespace argocd; \
+	read -p "press enter to continue..." nothing; \
+	helm upgrade --install argocd ./helm/argocd --namespace argocd --create-namespace
 	kubectl wait --namespace argocd --for=condition=ready pod --selector=app.kubernetes.io/name=argocd-server --timeout=300s
 
 deploy-argocd-dev-platform:

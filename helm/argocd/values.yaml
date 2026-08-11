@@ -1,0 +1,9 @@
+argo-cd:
+  global:
+    nodeSelector:
+      pool: ops
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: ops
+        effect: NoSchedule
