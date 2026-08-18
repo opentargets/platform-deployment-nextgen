@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devcluster-ppp-router
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+    targetRevision: argocd-rebase-observability
+    path: helm/router
+    helm:
+      valueFiles:
+        - /profiles/devcluster-ppp-router.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devcluster-ppp
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

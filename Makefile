@@ -1,5 +1,5 @@
 .PHONY: deploy-cluster-dev destroy-cluster-dev deploy-cluster-prod \
-	bootstrap-argocd-dev deploy-argocd-dev-platform deploy-chart-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
+	bootstrap-argocd-dev deploy-argocd-dev-platform deploy-argocd-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
 	deploy-observability-dev deploy-observability-prod \
 	port-forward-prometheus port-forward-grafana port-forward-argocd \
 	create-cluster-local delete-cluster-local tunnel-local refresh-secrets-local \
@@ -14,7 +14,7 @@ help:
 	@echo
 	@echo "  bootstrap-argocd-dev       - ARGO — Install ArgoCD onto the dev cluster (run once per fresh cluster)"
 	@echo "  deploy-argocd-dev-platform - ARGO — Bootstrap + sync the platform blue/green ArgoCD apps on the dev cluster"
-	@echo "  deploy-chart-dev-ppp       - HELM — Deploy the PPP      flavor on the dev  cluster"
+	@echo "  deploy-argocd-dev-ppp      - ARGO — Bootstrap + sync the ppp      blue/green ArgoCD apps on the dev cluster"
 	@echo "  deploy-chart-prod-platform - HELM — Deploy the platform flavor on the prod cluster"
 	@echo "  deploy-chart-prod-ppp      - HELM — Deploy the PPP      flavor on the prod cluster"
 	@echo
@@ -73,14 +73,16 @@ deploy-argocd-dev-platform:
 	argocd app sync devcluster-platform-blue --prune
 	argocd app sync devcluster-platform-green --prune
 
+deploy-argocd-dev-ppp:
+	@$(call CLUSTER_CONTEXT_CHECK,dev)
+	kubectl apply -f ./argocd/devcluster-ppp-router.yaml
+	kubectl apply -f ./argocd/devcluster-ppp-appset.yaml
+	argocd app sync devcluster-ppp-router --prune
+	argocd app sync devcluster-ppp-blue --prune
+	argocd app sync devcluster-ppp-green --prune
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Helm
-deploy-chart-dev-ppp:
-	@$(call CLUSTER_CONTEXT_CHECK,dev)
-	helm diff upgrade --allow-unreleased devcluster-ppp ./helm/platform -f ./profiles/devcluster-ppp.yaml; \
-	read -p "press enter to continue..." nothing; \
-	helm upgrade --install devcluster-ppp ./helm/platform -f ./profiles/devcluster-ppp.yaml
-
 deploy-chart-prod-platform:
 	@$(call CLUSTER_CONTEXT_CHECK,production)
 	helm lint ./helm/platform && \

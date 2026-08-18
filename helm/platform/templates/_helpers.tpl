@@ -10,6 +10,7 @@ product: {{ .Values.product }}
 {{- end -}}
 
 # subdomain returns the public subdomain for this product.
+# helm/router/templates/_helpers.tpl has an identical define — keep both in sync if either changes.
 {{- define "subdomain" -}}
 {{- $product := .Values.product -}}
 {{- $domain := .Values.domain -}}

@@ -1,7 +1,7 @@
 {{- if .Values.gcp.enabled }}
 {{- $routerNamespace := printf "%s-%s" .Values.envPrefix .Values.product }}
-{{- $prodSubdomain := printf "platform.%s" .Values.domain }}
-{{- $stagingSubdomain := printf "staging.platform.%s" .Values.domain }}
+{{- $prodSubdomain := include "subdomain" . }}
+{{- $stagingSubdomain := printf "staging.%s" $prodSubdomain }}
 ---
 apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeAddress
@@ -233,6 +233,10 @@ spec:
         ttl: 120
       - code: 410
         ttl: 120
+  {{- if eq .Values.product "ppp" }}
+  securityPolicy:
+    name: {{ .Values.envPrefix }}-ppp
+  {{- end }}
 ---
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
@@ -250,6 +254,10 @@ spec:
       - "X-Content-Type-Options: nosniff"
   cdn:
     enabled: false
+  {{- if eq .Values.product "ppp" }}
+  securityPolicy:
+    name: {{ .Values.envPrefix }}-ppp
+  {{- end }}
 ---
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
