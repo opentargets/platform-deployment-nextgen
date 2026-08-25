@@ -13,13 +13,13 @@ keywords:
 dependencies:
   - name: prometheus
     version: 27.39.0
-    repository: oci://ghcr.io/prometheus-community/charts
+    repository: https://prometheus-community.github.io/helm-charts
   - name: grafana
     version: 10.5.15
-    repository: oci://ghcr.io/grafana/helm-charts
+    repository: https://grafana.github.io/helm-charts
   - name: loki
     version: 7.0.0
-    repository: oci://ghcr.io/grafana/helm-charts
+    repository: https://grafana.github.io/helm-charts
   - name: alloy
     version: 1.8.0
     repository: https://grafana.github.io/helm-charts
