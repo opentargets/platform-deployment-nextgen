@@ -197,6 +197,10 @@ prometheus:
               target_label: node_environment
               regex: gke-[^-]+-[^-]+-([^-]+)-.*
               replacement: $1
+            - source_labels:
+                [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_node_name, __meta_kubernetes_pod_node_name]
+              regex: .*staging.*
+              action: drop
         - job_name: kubernetes-service-endpoints-slow
           honor_labels: true
           scrape_interval: 5m
@@ -234,6 +238,10 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: node
+            - source_labels:
+                [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_node_name, __meta_kubernetes_pod_node_name]
+              regex: .*staging.*
+              action: drop
           metric_relabel_configs:
             - source_labels: [environment]
               regex: ^staging$
@@ -318,6 +326,9 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: node
+            - source_labels: [__meta_kubernetes_pod_name]
+              regex: .*staging.*
+              action: drop
 
         - job_name: kubernetes-pods-slow
           honor_labels: true
@@ -364,6 +375,9 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: node
+            - source_labels: [__meta_kubernetes_pod_name]
+              regex: .*staging.*
+              action: drop
         - job_name: opensearch
           honor_labels: true
           metrics_path: /_prometheus/metrics
