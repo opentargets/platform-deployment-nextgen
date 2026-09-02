@@ -25,6 +25,13 @@ apps_machine_type   = "c4d-standard-8"
 apps_disk_size_gb   = 128
 apps_labels         = {}
 
+# OPS VARIABLES
+ops_machine_type   = "c4d-standard-4"
+ops_min_node_count = 1
+ops_max_node_count = 2
+ops_disk_size_gb   = 30
+
+
 # CLICKHOUSE VARIABLES
 clickhouse_machine_type   = "c4d-standard-4"
 clickhouse_min_node_count = 1
