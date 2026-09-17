@@ -11,7 +11,7 @@ spec:
     path: helm/router
     helm:
       valueFiles:
-        - /profiles/devcluster-ppp-router.yaml
+        - /profiles/devcluster/ppp/router.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: devcluster-ppp

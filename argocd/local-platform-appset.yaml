@@ -16,11 +16,11 @@ spec:
       project: default
       source:
         repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
-        targetRevision: argocd-nginx-router
+        targetRevision: argocd-rebase-observability
         path: helm/platform
         helm:
           valueFiles:
-            - /profiles/local-{{ colour }}.yaml
+            - /profiles/local/{{ colour }}.yaml
       destination:
         server: https://kubernetes.default.svc
         namespace: local-{{ colour }}-platform

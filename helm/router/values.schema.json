@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "title": "Router Helm Chart Values Schema",
+  "description": "Schema for OpenTargets router Helm chart values",
+  "properties": {
+    "gcpProject": {
+      "type": "string",
+      "description": "The Google Cloud Project ID where the cluster lives."
+    },
+    "envPrefix": {
+      "type": "string",
+      "enum": ["devcluster", "production", "local"],
+      "description": "Identifies the environment."
+    },
+    "product": {
+      "type": "string",
+      "enum": ["platform", "ppp"],
+      "description": "The product name: either `platform` or `ppp`. Affects domain names, resource allocation, and configuration."
+    },
+    "domain": {
+      "type": "string",
+      "description": "The domain name where the application will be exposed."
+    },
+    "dnsZone": {
+      "type": "string",
+      "description": "The Google Cloud DNS zone name where the domain is managed."
+    },
+    "gcp": {
+      "type": "object",
+      "description": "GCP-specific feature flags.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "When false, skips GCP-native resources (Config Connector, ManagedCertificate, SecretProviderClass, VolumeSnapshot) for local testing."
+        }
+      }
+    },
+    "stagingEnabled": {
+      "type": "boolean",
+      "description": "Mirrors the router profile's stagingEnabled. When false, the colour that isn't `prodColour` is paused automatically."
+    },
+    "security": {
+      "type": "object",
+      "description": "API security blacklists and whitelists.",
+      "properties": {
+        "rateLimiterWhitelist": {
+          "type": "array",
+          "description": "CIDR blocks exempt from API rate limiting.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

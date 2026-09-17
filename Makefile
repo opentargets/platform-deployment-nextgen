@@ -34,15 +34,15 @@ help:
 # Terraform
 deploy-cluster-dev:
 	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && \
-	terraform -chdir=./terraform apply -var-file="../profiles/devcluster.tfvars"
+	terraform -chdir=./terraform apply -var-file="../profiles/devcluster/variables.tfvars"
 
 destroy-cluster-dev:
 	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && \
-	terraform -chdir=./terraform destroy -var-file="../profiles/devcluster.tfvars"
+	terraform -chdir=./terraform destroy -var-file="../profiles/devcluster/variables.tfvars"
 
 deploy-cluster-prod:
 	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && \
-	terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"
+	terraform -chdir=./terraform apply -var-file="../profiles/production/variables.tfvars"
 
 define CLUSTER_CONTEXT_CHECK
 	@if ! kubectl config current-context | grep -q $1; then \
@@ -109,7 +109,7 @@ deploy-chart-prod-ppp:
 # Observability stack
 deploy-observability-dev:
 	@helm dependency build ./helm/observability
-	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/devcluster-observability.yaml; \
+	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/devcluster/observability.yaml; \
 	read -p "press enter to continue..." nothing; \
 	helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/devcluster-observability.yaml
 

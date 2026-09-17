@@ -16,16 +16,16 @@
           "schemas": {
             "./helm/platform/values.schema.json": [
               "helm/platform/values.yaml",
-              "profiles/*-{platform,ppp}.yaml",
-            ],
-            "./helm/databases/values.schema.json": [
-              "helm/databases/values.yaml",
-              "profiles/*-databases.yaml",
+              "profiles/{local,devcluster,production}/{platform,ppp}/{blue,green}.yaml",
             ],
             "./helm/observability/values.schema.json": [
               "helm/observability/values.yaml",
-              "profiles/*-observability.yaml",
+              "profiles/{local,devcluster,production}/observability.yaml",
             ],
+            "./helm/router/values.schema.json": [
+              "helm/router/values.yaml",
+              "profiles/{local,devcluster,production}/{platform,ppp}/router.yaml"
+            ]
           },
         },
       },

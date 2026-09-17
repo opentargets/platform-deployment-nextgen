@@ -15,11 +15,11 @@ paused: false
 # Set by the ApplicationSet from profiles/devcluster-router.yaml so this
 # colour can tell whether it's the one currently serving prod traffic,
 # and whether the router even wants a staging colour running at all.
-colour: ""
-prodColour: ""
+colour: ''
+prodColour: ''
 stagingEnabled: true
 
-release: "26.03"
+release: '26.03'
 webapp:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ui-apps/ot-ui-apps:0.15.7
 api:
@@ -71,6 +71,7 @@ resources:
     limits:
       memory: 10Gi
       cpu: 4000m
+    storageSize: 1Gi
   opensearch:
     replicas: 2
     heapSize: 8g
@@ -80,6 +81,7 @@ resources:
     limits:
       memory: 16Gi
       cpu: 4000m
+    storageSize: 1Gi
 
 security:
   rateLimiterWhitelist: []

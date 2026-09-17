@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "title": "Platform Apps Helm Chart Values Schema",
   "description": "Schema for OpenTargets platform Helm chart values",
@@ -166,17 +166,11 @@
         "snapshot": {
           "type": "string",
           "description": "GCP snapshot path to restore ClickHouse data from. Empty string skips snapshot init (for local testing)."
-        },
-        "storageSize": {
-          "type": "string",
-          "description": "PVC storage size (e.g., 400Gi)",
-          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         }
       },
       "required": [
         "image",
-        "snapshot",
-        "storageSize"
+        "snapshot"
       ],
       "additionalProperties": false
     },
@@ -190,17 +184,11 @@
         "snapshot": {
           "type": "string",
           "description": "GCP snapshot path to restore OpenSearch data from. Empty string skips snapshot init (for local testing)."
-        },
-        "storageSize": {
-          "type": "string",
-          "description": "PVC storage size (e.g., 400Gi)",
-          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         }
       },
       "required": [
         "image",
-        "snapshot",
-        "storageSize"
+        "snapshot"
       ],
       "additionalProperties": false
     },
@@ -215,6 +203,11 @@
         "requests": {
           "$ref": "#/$defs/resourceRequirements"
         },
+        "storageSize": {
+          "type": "string",
+          "description": "PVC storage size (e.g., 400Gi)",
+          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
+        },
         "limits": {
           "$ref": "#/$defs/resourceLimits"
         }
@@ -222,7 +215,8 @@
       "required": [
         "replicas",
         "requests",
-        "limits"
+        "limits",
+        "storageSize"
       ],
       "additionalProperties": false
     },
@@ -237,6 +231,11 @@
         "heapSize": {
           "type": "string",
           "description": "JVM heap size (e.g., 8g, 512m)."
+        },
+        "storageSize": {
+          "type": "string",
+          "description": "PVC storage size (e.g., 400Gi)",
+          "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         },
         "requests": {
           "$ref": "#/$defs/resourceRequirements"

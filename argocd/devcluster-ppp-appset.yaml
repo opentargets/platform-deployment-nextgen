@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
 spec:
   goTemplate: true
-  goTemplateOptions: ["missingkey=error"]
+  goTemplateOptions: ['missingkey=error']
   generators:
     - matrix:
         generators:
@@ -19,12 +19,12 @@ spec:
               repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
               revision: argocd-rebase-observability
               files:
-                - path: profiles/devcluster-ppp-router.yaml
+                - path: profiles/devcluster/ppp/router.yaml
   template:
     metadata:
       name: devcluster-ppp-{{ .colour }}
       labels:
-        role: "{{ if eq .colour .prodColour }}prod{{ else }}staging{{ end }}"
+        role: '{{ if eq .colour .prodColour }}prod{{ else }}staging{{ end }}'
     spec:
       project: default
       source:
@@ -33,14 +33,14 @@ spec:
         path: helm/platform
         helm:
           valueFiles:
-            - /profiles/devcluster-ppp-{{ .colour }}.yaml
+            - /profiles/devcluster/ppp/{{ .colour }}.yaml
           parameters:
             - name: colour
-              value: "{{ .colour }}"
+              value: '{{ .colour }}'
             - name: prodColour
-              value: "{{ .prodColour }}"
+              value: '{{ .prodColour }}'
             - name: stagingEnabled
-              value: "{{ .stagingEnabled }}"
+              value: '{{ .stagingEnabled }}'
       destination:
         server: https://kubernetes.default.svc
         namespace: devcluster-{{ .colour }}-ppp
