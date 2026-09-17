@@ -77,6 +77,26 @@ variable "apps_labels" {
   type        = map(string)
 }
 
+# OPS VARIABLES
+variable "ops_min_node_count" {
+  description = "The minimum (and initial) number of nodes in the Ops node pool"
+  type        = number
+}
+
+variable "ops_max_node_count" {
+  description = "The maximum number of nodes in the Ops node pool"
+  type        = number
+}
+
+variable "ops_machine_type" {
+  description = "The machine type to use for the Ops nodes"
+  type        = string
+}
+
+variable "ops_disk_size_gb" {
+  description = "The disk size in GB for each node in the Ops node pool"
+  type        = number
+}
 
 # CLICKHOUSE VARIABLES
 variable "clickhouse_machine_type" {
