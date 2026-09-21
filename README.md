@@ -1,6 +1,9 @@
 # Open Targets nextgen deployment
 
-TODO
+Release process documentation:
+
+https://opentargets.org/technical-knowledge-base/platform/release-process/
+
 
 ## Copyright
 
