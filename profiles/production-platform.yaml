@@ -12,7 +12,7 @@ googleTagManagerId: GTM-WPXWRDV
 blue:
   release: '26.09'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.4-dev
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.5-dev
   api:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.9.0
   aiapi:
