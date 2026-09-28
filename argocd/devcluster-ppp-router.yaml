@@ -14,10 +14,8 @@ spec:
         - /profiles/devcluster/ppp/router.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: devcluster-ppp
+    namespace: devcluster-ppp-router
+  # Manual sync during the migration window — restore automated{prune,selfHeal} after.
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true

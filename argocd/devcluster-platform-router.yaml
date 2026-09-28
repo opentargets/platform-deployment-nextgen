@@ -14,10 +14,11 @@ spec:
         - /profiles/devcluster/platform/router.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: devcluster-platform
+    namespace: devcluster-platform-router
+  # Manual sync during the migration window — restore automated{prune,selfHeal} once
+  # DNS has been cut over and the legacy release is retired.
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # Detect another ArgoCD Application's ownership (not Helm ownership).
+      - FailOnSharedResource=true

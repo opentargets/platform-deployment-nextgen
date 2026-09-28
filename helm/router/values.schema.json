@@ -4,6 +4,27 @@
   "title": "Router Helm Chart Values Schema",
   "description": "Schema for OpenTargets router Helm chart values",
   "properties": {
+    "namespaceOverride": {
+      "type": "string",
+      "description": "Existing namespace for proxies, or empty for <envPrefix>-<product>-router."
+    },
+    "manageNamespace": {
+      "type": "boolean",
+      "description": "Render the Namespace resource. Disable when another release owns it."
+    },
+    "frontend": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Render Ingress and its IP, DNS, certificates and FrontendConfig. Disable for proxies behind an existing Ingress."
+        }
+      }
+    },
+    "prodColour": {
+      "type": "string",
+      "enum": ["blue", "green"]
+    },
     "gcpProject": {
       "type": "string",
       "description": "The Google Cloud Project ID where the cluster lives."
@@ -32,13 +53,47 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "When false, skips GCP-native resources (Config Connector, ManagedCertificate, SecretProviderClass, VolumeSnapshot) for local testing."
+          "description": "Enable GKE BackendConfigs and NEG Services; frontend.enabled separately controls GCP frontend resources."
+        },
+        "dns": {
+          "type": "boolean",
+          "description": "When false, skips DNSRecordSet creation so the new path can be verified before DNS points at it."
         }
       }
     },
+    "dnsNamespaceOverride": {
+      "type": "string",
+      "description": "Renders DNSRecordSets into this namespace instead of the release's own. Used to adopt pre-existing DNS records in place without moving them, since a namespace change requires delete+recreate."
+    },
+    "dnsTargetOverride": {
+      "type": "string",
+      "description": "Literal IP for A records instead of a live ComputeAddress reference (rrdatas instead of rrdatasRefs). Needed when adopting a record that was patched directly to a literal value during cutover, since the two are mutually exclusive."
+    },
     "stagingEnabled": {
       "type": "boolean",
-      "description": "Mirrors the router profile's stagingEnabled. When false, the colour that isn't `prodColour` is paused automatically."
+      "description": "The ApplicationSet passes this to platform to pause the non-prod colour; paused staging proxies use a process-only readiness probe."
+    },
+    "replicas": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Replica count for each nginx proxy Deployment. Defaults to 2 for zero-downtime rolling updates and PDB coverage."
+    },
+    "names": {
+      "type": "object",
+      "description": "Optional overrides to adopt pre-existing GCP resources instead of provisioning new ones.",
+      "properties": {
+        "computeAddress": {
+          "type": "string",
+          "description": "Overrides the ComputeAddress (global static IP) name/resourceID. Default: <envPrefix>-<product>-computeaddress-global."
+        }
+      }
+    },
+    "preSharedCerts": {
+      "type": "array",
+      "description": "GCP SSL certificate resource names to bridge HTTPS during a migration, via pre-shared-cert.",
+      "items": {
+        "type": "string"
+      }
     },
     "security": {
       "type": "object",

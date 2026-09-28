@@ -1,6 +1,9 @@
 # Open Targets nextgen deployment
 
-TODO
+For the existing devcluster platform migration, see the
+[staged ArgoCD cutover runbook](docs/devcluster-platform-cutover.md). It preserves
+the current Ingresses, IPs and certificates while moving traffic to router proxies
+and separately managed blue/green workloads.
 
 ## Copyright
 

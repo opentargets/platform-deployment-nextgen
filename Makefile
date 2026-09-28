@@ -1,5 +1,5 @@
 .PHONY: deploy-cluster-dev destroy-cluster-dev deploy-cluster-prod \
-	bootstrap-argocd-dev deploy-argocd-dev-platform deploy-argocd-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
+	bootstrap-argocd-dev deploy-argocd-dev-platform deploy-argocd-dev-platform-router deploy-argocd-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
 	deploy-observability-dev deploy-observability-prod \
 	port-forward-prometheus port-forward-grafana port-forward-argocd \
 	create-cluster-local delete-cluster-local tunnel-local refresh-secrets-local \
@@ -13,8 +13,9 @@ help:
 	@echo "  destroy-cluster-dev        - TF   — Destroy the development GKE cluster"
 	@echo
 	@echo "  bootstrap-argocd-dev       - ARGO — Install ArgoCD onto the dev cluster (run once per fresh cluster)"
-	@echo "  deploy-argocd-dev-platform - ARGO — Bootstrap + sync the platform blue/green ArgoCD apps on the dev cluster"
-	@echo "  deploy-argocd-dev-ppp      - ARGO — Bootstrap + sync the ppp      blue/green ArgoCD apps on the dev cluster"
+	@echo "  deploy-argocd-dev-platform - ARGO — Apply + sync platform colours only; leaves router and traffic unchanged"
+	@echo "  deploy-argocd-dev-platform-router - ARGO — Apply + sync router proxies separately (see migration runbook)"
+	@echo "  deploy-argocd-dev-ppp      - ARGO — Apply + sync the ppp      blue/green ArgoCD apps on the dev cluster (ArgoCD must already be installed)"
 	@echo "  deploy-chart-prod-platform - HELM — Deploy the platform flavor on the prod cluster"
 	@echo "  deploy-chart-prod-ppp      - HELM — Deploy the PPP      flavor on the prod cluster"
 	@echo
@@ -42,7 +43,7 @@ destroy-cluster-dev:
 
 deploy-cluster-prod:
 	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && \
-	terraform -chdir=./terraform apply -var-file="../profiles/production/variables.tfvars"
+	terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"
 
 define CLUSTER_CONTEXT_CHECK
 	@if ! kubectl config current-context | grep -q $1; then \
@@ -54,32 +55,48 @@ endef
 # ----------------------------------------------------------------------------------------------------------------------
 # ArgoCD
 #
-# Requires `argocd login localhost:8080` against a `port-forward-argocd` tunnel first.
-# The router + platform ApplicationSet are applied (picking up any manifest changes),
-# then each app is synced with --prune since automated sync/prune is intentionally off.
+# bootstrap-argocd-dev installs ArgoCD itself (run once per fresh cluster).
+#
+# The deploy-argocd-dev-* targets require `argocd login localhost:8080` against a
+# `port-forward-argocd` tunnel first. Platform colours and router are separate stages.
+# The platform router stands up its own fresh namespace/IP/certs alongside the legacy
+# release; DNS cutover and legacy retirement are separate, explicit actions documented
+# in the runbook.
 bootstrap-argocd-dev:
 	@$(call CLUSTER_CONTEXT_CHECK,dev)
 	@helm dependency build ./helm/argocd
-	@helm diff upgrade --allow-unreleased argocd ./helm/argocd --namespace argocd; \
-	read -p "press enter to continue..." nothing; \
+	@helm diff upgrade --allow-unreleased argocd ./helm/argocd --namespace argocd && \
+	read -p "press enter to continue..." nothing && \
 	helm upgrade --install argocd ./helm/argocd --namespace argocd --create-namespace
 	kubectl wait --namespace argocd --for=condition=ready pod --selector=app.kubernetes.io/name=argocd-server --timeout=300s
 
 deploy-argocd-dev-platform:
 	@$(call CLUSTER_CONTEXT_CHECK,dev)
-	kubectl apply -f ./argocd/devcluster-platform-router.yaml
 	kubectl apply -f ./argocd/devcluster-platform-appset.yaml
-	argocd app sync devcluster-platform-router --prune
+	kubectl wait -n argocd --for=create application/devcluster-platform-blue --timeout=120s
+	kubectl wait -n argocd --for=create application/devcluster-platform-green --timeout=120s
+	argocd app wait devcluster-platform-blue devcluster-platform-green --operation --timeout 900
 	argocd app sync devcluster-platform-blue --prune
 	argocd app sync devcluster-platform-green --prune
+	argocd app wait devcluster-platform-blue devcluster-platform-green --sync --health --timeout 900
+
+deploy-argocd-dev-platform-router:
+	@$(call CLUSTER_CONTEXT_CHECK,dev)
+	kubectl apply -f ./argocd/devcluster-platform-router.yaml
+	argocd app sync devcluster-platform-router --prune
+	argocd app wait devcluster-platform-router --sync --health --timeout 600
 
 deploy-argocd-dev-ppp:
 	@$(call CLUSTER_CONTEXT_CHECK,dev)
-	kubectl apply -f ./argocd/devcluster-ppp-router.yaml
 	kubectl apply -f ./argocd/devcluster-ppp-appset.yaml
-	argocd app sync devcluster-ppp-router --prune
+	kubectl wait -n argocd --for=create application/devcluster-ppp-blue --timeout=120s
+	kubectl wait -n argocd --for=create application/devcluster-ppp-green --timeout=120s
+	argocd app wait devcluster-ppp-blue devcluster-ppp-green --operation --timeout 900
 	argocd app sync devcluster-ppp-blue --prune
 	argocd app sync devcluster-ppp-green --prune
+	argocd app wait devcluster-ppp-blue devcluster-ppp-green --sync --health --timeout 900
+	kubectl apply -f ./argocd/devcluster-ppp-router.yaml
+	argocd app sync devcluster-ppp-router --prune
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Helm
@@ -111,7 +128,7 @@ deploy-observability-dev:
 	@helm dependency build ./helm/observability
 	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/devcluster/observability.yaml; \
 	read -p "press enter to continue..." nothing; \
-	helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/devcluster-observability.yaml
+	helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/devcluster/observability.yaml
 
 deploy-observability-prod:
 	@helm dependency build ./helm/observability

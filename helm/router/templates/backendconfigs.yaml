@@ -1,0 +1,43 @@
+{{- if .Values.gcp.enabled }}
+{{- $prefix := printf "%s-%s" .Values.envPrefix .Values.product }}
+{{- range $cdn := list true false }}
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: {{ $prefix }}-backendconfig-{{ ternary "cdn" "no-cdn" $cdn }}
+  namespace: {{ include "router.namespace" $ }}
+spec:
+  # Exercise the upstream application, not nginx's process-only liveness check.
+  healthCheck:
+    requestPath: /health
+    port: 8080
+    type: HTTP
+  customResponseHeaders:
+    headers:
+      - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
+      - "X-Content-Type-Options: nosniff"
+      {{- if $cdn }}
+      - "X-Frame-Options: DENY"
+      - "Content-Security-Policy: base-uri 'self'; frame-ancestors 'none'"
+      {{- end }}
+  cdn:
+    enabled: {{ $cdn }}
+    {{- if $cdn }}
+    cachePolicy:
+      includeHost: true
+      includeProtocol: true
+      includeQueryString: false
+    negativeCaching: true
+    negativeCachingPolicy:
+      - code: 404
+        ttl: 120
+      - code: 410
+        ttl: 120
+    {{- end }}
+  {{- if eq $.Values.product "ppp" }}
+  securityPolicy:
+    name: {{ $.Values.envPrefix }}-ppp
+  {{- end }}
+{{- end }}
+{{- end }}

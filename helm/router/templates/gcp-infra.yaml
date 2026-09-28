@@ -1,39 +1,47 @@
-{{- if .Values.gcp.enabled }}
+{{- if and .Values.gcp.enabled .Values.frontend.enabled }}
 {{- $routerNamespace := printf "%s-%s" .Values.envPrefix .Values.product }}
+{{- $namespace := include "router.namespace" . }}
+{{/* Lets DNSRecordSets be adopted in place from a different (e.g. legacy) namespace
+     without moving the rest of the frontend. Defaults to this release's own namespace. */}}
+{{- $dnsNamespace := .Values.dnsNamespaceOverride | default $namespace }}
 {{- $prodSubdomain := include "subdomain" . }}
 {{- $stagingSubdomain := printf "staging.%s" $prodSubdomain }}
+{{/* Only computeAddress is a real Config Connector adoption target; cert/ingress names aren't. */}}
+{{- $computeAddressName := (.Values.names).computeAddress | default (printf "%s-computeaddress-global" $routerNamespace) }}
+{{- $sslCertName := printf "%s-ssl-cert" $routerNamespace }}
+{{- $sslCertFallbackName := printf "%s-ssl-cert-fallback" $routerNamespace }}
+{{- $ingressName := printf "%s-ingress" $routerNamespace }}
 ---
 apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeAddress
 metadata:
-  name: {{ $routerNamespace }}-computeaddress-global
-  namespace: {{ $routerNamespace }}
+  name: {{ $computeAddressName }}
+  namespace: {{ $namespace }}
 spec:
   location: global
   description: Global IP address for {{ $routerNamespace }} router
-  resourceID: {{ $routerNamespace }}-computeaddress-global
+  resourceID: {{ $computeAddressName }}
+{{/* Gated separately so DNS can stay off while the rest is provisioned and verified. */}}
+{{- if ne .Values.gcp.dns false }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-webapp
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: {{ $prodSubdomain }}.
   type: A
   ttl: 300
   managedZoneRef:
     external: {{ .Values.dnsZone }}
-  rrdatasRefs:
-    - kind: ComputeAddress
-      name: {{ $routerNamespace }}-computeaddress-global
-      namespace: {{ $routerNamespace }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-webapp-www
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: www.{{ $prodSubdomain }}.
   type: CNAME
@@ -47,56 +55,47 @@ apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-api
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: api.{{ $prodSubdomain }}.
   type: A
   ttl: 300
   managedZoneRef:
     external: {{ .Values.dnsZone }}
-  rrdatasRefs:
-    - kind: ComputeAddress
-      name: {{ $routerNamespace }}-computeaddress-global
-      namespace: {{ $routerNamespace }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-aiapi
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: ai.{{ $prodSubdomain }}.
   type: A
   ttl: 300
   managedZoneRef:
     external: {{ .Values.dnsZone }}
-  rrdatasRefs:
-    - kind: ComputeAddress
-      name: {{ $routerNamespace }}-computeaddress-global
-      namespace: {{ $routerNamespace }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
 {{- if eq .Values.product "platform" }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-genetics
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: genetics.{{ .Values.domain }}.
   type: A
   ttl: 300
   managedZoneRef:
     external: {{ .Values.dnsZone }}
-  rrdatasRefs:
-    - kind: ComputeAddress
-      name: {{ $routerNamespace }}-computeaddress-global
-      namespace: {{ $routerNamespace }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-genetics-www
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: www.genetics.{{ .Values.domain }}.
   type: CNAME
@@ -111,23 +110,20 @@ apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-webapp-staging
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: {{ $stagingSubdomain }}.
   type: A
   ttl: 300
   managedZoneRef:
     external: {{ .Values.dnsZone }}
-  rrdatasRefs:
-    - kind: ComputeAddress
-      name: {{ $routerNamespace }}-computeaddress-global
-      namespace: {{ $routerNamespace }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-webapp-staging-www
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: www.{{ $stagingSubdomain }}.
   type: CNAME
@@ -141,39 +137,34 @@ apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-api-staging
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: api.{{ $stagingSubdomain }}.
   type: A
   ttl: 300
   managedZoneRef:
     external: {{ .Values.dnsZone }}
-  rrdatasRefs:
-    - kind: ComputeAddress
-      name: {{ $routerNamespace }}-computeaddress-global
-      namespace: {{ $routerNamespace }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet
 metadata:
   name: {{ $routerNamespace }}-dnsrecordset-aiapi-staging
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $dnsNamespace }}
 spec:
   name: ai.{{ $stagingSubdomain }}.
   type: A
   ttl: 300
   managedZoneRef:
     external: {{ .Values.dnsZone }}
-  rrdatasRefs:
-    - kind: ComputeAddress
-      name: {{ $routerNamespace }}-computeaddress-global
-      namespace: {{ $routerNamespace }}
+{{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
+{{- end }}
 ---
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
-  name: {{ $routerNamespace }}-ssl-cert
-  namespace: {{ $routerNamespace }}
+  name: {{ $sslCertName }}
+  namespace: {{ $namespace }}
 spec:
   domains:
     - {{ $prodSubdomain }}
@@ -192,8 +183,8 @@ spec:
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
-  name: {{ $routerNamespace }}-ssl-cert-fallback
-  namespace: {{ $routerNamespace }}
+  name: {{ $sslCertFallbackName }}
+  namespace: {{ $namespace }}
 spec:
   domains:
     - {{ $prodSubdomain }}
@@ -208,62 +199,12 @@ spec:
     - genetics.{{ .Values.domain }}
     - www.genetics.{{ .Values.domain }}
     {{- end }}
----
-apiVersion: cloud.google.com/v1
-kind: BackendConfig
-metadata:
-  name: {{ $routerNamespace }}-backendconfig-cdn
-  namespace: {{ $routerNamespace }}
-spec:
-  customResponseHeaders:
-    headers:
-      - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
-      - "X-Content-Type-Options: nosniff"
-      - "X-Frame-Options: DENY"
-      - "Content-Security-Policy: base-uri 'self'; frame-ancestors 'none'"
-  cdn:
-    enabled: true
-    cachePolicy:
-      includeHost: true
-      includeProtocol: true
-      includeQueryString: false
-    negativeCaching: true
-    negativeCachingPolicy:
-      - code: 404
-        ttl: 120
-      - code: 410
-        ttl: 120
-  {{- if eq .Values.product "ppp" }}
-  securityPolicy:
-    name: {{ .Values.envPrefix }}-ppp
-  {{- end }}
----
-apiVersion: cloud.google.com/v1
-kind: BackendConfig
-metadata:
-  name: {{ $routerNamespace }}-backendconfig-no-cdn
-  namespace: {{ $routerNamespace }}
-spec:
-  healthCheck:
-    requestPath: /health
-    port: 8080
-    type: HTTP
-  customResponseHeaders:
-    headers:
-      - "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
-      - "X-Content-Type-Options: nosniff"
-  cdn:
-    enabled: false
-  {{- if eq .Values.product "ppp" }}
-  securityPolicy:
-    name: {{ .Values.envPrefix }}-ppp
-  {{- end }}
 ---
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
 metadata:
   name: {{ $routerNamespace }}-frontendconfig-http-redirect
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $namespace }}
 spec:
   redirectToHttps:
     enabled: true
@@ -273,11 +214,14 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ $routerNamespace }}-ingress
-  namespace: {{ $routerNamespace }}
+  name: {{ $ingressName }}
+  namespace: {{ $namespace }}
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: {{ $routerNamespace }}-computeaddress-global
-    networking.gke.io/managed-certificates: {{ $routerNamespace }}-ssl-cert,{{ $routerNamespace }}-ssl-cert-fallback
+    kubernetes.io/ingress.global-static-ip-name: {{ $computeAddressName }}
+    networking.gke.io/managed-certificates: {{ $sslCertName }},{{ $sslCertFallbackName }}
+    {{- if .Values.preSharedCerts }}
+    ingress.gcp.kubernetes.io/pre-shared-cert: {{ join "," .Values.preSharedCerts }}
+    {{- end }}
     networking.gke.io/v1beta1.FrontendConfig: {{ $routerNamespace }}-frontendconfig-http-redirect
     cloud.google.com/neg: '{"ingress": true}'
 spec:

@@ -1,11 +1,32 @@
+# Empty means <envPrefix>-<product>-router. Must match the Application destination.
+namespaceOverride: ""
+manageNamespace: true
+# Disable when installing proxies behind an existing Ingress. BackendConfigs and
+# NEG-enabled Services are still created when gcp.enabled is true.
+frontend:
+  enabled: true
 gcp:
   enabled: false
-# Not read by this chart's own templates — the router's routing surface
-# (proxies, DNS, Ingress rules, cert domains) stays static regardless, since
-# toggling GCLB-attached resources on/off is slow and races with GKE's NEG
-# controller. It's declared here purely so the devcluster ApplicationSet can
-# read it via a git-file generator and pass it through to the platform
-# chart's `paused` computation for the non-prod colour.
+  # false = provision without touching DNS yet (verify via curl --resolve first).
+  dns: true
+# Renders DNSRecordSets into a different namespace than the rest of this release.
+# Used to adopt pre-existing DNS records in place (e.g. from a retiring release)
+# without moving them, since a namespace change requires delete+recreate.
+dnsNamespaceOverride: ""
+# Literal IP for A records instead of a live ComputeAddress reference. Needed when
+# adopting a record that was patched directly to a literal value during cutover —
+# rrdatas and rrdatasRefs are mutually exclusive, so an adopted record must keep
+# using rrdatas to match what's already live.
+dnsTargetOverride: ""
+replicas: 2
+names:
+  # Adopts a pre-existing ComputeAddress instead of provisioning a new one.
+  computeAddress: ""
+# GCP SSL certificate names to bridge HTTPS during a migration (pre-shared-cert).
+preSharedCerts: []
+# The routing surface stays allocated when staging is paused. This controls the
+# staging proxies' readiness check and is passed by the ApplicationSet to the
+# platform chart's `paused` computation for the non-prod colour.
 stagingEnabled: true
 security:
   rateLimiterWhitelist: []

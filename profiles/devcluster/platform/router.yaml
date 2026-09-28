@@ -6,4 +6,24 @@ dnsZone: opentargets-xyz
 gcpProject: open-targets-eu-dev
 gcp:
   enabled: true
-stagingEnabled: false
+  # false until the new stack is validated; see the runbook's cutover section.
+  dns: false
+# The legacy release's Active certs (compute SSL certs owned by its ManagedCertificates in
+# devcluster-platform), attached so the new Ingress serves valid TLS before DNS moves.
+# The router's own ManagedCertificates can't provision until DNS points here. Remove this
+# once they're Active, and before the runbook retires the legacy release.
+preSharedCerts:
+  - mcrt-5ca2e77b-9178-4df2-886c-c849e61c74fa # devcluster-platform-prod-ssl-cert
+  - mcrt-bec64caf-2cc9-4e77-94e8-3f3f0914e5bc # devcluster-platform-prod-ssl-cert-fallback
+  - mcrt-617a7cfa-6bde-44df-a3e9-c7aa1b543d2a # devcluster-platform-staging-ssl-cert
+  - mcrt-8a167d5f-ad49-4f06-a304-b3feb879f105 # devcluster-platform-staging-ssl-cert-fallback
+# Keep both colours available for validation and rollback during migration.
+stagingEnabled: true
+frontend:
+  enabled: true
+# Once cutting DNS over (see the runbook): set dnsNamespaceOverride to
+# "devcluster-platform" so the legacy release's DNSRecordSets are adopted here in
+# place, dnsTargetOverride to the literal new IP (matching what the runbook's
+# kubectl patch already set live), and flip gcp.dns to true.
+# dnsNamespaceOverride: devcluster-platform
+# dnsTargetOverride: "203.0.113.1"

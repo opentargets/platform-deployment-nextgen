@@ -11,6 +11,25 @@ resource "google_compute_ssl_policy" "tls12" {
 locals {
   products    = ["platform", "ppp"]
   deployments = ["platform-blue", "ppp-blue", "platform-green", "ppp-green"]
+
+  # Current namespace/KSA naming scheme, keyed "<colour>-<product>" (e.g. "blue-platform").
+  workload_identity_bindings = {
+    for d in local.deployments : "${split("-", d)[1]}-${split("-", d)[0]}" => {
+      product   = split("-", d)[0]
+      namespace = "${var.global_prefix}-${split("-", d)[1]}-${split("-", d)[0]}"
+      ksa       = "${var.global_prefix}-${split("-", d)[1]}-${split("-", d)[0]}-aiapi"
+    }
+  }
+
+  # Old scheme, still used by the live pre-ArgoCD release. Delete once it's retired.
+  # Keyed "<product>-<colour>" to match the existing state entries, so they're left untouched.
+  legacy_workload_identity_bindings = {
+    for d in local.deployments : d => {
+      product   = split("-", d)[0]
+      namespace = "${var.global_prefix}-${split("-", d)[0]}"
+      ksa       = "${var.global_prefix}-${d}-aiapi"
+    } if startswith(d, "platform-")
+  }
 }
 
 resource "google_service_account" "aiapi" {
@@ -33,11 +52,11 @@ resource "google_project_iam_member" "aiapi_roles" {
 
 # Workload Identity bindings for the namespaces.
 resource "google_service_account_iam_member" "aiapi_to_global_gsa_workload_identity_binding" {
-  for_each = toset(local.deployments)
+  for_each = merge(local.workload_identity_bindings, local.legacy_workload_identity_bindings)
 
-  service_account_id = google_service_account.aiapi[split("-", each.value)[0]].name
+  service_account_id = google_service_account.aiapi[each.value.product].name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "serviceAccount:${var.project_id}.svc.id.goog[${var.global_prefix}-${split("-", each.value)[1]}-${split("-", each.value)[0]}/${var.global_prefix}-${split("-", each.value)[1]}-${split("-", each.value)[0]}-aiapi]"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[${each.value.namespace}/${each.value.ksa}]"
 }
 
 # This service account is used by Config Connector. It needs permissions to create

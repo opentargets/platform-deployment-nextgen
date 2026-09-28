@@ -3,6 +3,7 @@
 {{- $prodNamespace := printf "%s-%s-%s" .Values.envPrefix $prodColour .Values.product }}
 {{- $stagingNamespace := printf "%s-%s-%s" .Values.envPrefix $stagingColour .Values.product }}
 {{- $routerNamespace := printf "%s-%s" .Values.envPrefix .Values.product }}
+{{- $namespace := include "router.namespace" . }}
 {{- $cdnBackend := printf "%s-backendconfig-cdn" $routerNamespace }}
 {{- $noCdnBackend := printf "%s-backendconfig-no-cdn" $routerNamespace }}
 
@@ -11,70 +12,63 @@
   (dict "name" "api-prod"       "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)          "backend" $noCdnBackend)
   (dict "name" "webapp-staging" "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace) "backend" $cdnBackend)
   (dict "name" "api-staging"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)    "backend" $noCdnBackend)
-  (dict "name" "aiapi-prod"     "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)         "backend" $noCdnBackend)
-  (dict "name" "aiapi-staging"  "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)   "backend" $noCdnBackend)
+  (dict "name" "aiapi-prod"     "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)         "backend" $noCdnBackend "streaming" true)
+  (dict "name" "aiapi-staging"  "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)   "backend" $noCdnBackend "streaming" true)
 }}
+{{- $config := include "router.proxyConfig" (dict "upstream" .upstream "security" $.Values.security "streaming" (.streaming | default false)) }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .name }}-proxy-config
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $namespace }}
 data:
   nginx.conf: |
-    events {}
-    http {
-      geo $real_client_ip $limit {
-        default 1;
-        {{- range $ip := $.Values.security.rateLimiterWhitelist }}
-        {{ $ip }} 0;
-        {{- end }}
-      }
-      map $http_x_forwarded_for $real_client_ip {
-        ~^(\S+),\s  $1;
-        default     $http_x_forwarded_for;
-      }
-      map $limit $limit_key {
-        0 "";
-        1 $real_client_ip;
-      }
-      limit_req_zone $limit_key zone=api_limit:10m rate=40r/s;
-      server {
-        listen 8080;
-        location / {
-          limit_req zone=api_limit burst=80 nodelay;
-          limit_req_status 429;
-          proxy_pass http://{{ .upstream }};
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-        }
-      }
-    }
+{{ $config | indent 4 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .name }}-proxy
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $namespace }}
 spec:
-  replicas: 1
+  replicas: {{ $.Values.replicas | default 2 }}
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: {{ .name }}-proxy
   template:
     metadata:
       annotations:
-        checksum/config: "{{ .upstream | sha256sum }}"
+        checksum/config: {{ $config | sha256sum | quote }}
       labels:
         app: {{ .name }}-proxy
+        app.kubernetes.io/component: router-proxy
     spec:
       containers:
         - name: nginx
           image: nginx:alpine
           ports:
             - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              {{- if and (hasSuffix "-staging" .name) (not $.Values.stagingEnabled) }}
+              path: /nginx-health
+              {{- else }}
+              path: /health
+              {{- end }}
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /nginx-health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
           volumeMounts:
             - name: config
               mountPath: /etc/nginx/nginx.conf
@@ -88,7 +82,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .name }}
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $namespace }}
   {{- if $.Values.gcp.enabled }}
   annotations:
     cloud.google.com/neg: '{"ingress": true}'
@@ -101,16 +95,27 @@ spec:
     - port: 8080
       targetPort: 8080
   type: ClusterIP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}-proxy-pdb
+  namespace: {{ $namespace }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}-proxy
 {{- end }}
 
 
-{{- if not .Values.gcp.enabled }}
+{{- if and (not .Values.gcp.enabled) .Values.frontend.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $routerNamespace }}-ingress
-  namespace: {{ $routerNamespace }}
+  namespace: {{ $namespace }}
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:

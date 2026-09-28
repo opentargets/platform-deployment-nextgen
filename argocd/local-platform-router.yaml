@@ -14,7 +14,7 @@ spec:
         - /profiles/local/router.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: local-platform
+    namespace: local-platform-router
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
