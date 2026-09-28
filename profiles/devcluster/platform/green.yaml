@@ -24,7 +24,7 @@ clickhouse:
   image: clickhouse/clickhouse-server:26.8.2.7
   snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2609b-ch
 opensearch:
-  image: opensearchproject/opensearch:3.7.0
+  image: opensearchproject/opensearch:3.5.0
   snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2609-os
 
 resources:
