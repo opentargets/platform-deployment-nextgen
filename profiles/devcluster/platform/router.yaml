@@ -1,4 +1,4 @@
-prodColour: green
+prodColour: blue
 envPrefix: devcluster
 product: platform
 domain: opentargets.xyz
@@ -10,8 +10,12 @@ gcp:
   dns: false
 # The legacy release's Active certs (compute SSL certs owned by its ManagedCertificates in
 # devcluster-platform), attached so the new Ingress serves valid TLS before DNS moves.
-# The router's own ManagedCertificates can't provision until DNS points here. Remove this
-# once they're Active, and before the runbook retires the legacy release.
+# The router's own ManagedCertificates can't provision until DNS points here.
+# Once they're Active, REPLACE these with the router's own cert names (their
+# .status.certificateName) — don't delete the list. GKE's certificate controller writes
+# the router's certs into this same annotation, so removing it strips them too and can
+# briefly leave the load balancer with no certificate. See the runbook's step 6.
+# Until then, ArgoCD shows the Ingress OutOfSync as the controller appends its own two.
 preSharedCerts:
   - mcrt-5ca2e77b-9178-4df2-886c-c849e61c74fa # devcluster-platform-prod-ssl-cert
   - mcrt-bec64caf-2cc9-4e77-94e8-3f3f0914e5bc # devcluster-platform-prod-ssl-cert-fallback
