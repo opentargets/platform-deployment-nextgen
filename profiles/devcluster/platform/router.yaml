@@ -17,10 +17,8 @@ gcp:
 # briefly leave the load balancer with no certificate. See the runbook's step 6.
 # Until then, ArgoCD shows the Ingress OutOfSync as the controller appends its own two.
 preSharedCerts:
-  - mcrt-5ca2e77b-9178-4df2-886c-c849e61c74fa # devcluster-platform-prod-ssl-cert
-  - mcrt-bec64caf-2cc9-4e77-94e8-3f3f0914e5bc # devcluster-platform-prod-ssl-cert-fallback
-  - mcrt-617a7cfa-6bde-44df-a3e9-c7aa1b543d2a # devcluster-platform-staging-ssl-cert
-  - mcrt-8a167d5f-ad49-4f06-a304-b3feb879f105 # devcluster-platform-staging-ssl-cert-fallback
+  - mcrt-cb249702-980b-45db-a35d-f8441adc276c # devcluster-platform-ssl-cert
+  - mcrt-428dc92e-19be-43ae-a20e-20422624fe83 # devcluster-platform-ssl-cert-fallback
 # Keep both colours available for validation and rollback during migration.
 stagingEnabled: true
 frontend:
