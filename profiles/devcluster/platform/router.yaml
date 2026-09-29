@@ -6,8 +6,11 @@ dnsZone: opentargets-xyz
 gcpProject: open-targets-eu-dev
 gcp:
   enabled: true
-  # false until the new stack is validated; see the runbook's cutover section.
-  dns: false
+  # The router owns its DNSRecordSets in its own namespace, pointing at its own
+  # ComputeAddress. On first sync, Config Connector takes over the existing Cloud DNS
+  # records (same data, so no change); the legacy objects are then released with
+  # deletion-policy=abandon. See the runbook's step 7.
+  dns: true
 # The legacy release's Active certs (compute SSL certs owned by its ManagedCertificates in
 # devcluster-platform), attached so the new Ingress serves valid TLS before DNS moves.
 # The router's own ManagedCertificates can't provision until DNS points here.
@@ -25,9 +28,3 @@ preSharedCerts:
 stagingEnabled: true
 frontend:
   enabled: true
-# Once cutting DNS over (see the runbook): set dnsNamespaceOverride to
-# "devcluster-platform" so the legacy release's DNSRecordSets are adopted here in
-# place, dnsTargetOverride to the literal new IP (matching what the runbook's
-# kubectl patch already set live), and flip gcp.dns to true.
-# dnsNamespaceOverride: devcluster-platform
-# dnsTargetOverride: "203.0.113.1"
