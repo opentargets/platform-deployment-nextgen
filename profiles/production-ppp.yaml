@@ -4,7 +4,7 @@ product: ppp
 domain: opentargets.org
 dnsZone: opentargets-org
 
-production: green
+production: blue
 staging: enabled
 
 googleTagManagerId: GTM-5BSVCXB
@@ -14,18 +14,18 @@ blue:
   webapp:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.7
   api:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.9.1-rc.2
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.9.1
   aiapi:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
     secrets:
       openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:26.8.2.7
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2609-ch-rc2
+    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2609-ch
     storageSize: 170Gi
   opensearch:
     image: opensearchproject/opensearch:3.5.0
-    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2609-os-rc2
+    snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2609-os
     storageSize: 60Gi
 
 green:
