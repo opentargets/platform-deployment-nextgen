@@ -63,6 +63,8 @@ deploy-chart-prod-platform:
 	read -p "confirm production platform chart deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
 		helm upgrade --install production-platform ./helm/platform -f ./profiles/production-platform.yaml; \
+		URLMAP=$$(kubectl get ingress production-platform-prod-ingress -n production-platform -o jsonpath='{.metadata.annotations.ingress\.kubernetes\.io/url-map}') && \
+		gcloud compute url-maps invalidate-cdn-cache "$$URLMAP" --path "/config.js" --host "platform.opentargets.org" --global --async --project="open-targets-prod"; \
 	else \
 		echo "deploy cancelled"; \
 	fi
@@ -74,6 +76,8 @@ deploy-chart-prod-ppp:
 	read -p "confirm production ppp chart deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
 		helm upgrade --install production-ppp ./helm/platform -f ./profiles/production-ppp.yaml; \
+		URLMAP=$$(kubectl get ingress production-ppp-prod-ingress -n production-ppp -o jsonpath='{.metadata.annotations.ingress\.kubernetes\.io/url-map}') && \
+		gcloud compute url-maps invalidate-cdn-cache "$$URLMAP" --path "/config.js" --host "partner-platform.opentargets.org" --global --async --project="open-targets-prod"; \
 	else \
 		echo "deploy cancelled"; \
 	fi
