@@ -12,7 +12,7 @@ googleTagManagerId: GTM-5BSVCXB
 blue:
   release: '26.09'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.7
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.8
   api:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.9.1
   aiapi:
