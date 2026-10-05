@@ -240,7 +240,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "fixedColor": "light-green",
+            "mode": "fixed"
           },
           "custom": {
             "hideFrom": {
@@ -256,10 +257,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -281,7 +278,9 @@
             "theme": "auto"
           },
           "name": "Layer 0",
-          "type": "default"
+          "noRepeat": false,
+          "opacity": 0.3,
+          "type": "osm-standard"
         },
         "controls": {
           "mouseWheelZoom": true,
@@ -342,9 +341,12 @@
           },
           {
             "config": {
-              "nightColor": "#ccccdb70",
+              "nightColor": "#a7a6ba4D",
               "show": "to",
               "sun": false
+            },
+            "location": {
+              "mode": "auto"
             },
             "name": "Layer 4",
             "opacity": 0.4,
