@@ -80,6 +80,36 @@ spec:
           port: {{ include "ports.http" . }}
 
 
+---
+# NetworkPolicy for {{ $namespace }} API metrics.
+# Allows ingress from Prometheus pods..
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $namespace }}-api-metrics-ingress
+  namespace: {{ $namespace }}
+  labels:
+    app: api
+    {{- $labels | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: {{ include "ports.http" . }}
+
+
 {{- if not $paused }}
 ---
 # HorizontalPodAutoscaler for {{ $namespace }} API.
