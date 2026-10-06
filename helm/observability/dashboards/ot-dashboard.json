@@ -675,12 +675,7 @@
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Value #A"
-          }
-        ]
+        "sortBy": []
       },
       "pluginVersion": "12.3.1",
       "targets": [
@@ -691,7 +686,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "topk(5, sum by(geoip_continent_code) (count_over_time({container=\"api\"} |= `client_ip` | json [$__auto])))",
+          "expr": "sort_desc(topk(5, sum by(geoip_country_code) (count_over_time({container=\"api\"} |= `client_ip` | json [$__auto]))))",
           "legendFormat": "",
           "queryType": "instant",
           "refId": "A"
@@ -704,7 +699,7 @@
           "options": {
             "include": {
               "names": [
-                "geoip_continent_code"
+                "geoip_country_code"
               ]
             }
           }
