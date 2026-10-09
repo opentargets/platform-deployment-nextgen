@@ -12,7 +12,7 @@ googleTagManagerId: GTM-WPXWRDV
 blue:
   release: '26.09'
   webapp:
-    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.1
+    image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.9
   api:
     image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.9.0
   aiapi:
@@ -21,7 +21,7 @@ blue:
       openai: projects/open-targets-prod/locations/europe-west1/secrets/openai-token
   clickhouse:
     image: clickhouse/clickhouse-server:26.8.2.7
-    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2609-ch
+    snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2609b-ch
     storageSize: 200Gi
   opensearch:
     image: opensearchproject/opensearch:3.5.0
