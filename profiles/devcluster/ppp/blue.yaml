@@ -10,7 +10,7 @@ gcp:
   enabled: true
   ingress: false
 
-release: '26.06'
+release: '26.09'
 webapp:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.8
 api:
@@ -22,10 +22,10 @@ aiapi:
     openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
 clickhouse:
   image: clickhouse/clickhouse-server:25.8.18.1
-  snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2606-ch
+  snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2609-ch
 opensearch:
   image: opensearchproject/opensearch:3.5.0
-  snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2606-os
+  snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2609-os
 
 resources:
   webapp:
