@@ -21,7 +21,7 @@ aiapi:
   secrets:
     openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
 clickhouse:
-  image: clickhouse/clickhouse-server:25.8.18.1
+  image: clickhouse/clickhouse-server:26.8.2.7
   snapshot: projects/open-targets-eu-dev/global/snapshots/ppp-2609-ch
 opensearch:
   image: opensearchproject/opensearch:3.5.0
