@@ -29,7 +29,7 @@ opensearch:
 
 resources:
   webapp:
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 5
     requests:
       memory: 32Mi
@@ -38,7 +38,7 @@ resources:
       memory: 256Mi
       cpu: 500m
   api:
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 5
     requests:
       memory: 2Gi
@@ -47,7 +47,7 @@ resources:
       memory: 4Gi
       cpu: 2000m
   aiapi:
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 5
     requests:
       memory: 72Mi
@@ -56,7 +56,7 @@ resources:
       memory: 256Mi
       cpu: 500m
   clickhouse:
-    replicas: 2
+    replicas: 1
     storageSize: 150Gi
     requests:
       memory: 2Gi
@@ -65,7 +65,7 @@ resources:
       memory: 10Gi
       cpu: 2000m
   opensearch:
-    replicas: 2
+    replicas: 1
     storageSize: 60Gi
     heapSize: 2g
     requests:
