@@ -9,4 +9,4 @@ gcp:
 stagingEnabled: false
 # Keep PPP's existing frontend untouched until its cutover is planned separately.
 frontend:
-  enabled: false
+  enabled: true
