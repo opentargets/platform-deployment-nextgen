@@ -5,7 +5,7 @@ domain: opentargets.org
 dnsZone: opentargets-org
 
 production: green
-staging: disabled
+staging: enabled
 
 googleTagManagerId: GTM-WPXWRDV
 
