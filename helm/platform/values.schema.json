@@ -51,7 +51,7 @@
     },
     "paused": {
       "type": "boolean",
-      "description": "When true, scales webapp/api/aiapi Deployments and the ClickHouse/OpenSearch StatefulSets to 0 replicas and drops their HPAs/PDBs, while keeping the namespace, Services, and PVCs (data) intact. Also true implicitly when `colour` differs from `prodColour` and `stagingEnabled` is false."
+      "description": "When true, scales webapp/api/aiapi Deployments and the ClickHouse/OpenSearch StatefulSets to 0 replicas and drops their HPAs/PDBs, while keeping the namespace and Services. The data disks are deleted and restored from the snapshot again when the colour resumes. Also true implicitly when `colour` differs from `prodColour` and `stagingEnabled` is false."
     },
     "colour": {
       "type": "string",
@@ -209,7 +209,7 @@
         },
         "storageSize": {
           "type": "string",
-          "description": "PVC storage size (e.g., 400Gi)",
+          "description": "Disk size per replica (e.g., 400Gi); at least the snapshot's disk size. Changing it replaces the StatefulSet and restores fresh disks.",
           "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         },
         "limits": {
@@ -238,7 +238,7 @@
         },
         "storageSize": {
           "type": "string",
-          "description": "PVC storage size (e.g., 400Gi)",
+          "description": "Disk size per replica (e.g., 400Gi); at least the snapshot's disk size. Changing it replaces the StatefulSet and restores fresh disks.",
           "pattern": "^\\d+(\\.\\d+)?(Mi|Gi|Ti)$"
         },
         "requests": {

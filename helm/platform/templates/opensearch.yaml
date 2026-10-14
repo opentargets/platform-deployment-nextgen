@@ -4,6 +4,10 @@
 {{- $os := .Values.opensearch }}
 {{- $osRes := .Values.resources.opensearch }}
 {{- $paused := or .Values.paused (and .Values.colour (ne .Values.colour .Values.prodColour) (not .Values.stagingEnabled)) }}
+{{- $snapshotName := printf "%s-opensearch-%s" $namespace ($os.snapshot | default "" | sha256sum | trunc 8) }}
+{{- /* volumeClaimTemplates are immutable: a new snapshot or disk size needs a new StatefulSet. */}}
+{{- $stsName := printf "%s-opensearch-%s" $namespace (printf "%s|%s" ($os.snapshot | default "") $osRes.storageSize | sha256sum | trunc 8) }}
+{{- $restore := and .Values.gcp.enabled $os.snapshot }}
 
 ---
 # NetworkPolicy for {{ $namespace }} OpenSearch.
@@ -107,20 +111,20 @@ spec:
       app: opensearch
 {{- end }}
 
-{{- if and .Values.gcp.enabled $os.snapshot }}
+{{- if $restore }}
 ---
 # VolumeSnapshotContent with the {{ $namespace }} OpenSearch data snapshot.
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotContent
 metadata:
-  name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
+  name: {{ $snapshotName }}
 spec:
   deletionPolicy: Retain
   driver: pd.csi.storage.gke.io
   source:
     snapshotHandle: {{ $os.snapshot }}
   volumeSnapshotRef:
-    name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
+    name: {{ $snapshotName }}
     namespace: {{ $namespace }}
 
 
@@ -129,36 +133,19 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
-  name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
+  name: {{ $snapshotName }}
   namespace: {{ $namespace }}
 spec:
   source:
-    volumeSnapshotContentName: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
+    volumeSnapshotContentName: {{ $snapshotName }}
 {{- end }}
 
----
-# PersistentVolumeClaim for {{ $namespace }} OpenSearch.
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
-  namespace: {{ $namespace }}
-spec:
-  accessModes: [ReadWriteOnce]
-  storageClassName: hyperdisk-balanced
-  dataSource:
-    name: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
-    kind: VolumeSnapshot
-    apiGroup: snapshot.storage.k8s.io
-  resources:
-      requests:
-        storage: {{ $osRes.storageSize | quote }}
 ---
 # StatefulSet for {{ $namespace }} OpenSearch.
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $namespace }}-opensearch
+  name: {{ $stsName }}
   namespace: {{ $namespace }}
   labels:
     app: opensearch
@@ -287,15 +274,32 @@ spec:
             periodSeconds: 20
             failureThreshold: 6
       volumes:
+        {{- if not $restore }}
         - name: data
-          {{- if and .Values.gcp.enabled $os.snapshot }}
-          persistentVolumeClaim:
-            claimName: {{ $namespace }}-opensearch-{{ $os.snapshot | sha256sum | trunc 8 }}
-          {{- else }}
           emptyDir: {}
-          {{- end }}
+        {{- end }}
         - name: logs
           emptyDir: {}
         - name: plugins
           emptyDir: {}
+  {{- if $restore }}
+  # One disk per replica, each restored from the snapshot. Deleted with the StatefulSet
+  # (e.g. when a new snapshot or size renames it) and when the colour is scaled down.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: hyperdisk-balanced
+        dataSource:
+          name: {{ $snapshotName }}
+          kind: VolumeSnapshot
+          apiGroup: snapshot.storage.k8s.io
+        resources:
+          requests:
+            storage: {{ $osRes.storageSize | quote }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
+  {{- end }}
 {{- end }}
