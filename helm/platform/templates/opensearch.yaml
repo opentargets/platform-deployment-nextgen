@@ -175,6 +175,11 @@ spec:
         - key: workload
           value: opensearch
           effect: NoSchedule
+        # Lets these pods run on the opensearch ComputeClass pools (terraform/computeclasses.tf on
+        # the ArgoCD branch), which carry this taint. Harmless where the taint is absent.
+        - key: cloud.google.com/compute-class
+          value: opensearch
+          effect: NoSchedule
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
