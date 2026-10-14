@@ -378,7 +378,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{container=\"api\"} |= `client_ip` | json | line_format `{{.geoip_country_code}}`",
+          "expr": "{container=\"api\"} |= `client_ip` != `ppp` | json | line_format `{{.geoip_country_code}}`",
           "queryType": "range",
           "refId": "A"
         }
@@ -686,7 +686,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "sort_desc(topk(5, sum by(geoip_country_code) (count_over_time({container=\"api\"} |= `client_ip` | json [$__auto]))))",
+          "expr": "sort_desc(topk(5, sum by(geoip_country_code) (count_over_time({container=\"api\"} |= `client_ip` != `ppp` | json [$__auto]))))",
           "legendFormat": "",
           "queryType": "instant",
           "refId": "A"
