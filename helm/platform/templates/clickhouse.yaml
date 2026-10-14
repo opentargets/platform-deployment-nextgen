@@ -193,6 +193,11 @@ spec:
         - key: workload
           value: clickhouse
           effect: NoSchedule
+        # Lets these pods run on the clickhouse ComputeClass pools (terraform/computeclasses.tf on
+        # the ArgoCD branch), which carry this taint. Harmless where the taint is absent.
+        - key: cloud.google.com/compute-class
+          value: clickhouse
+          effect: NoSchedule
       securityContext:
         runAsUser: 101
         runAsGroup: 101
