@@ -9,6 +9,8 @@ googleTagManagerId: GTM-XXXXXXX
 gcp:
   enabled: true
   ingress: true
+  # Data stores select the ComputeClasses created by Terraform (terraform/computeclasses.tf).
+  computeClasses: false
 
 paused: false
 

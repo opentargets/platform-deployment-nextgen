@@ -199,6 +199,13 @@ spec:
         - key: workload
           value: clickhouse
           effect: NoSchedule
+        - key: cloud.google.com/compute-class
+          value: clickhouse
+          effect: NoSchedule
+      {{- if and .Values.gcp.enabled .Values.gcp.computeClasses }}
+      nodeSelector:
+        cloud.google.com/compute-class: clickhouse
+      {{- end }}
       securityContext:
         runAsUser: 101
         runAsGroup: 101

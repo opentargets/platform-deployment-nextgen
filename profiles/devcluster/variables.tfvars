@@ -36,9 +36,13 @@ clickhouse_machine_type   = "c4d-standard-4"
 clickhouse_min_node_count = 1
 clickhouse_max_node_count = 5
 clickhouse_labels         = {}
+# Same shape as the pool, other families: used when the pool cannot scale (stockout).
+clickhouse_fallback_machine_types = ["c4-standard-4", "n4d-standard-4", "n4-standard-4", "c3d-standard-4"]
 
 # OPENSEARCH VARIABLES
 opensearch_machine_type   = "c3d-highmem-4"
 opensearch_min_node_count = 1
 opensearch_max_node_count = 5
 opensearch_labels         = {}
+# Same shape as the pool, other families: used when the pool cannot scale (stockout).
+opensearch_fallback_machine_types = ["c4d-highmem-4", "n4d-highmem-4", "n4-highmem-4", "c4-highmem-4"]

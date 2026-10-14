@@ -119,6 +119,12 @@ variable "clickhouse_labels" {
   type        = map(string)
 }
 
+variable "clickhouse_fallback_machine_types" {
+  description = "Fallback machine types for ClickHouse, in order of preference. Each gets its own node pool, empty until the main pool cannot scale. Must support hyperdisk-balanced."
+  type        = list(string)
+  default     = []
+}
+
 # OPENSEARCH VARIABLES
 variable "opensearch_machine_type" {
   description = "The machine type to use for the OpenSearch nodes"
@@ -138,4 +144,10 @@ variable "opensearch_max_node_count" {
 variable "opensearch_labels" {
   description = "The labels for the OpenSearch module"
   type        = map(string)
+}
+
+variable "opensearch_fallback_machine_types" {
+  description = "Fallback machine types for OpenSearch, in order of preference. Each gets its own node pool, empty until the main pool cannot scale. Must support hyperdisk-balanced."
+  type        = list(string)
+  default     = []
 }

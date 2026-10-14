@@ -40,6 +40,10 @@
         },
         "ingress": {
           "type": "boolean"
+        },
+        "computeClasses": {
+          "type": "boolean",
+          "description": "When true (and `enabled` is true), ClickHouse and OpenSearch pods select the `clickhouse` / `opensearch` GKE ComputeClass that Terraform creates, so the autoscaler can fall back to other machine types during a stockout."
         }
       },
       "required": ["enabled"],

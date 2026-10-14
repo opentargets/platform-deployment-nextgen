@@ -182,6 +182,13 @@ spec:
         - key: workload
           value: opensearch
           effect: NoSchedule
+        - key: cloud.google.com/compute-class
+          value: opensearch
+          effect: NoSchedule
+      {{- if and .Values.gcp.enabled .Values.gcp.computeClasses }}
+      nodeSelector:
+        cloud.google.com/compute-class: opensearch
+      {{- end }}
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
