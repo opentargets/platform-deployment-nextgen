@@ -151,3 +151,14 @@ variable "opensearch_fallback_machine_types" {
   type        = list(string)
   default     = []
 }
+
+variable "legacy_workload_identity_products" {
+  description = "Products whose pre-ArgoCD Helm release is still running and needs its old-scheme ai-api Workload Identity bindings (namespace <prefix>-<product>)."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for p in var.legacy_workload_identity_products : contains(["platform", "ppp"], p)])
+    error_message = "Each entry must be \"platform\" or \"ppp\"."
+  }
+}

@@ -47,3 +47,7 @@ opensearch_max_node_count = 5
 opensearch_labels         = {}
 # Same shape as the pool, other families: used when the pool cannot scale (stockout).
 opensearch_fallback_machine_types = ["n4d-highmem-2", "c4-highmem-2", "n4-highmem-4", "n4d-highmem-4", "c3d-highmem-4"]
+
+# Legacy production-platform / production-ppp releases are still live. Remove each product
+# after its cutover retires the legacy release.
+legacy_workload_identity_products = ["platform", "ppp"]

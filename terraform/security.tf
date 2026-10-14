@@ -21,14 +21,16 @@ locals {
     }
   }
 
-  # Old scheme, still used by the live pre-ArgoCD release. Delete once it's retired.
+  # Old scheme, used by the pre-ArgoCD releases (namespace "<prefix>-<product>") of the
+  # products listed in var.legacy_workload_identity_products. Remove a product from that
+  # list once its legacy release is retired.
   # Keyed "<product>-<colour>" to match the existing state entries, so they're left untouched.
   legacy_workload_identity_bindings = {
     for d in local.deployments : d => {
       product   = split("-", d)[0]
       namespace = "${var.global_prefix}-${split("-", d)[0]}"
       ksa       = "${var.global_prefix}-${d}-aiapi"
-    } if startswith(d, "platform-")
+    } if contains(var.legacy_workload_identity_products, split("-", d)[0])
   }
 }
 
