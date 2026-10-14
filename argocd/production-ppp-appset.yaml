@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: production-ppp
+  namespace: argocd
+spec:
+  # Deleting this ApplicationSet (or a colour dropping out of the generator) must not
+  # cascade-delete a running production colour.
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  goTemplate: true
+  goTemplateOptions: ['missingkey=error']
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - colour: blue
+                - colour: green
+          # Reads prodColour/stagingEnabled from the router profile so both
+          # colours automatically know whether they're prod or idle staging.
+          - git:
+              repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+              revision: argocd-rebase-observability
+              files:
+                - path: profiles/production/ppp/router.yaml
+  template:
+    metadata:
+      name: production-ppp-{{ .colour }}
+      labels:
+        role: '{{ if eq .colour .prodColour }}prod{{ else }}staging{{ end }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+        targetRevision: argocd-rebase-observability
+        path: helm/platform
+        helm:
+          valueFiles:
+            - /profiles/production/ppp/{{ .colour }}.yaml
+          parameters:
+            - name: colour
+              value: '{{ .colour }}'
+            - name: prodColour
+              value: '{{ .prodColour }}'
+            - name: stagingEnabled
+              value: '{{ .stagingEnabled }}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: production-{{ .colour }}-ppp
+      # Manual sync only: production tracks the same branch as devcluster, so a chart
+      # push must never roll out here without an explicit `argocd app sync`.
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true

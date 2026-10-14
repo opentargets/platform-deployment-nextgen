@@ -45,6 +45,12 @@ http {
   limit_req_zone $limit_key zone=api_limit:10m rate=40r/s;
   server {
     listen 8080;
+    {{- if .rejectNodeUserAgent }}
+    # Carried over from the legacy API's nginx sidecar: block default Node.js HTTP clients.
+    if ($http_user_agent = "node") {
+      return 403;
+    }
+    {{- end }}
     location = /nginx-health {
       access_log off;
       return 200 "ok\n";

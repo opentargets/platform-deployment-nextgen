@@ -1,9 +1,12 @@
 # Open Targets nextgen deployment
 
-For the existing devcluster platform migration, see the
-[staged ArgoCD cutover runbook](docs/devcluster-platform-cutover.md). It preserves
-the current Ingresses, IPs and certificates while moving traffic to router proxies
-and separately managed blue/green workloads.
+Moving an environment from its legacy Helm releases to ArgoCD (per-colour Applications
+plus a router per product) is done with a staged runbook. The new stack comes up beside
+the legacy release on its own IP, borrows the legacy certificates, and takes traffic by
+repointing DNS:
+
+- [Devcluster platform cutover](docs/devcluster-platform-cutover.md)
+- [Production cutover](docs/production-cutover.md) (platform, then ppp)
 
 ## Copyright
 

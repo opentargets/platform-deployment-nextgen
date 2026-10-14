@@ -2,6 +2,8 @@
 {{- $namespace := include "prefix-product" . }}
 {{- $labels := include "labels" . }}
 {{- $subdomain := include "subdomain" . }}
+{{- /* The browser calls the API of its own lane: staging.<subdomain> while this colour is not live. */}}
+{{- $laneSubdomain := ternary (printf "staging.%s" $subdomain) $subdomain (and (not (empty .Values.colour)) (ne .Values.colour .Values.prodColour)) }}
 {{- $resources := .Values.resources.webapp }}
 {{- $paused := or .Values.paused (and .Values.colour (ne .Values.colour .Values.prodColour) (not .Values.stagingEnabled)) }}
 ---
@@ -150,10 +152,11 @@ spec:
               name: http
           env:
             - name: WEBAPP_API_URL
-              value: https://api.{{ $subdomain }}/api/v4/graphql
+              value: https://api.{{ $laneSubdomain }}/api/v4/graphql
             - name: WEBAPP_OPENAI_URL
-              value: https://ai.{{ $subdomain }}
-            {{- if eq .Values.prefix "production" }}
+              value: https://ai.{{ $laneSubdomain }}
+            {{- /* Analytics on the live production colour only (prefix is "production-<colour>"). */}}
+            {{- if and (hasPrefix "production" .Values.prefix) (or (not .Values.colour) (eq .Values.colour .Values.prodColour)) }}
             - name: WEBAPP_GOOGLE_TAG_MANAGER_ID
               value: {{ .Values.googleTagManagerId }}
             {{- end }}

@@ -9,13 +9,13 @@
 
 {{- range list
   (dict "name" "webapp-prod"    "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)       "backend" $cdnBackend)
-  (dict "name" "api-prod"       "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)          "backend" $noCdnBackend)
+  (dict "name" "api-prod"       "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)          "backend" $noCdnBackend "rejectNodeUserAgent" true)
   (dict "name" "webapp-staging" "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace) "backend" $cdnBackend)
-  (dict "name" "api-staging"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)    "backend" $noCdnBackend)
+  (dict "name" "api-staging"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)    "backend" $noCdnBackend "rejectNodeUserAgent" true)
   (dict "name" "aiapi-prod"     "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)         "backend" $noCdnBackend "streaming" true)
   (dict "name" "aiapi-staging"  "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)   "backend" $noCdnBackend "streaming" true)
 }}
-{{- $config := include "router.proxyConfig" (dict "upstream" .upstream "security" $.Values.security "streaming" (.streaming | default false)) }}
+{{- $config := include "router.proxyConfig" (dict "upstream" .upstream "security" $.Values.security "streaming" (.streaming | default false) "rejectNodeUserAgent" (.rejectNodeUserAgent | default false)) }}
 ---
 apiVersion: v1
 kind: ConfigMap

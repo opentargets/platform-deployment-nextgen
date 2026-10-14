@@ -76,7 +76,9 @@ spec:
   managedZoneRef:
     external: {{ .Values.dnsZone }}
 {{ include "router.dnsTarget" (dict "Values" $.Values "computeAddressName" $computeAddressName "namespace" $namespace) | indent 2 }}
-{{- if eq .Values.product "platform" }}
+{{/* geneticsDns=false leaves the genetics names to records managed elsewhere (in production
+     genetics.opentargets.org is a CNAME to platform.opentargets.org, which an A record can't replace). */}}
+{{- if and (eq .Values.product "platform") (ne .Values.gcp.geneticsDns false) }}
 ---
 apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSRecordSet

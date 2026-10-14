@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: production-platform-router
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+    targetRevision: argocd-rebase-observability
+    path: helm/router
+    helm:
+      valueFiles:
+        - /profiles/production/platform/router.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production-platform-router
+  # Manual sync only, like the colour Applications: production shares its branch with devcluster.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      # Detect another ArgoCD Application's ownership (not Helm ownership).
+      - FailOnSharedResource=true

@@ -58,6 +58,10 @@
         "dns": {
           "type": "boolean",
           "description": "When false, skips DNSRecordSet creation so the new path can be verified before DNS points at it."
+        },
+        "geneticsDns": {
+          "type": "boolean",
+          "description": "Platform only. When false, skips the genetics.<domain> and www.genetics.<domain> DNSRecordSets, for when those names are managed elsewhere (e.g. as a CNAME). Ingress hosts and certificate domains are unaffected."
         }
       }
     },

@@ -1,5 +1,6 @@
 .PHONY: deploy-cluster-dev destroy-cluster-dev deploy-cluster-prod \
-	bootstrap-argocd-dev deploy-argocd-dev-platform deploy-argocd-dev-platform-router deploy-argocd-dev-ppp deploy-chart-prod-platform deploy-chart-prod-ppp \
+	bootstrap-argocd-dev deploy-argocd-dev-platform deploy-argocd-dev-platform-router deploy-argocd-dev-ppp \
+	bootstrap-argocd-prod deploy-argocd-prod-platform deploy-argocd-prod-platform-router deploy-argocd-prod-ppp deploy-argocd-prod-ppp-router \
 	deploy-observability-dev deploy-observability-prod \
 	port-forward-prometheus port-forward-grafana port-forward-argocd \
 	create-cluster-local delete-cluster-local tunnel-local refresh-secrets-local \
@@ -16,8 +17,14 @@ help:
 	@echo "  deploy-argocd-dev-platform - ARGO — Apply + sync platform colours only; leaves router and traffic unchanged"
 	@echo "  deploy-argocd-dev-platform-router - ARGO — Apply + sync router proxies separately (see migration runbook)"
 	@echo "  deploy-argocd-dev-ppp      - ARGO — Apply + sync the ppp      blue/green ArgoCD apps on the dev cluster (ArgoCD must already be installed)"
-	@echo "  deploy-chart-prod-platform - HELM — Deploy the platform flavor on the prod cluster"
-	@echo "  deploy-chart-prod-ppp      - HELM — Deploy the PPP      flavor on the prod cluster"
+	@echo
+	@echo "  bootstrap-argocd-prod      - ARGO — Install ArgoCD onto the prod cluster (run once)"
+	@echo "  deploy-argocd-prod-platform        - ARGO — Apply platform colours, show the diff, sync after typing confirm"
+	@echo "  deploy-argocd-prod-platform-router - ARGO — Apply platform router, show the diff, sync after typing confirm"
+	@echo "  deploy-argocd-prod-ppp             - ARGO — Apply ppp colours, show the diff, sync after typing confirm"
+	@echo "  deploy-argocd-prod-ppp-router      - ARGO — Apply ppp router, show the diff, sync after typing confirm"
+	@echo "    (legacy production-platform / production-ppp Helm releases are deployed from main until retired;"
+	@echo "     see docs/production-cutover.md)"
 	@echo
 	@echo "  deploy-observability-dev   - HELM — Deploy observability stack to the development cluster using Helm"
 	@echo "  deploy-observability-prod  - HELM — Deploy observability stack to the production cluster using Helm"
@@ -43,7 +50,7 @@ destroy-cluster-dev:
 
 deploy-cluster-prod:
 	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && \
-	terraform -chdir=./terraform apply -var-file="../profiles/production.tfvars"
+	terraform -chdir=./terraform apply -var-file="../profiles/production/variables.tfvars"
 
 define CLUSTER_CONTEXT_CHECK
 	@if ! kubectl config current-context | grep -q $1; then \
@@ -98,29 +105,67 @@ deploy-argocd-dev-ppp:
 	kubectl apply -f ./argocd/devcluster-ppp-router.yaml
 	argocd app sync devcluster-ppp-router --prune
 
-# ----------------------------------------------------------------------------------------------------------------------
-# Helm
-deploy-chart-prod-platform:
+# Production. Every production Application is manual-sync (it tracks the same branch as
+# devcluster), so these targets apply the manifests, show `argocd app diff`, and only sync
+# after you type "confirm". Colours and routers are separate stages; see
+# docs/production-cutover.md for the order.
+bootstrap-argocd-prod:
 	@$(call CLUSTER_CONTEXT_CHECK,production)
-	helm lint ./helm/platform && \
-	helm diff upgrade --allow-unreleased production-platform ./helm/platform -f ./profiles/production-platform.yaml; \
-	read -p "confirm production platform chart deploy: " confirm; \
+	@helm dependency build ./helm/argocd
+	@helm diff upgrade --allow-unreleased argocd ./helm/argocd --namespace argocd; \
+	read -p "confirm production argocd install: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
-		helm upgrade --install production-platform ./helm/platform -f ./profiles/production-platform.yaml; \
+		helm upgrade --install argocd ./helm/argocd --namespace argocd --create-namespace && \
+		kubectl wait --namespace argocd --for=condition=ready pod --selector=app.kubernetes.io/name=argocd-server --timeout=300s; \
 	else \
-		echo "deploy cancelled"; \
+		echo "install cancelled"; \
 	fi
 
-deploy-chart-prod-ppp:
+# $(1) = product. Syncs the live colour first, then the idle one.
+define ARGOCD_PROD_COLOURS
 	@$(call CLUSTER_CONTEXT_CHECK,production)
-	@helm lint ./helm/platform && \
-	helm diff upgrade --allow-unreleased production-ppp ./helm/platform -f ./profiles/production-ppp.yaml; \
-	read -p "confirm production ppp chart deploy: " confirm; \
+	kubectl apply -f ./argocd/production-$(1)-appset.yaml
+	kubectl wait -n argocd --for=create application/production-$(1)-blue --timeout=120s
+	kubectl wait -n argocd --for=create application/production-$(1)-green --timeout=120s
+	@PROD=$$(kubectl get application -n argocd -l role=prod -o name | grep -o 'production-$(1)-[a-z]*$$'); \
+	IDLE=$$(kubectl get application -n argocd -l role=staging -o name | grep -o 'production-$(1)-[a-z]*$$'); \
+	echo "live: $$PROD  idle: $$IDLE"; \
+	argocd app diff $$PROD --refresh; argocd app diff $$IDLE --refresh; \
+	read -p "confirm production $(1) colours sync: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
-		helm upgrade --install production-ppp ./helm/platform -f ./profiles/production-ppp.yaml; \
+		argocd app sync $$PROD --prune && argocd app wait $$PROD --sync --health --timeout 1800 && \
+		argocd app sync $$IDLE --prune && argocd app wait $$IDLE --sync --health --timeout 1800; \
 	else \
-		echo "deploy cancelled"; \
+		echo "sync cancelled"; \
 	fi
+endef
+
+# $(1) = product.
+define ARGOCD_PROD_ROUTER
+	@$(call CLUSTER_CONTEXT_CHECK,production)
+	kubectl apply -f ./argocd/production-$(1)-router.yaml
+	kubectl wait -n argocd --for=create application/production-$(1)-router --timeout=120s
+	@argocd app diff production-$(1)-router --refresh; \
+	read -p "confirm production $(1) router sync: " confirm; \
+	if [ "$$confirm" = "confirm" ]; then \
+		argocd app sync production-$(1)-router --prune && \
+		argocd app wait production-$(1)-router --sync --health --timeout 900; \
+	else \
+		echo "sync cancelled"; \
+	fi
+endef
+
+deploy-argocd-prod-platform:
+	$(call ARGOCD_PROD_COLOURS,platform)
+
+deploy-argocd-prod-platform-router:
+	$(call ARGOCD_PROD_ROUTER,platform)
+
+deploy-argocd-prod-ppp:
+	$(call ARGOCD_PROD_COLOURS,ppp)
+
+deploy-argocd-prod-ppp-router:
+	$(call ARGOCD_PROD_ROUTER,ppp)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Observability stack
@@ -132,10 +177,10 @@ deploy-observability-dev:
 
 deploy-observability-prod:
 	@helm dependency build ./helm/observability
-	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/production-observability.yaml; \
+	@helm diff upgrade observability ./helm/observability --allow-unreleased --namespace observability -f ./profiles/production/observability.yaml; \
 	read -p "confirm production observability deploy: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
-		helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/production-observability.yaml; \
+		helm upgrade observability ./helm/observability --namespace observability --install --create-namespace -f ./profiles/production/observability.yaml; \
 	else \
 		echo "deploy cancelled"; \
 	fi

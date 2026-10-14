@@ -9,6 +9,9 @@ gcp:
   enabled: false
   # false = provision without touching DNS yet (verify via curl --resolve first).
   dns: true
+  # false = skip the genetics.<domain> and www.genetics.<domain> records (platform only);
+  # the frontend still serves and certifies those hosts.
+  geneticsDns: true
 # Renders DNSRecordSets into a different namespace than the rest of this release.
 # Used to adopt pre-existing DNS records in place (e.g. from a retiring release)
 # without moving them, since a namespace change requires delete+recreate.
