@@ -11,19 +11,8 @@ gcp:
   # records (same data, so no change); the legacy objects are then released with
   # deletion-policy=abandon. See the runbook's step 7.
   dns: true
-# The legacy release's Active certs (compute SSL certs owned by its ManagedCertificates in
-# devcluster-platform), attached so the new Ingress serves valid TLS before DNS moves.
-# The router's own ManagedCertificates can't provision until DNS points here.
-# Once they're Active, REPLACE these with the router's own cert names (their
-# .status.certificateName) — don't delete the list. GKE's certificate controller writes
-# the router's certs into this same annotation, so removing it strips them too and can
-# briefly leave the load balancer with no certificate. See the runbook's step 6.
-# Until then, ArgoCD shows the Ingress OutOfSync as the controller appends its own two.
-preSharedCerts:
-  # Sorted: GKE's certificate controller rewrites the annotation in alphabetical order,
-  # so any other order leaves ArgoCD permanently OutOfSync.
-  - mcrt-428dc92e-19be-43ae-a20e-20422624fe83 # devcluster-platform-ssl-cert-fallback
-  - mcrt-cb249702-980b-45db-a35d-f8441adc276c # devcluster-platform-ssl-cert
+# No preSharedCerts: GKE attaches the router's own ManagedCertificates through the Ingress's
+# pre-shared-cert annotation, which the router Application ignores (argocd/*-router.yaml).
 # Keep both colours available for validation and rollback during migration.
 stagingEnabled: false
 frontend:

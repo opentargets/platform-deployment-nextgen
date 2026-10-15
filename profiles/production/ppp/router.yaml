@@ -6,18 +6,11 @@ dnsZone: opentargets-org
 gcpProject: open-targets-prod
 gcp:
   enabled: true
-  # Off until the cutover: the new frontend is validated on its own IP first, then DNS moves.
-  # See docs/production-cutover.md.
+  # The router owns its DNSRecordSets, pointing at its own ComputeAddress.
   dns: true
-# The legacy release's Active certificates (production-ppp namespace), prod and staging,
-# so the new Ingress serves valid TLS before DNS moves. Once the router's own
-# ManagedCertificates are Active, REPLACE these with theirs (see the runbook); don't delete
-# the list. Sorted: GKE rewrites the annotation in alphabetical order.
-preSharedCerts:
-  - mcrt-02a96cfc-ab5b-48be-8775-e948cb854f8b
-  - mcrt-292b49a3-5d81-4bd0-ae84-4c37301f343f
-# Staging stays off until the legacy release is retired: the cutover runs the new live
-# colour beside the legacy one, and there is no node capacity for a staging colour as well.
+# No preSharedCerts: GKE attaches the router's own ManagedCertificates through the Ingress's
+# pre-shared-cert annotation, which the router Application ignores (argocd/*-router.yaml).
+# Staging is off for node capacity; turning it on starts the idle colour.
 stagingEnabled: false
 frontend:
   enabled: true

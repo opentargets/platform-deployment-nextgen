@@ -6,25 +6,14 @@ dnsZone: opentargets-org
 gcpProject: open-targets-prod
 gcp:
   enabled: true
-  # Off until the cutover: the new frontend is validated on its own IP first, then DNS moves.
-  # See docs/production-cutover.md.
+  # The router owns its DNSRecordSets, pointing at its own ComputeAddress.
   dns: true
   # genetics.opentargets.org is a CNAME to platform.opentargets.org managed outside the
-  # chart, so it follows the platform record through the cutover; never render an A record.
+  # chart, so it follows the platform record; never render an A record.
   geneticsDns: false
-# The legacy release's Active certificates (production-platform namespace), prod and staging,
-# so the new Ingress serves valid TLS before DNS moves. Once the router's own
-# ManagedCertificates are Active, REPLACE these with theirs (see the runbook); don't delete
-# the list. Sorted: GKE rewrites the annotation in alphabetical order.
-preSharedCerts:
-  - mcrt-1ad23e81-f571-49a4-aa33-dfe91609529e
-  - mcrt-ab62ec68-6e1a-4525-9be0-09e51ecf2dba
-  # - mcrt-009fe8f9-ce46-41e6-a61a-57595a236412 # production-platform-prod-ssl-cert
-  # - mcrt-129b75d2-876f-4eea-a604-9020784929a3 # production-platform-staging-ssl-cert
-  # - mcrt-958c2090-bca8-4ab6-b0f1-ae301963e4d2 # production-platform-prod-ssl-cert-fallback
-  # - mcrt-bf392c19-0249-4f44-9143-a5c164ab0813 # production-platform-staging-ssl-cert-fallback
-# Staging stays off until the legacy release is retired: the cutover runs the new live
-# colour beside the legacy one, and there is no node capacity for a staging colour as well.
+# No preSharedCerts: GKE attaches the router's own ManagedCertificates through the Ingress's
+# pre-shared-cert annotation, which the router Application ignores (argocd/*-router.yaml).
+# Staging is off for node capacity; turning it on starts the idle colour.
 stagingEnabled: false
 frontend:
   enabled: true

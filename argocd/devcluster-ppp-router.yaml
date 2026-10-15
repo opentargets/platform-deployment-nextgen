@@ -15,7 +15,16 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: devcluster-ppp-router
+  # GKE's managed-certificate controller writes the router's certificates into this
+  # annotation. The chart doesn't set it, so ignore it, and keep the live value on sync
+  # (RespectIgnoreDifferences) rather than stripping it from the load balancer.
+  ignoreDifferences:
+    - group: networking.k8s.io
+      kind: Ingress
+      jsonPointers:
+        - /metadata/annotations/ingress.gcp.kubernetes.io~1pre-shared-cert
   # Manual sync during the migration window — restore automated{prune,selfHeal} after.
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true

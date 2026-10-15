@@ -25,7 +25,10 @@ replicas: 2
 names:
   # Adopts a pre-existing ComputeAddress instead of provisioning a new one.
   computeAddress: ""
-# GCP SSL certificate names to bridge HTTPS during a migration (pre-shared-cert).
+# GCP SSL certificate names to bridge HTTPS during a migration (pre-shared-cert), e.g. a
+# legacy release's certificates before DNS moves. Leave empty otherwise: GKE writes the
+# router's own ManagedCertificates into the same annotation, and the router Applications
+# ignore it (ignoreDifferences + RespectIgnoreDifferences) so a sync never strips them.
 preSharedCerts: []
 # The routing surface stays allocated when staging is paused. This controls the
 # staging proxies' readiness check and is passed by the ApplicationSet to the
