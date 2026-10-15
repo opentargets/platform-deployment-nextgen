@@ -17,10 +17,12 @@ gcp:
 # ManagedCertificates are Active, REPLACE these with theirs (see the runbook); don't delete
 # the list. Sorted: GKE rewrites the annotation in alphabetical order.
 preSharedCerts:
-  - mcrt-009fe8f9-ce46-41e6-a61a-57595a236412 # production-platform-prod-ssl-cert
-  - mcrt-129b75d2-876f-4eea-a604-9020784929a3 # production-platform-staging-ssl-cert
-  - mcrt-958c2090-bca8-4ab6-b0f1-ae301963e4d2 # production-platform-prod-ssl-cert-fallback
-  - mcrt-bf392c19-0249-4f44-9143-a5c164ab0813 # production-platform-staging-ssl-cert-fallback
+  - mcrt-1ad23e81-f571-49a4-aa33-dfe91609529e
+  - mcrt-ab62ec68-6e1a-4525-9be0-09e51ecf2dba
+  # - mcrt-009fe8f9-ce46-41e6-a61a-57595a236412 # production-platform-prod-ssl-cert
+  # - mcrt-129b75d2-876f-4eea-a604-9020784929a3 # production-platform-staging-ssl-cert
+  # - mcrt-958c2090-bca8-4ab6-b0f1-ae301963e4d2 # production-platform-prod-ssl-cert-fallback
+  # - mcrt-bf392c19-0249-4f44-9143-a5c164ab0813 # production-platform-staging-ssl-cert-fallback
 # Staging stays off until the legacy release is retired: the cutover runs the new live
 # colour beside the legacy one, and there is no node capacity for a staging colour as well.
 stagingEnabled: false
