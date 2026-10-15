@@ -1,0 +1,35 @@
+{{- $prodNamespace := printf "%s-%s-%s" .Values.envPrefix .Values.prodColour .Values.product }}
+{{- $otherColour := ternary "green" "blue" (eq .Values.prodColour "blue") }}
+{{- $stagingNamespace := printf "%s-%s-%s" .Values.envPrefix $otherColour .Values.product }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.envPrefix }}-{{ .Values.product }}-router-proxies
+  namespace: {{ include "router.namespace" . }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: router-proxy
+  policyTypes: [Ingress, Egress]
+  ingress:
+    # GCLB traffic, health probes, and in-cluster smoke tests.
+    - ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $prodNamespace }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $stagingNamespace }}
+      ports:
+        - protocol: TCP
+          port: 8080

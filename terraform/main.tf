@@ -238,7 +238,7 @@ resource "google_container_node_pool" "databases_clickhouse" {
     disk_size_gb    = 30 # This is the boot disk. Data is on a PV.
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
-    labels          = merge(var.base_labels, var.cluster_labels, { pool = "clickhouse" })
+    labels          = merge(var.base_labels, var.cluster_labels, { pool = "clickhouse", "cloud.google.com/compute-class" = "clickhouse" })
     tags            = ["cluster", "node", "clickhouse"]
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
@@ -249,6 +249,13 @@ resource "google_container_node_pool" "databases_clickhouse" {
 
     taint {
       key    = "workload"
+      value  = "clickhouse"
+      effect = "NO_SCHEDULE"
+    }
+
+    # Makes this pool the first priority of the "clickhouse" ComputeClass (computeclasses.tf).
+    taint {
+      key    = "cloud.google.com/compute-class"
       value  = "clickhouse"
       effect = "NO_SCHEDULE"
     }
@@ -372,7 +379,7 @@ resource "google_container_node_pool" "pools_opensearch" {
     disk_size_gb    = 30 # This is the boot disk. Data is on a PV.
     image_type      = "COS_CONTAINERD"
     service_account = google_service_account.node.email
-    labels          = merge(var.base_labels, var.cluster_labels, { pool = "opensearch" })
+    labels          = merge(var.base_labels, var.cluster_labels, { pool = "opensearch", "cloud.google.com/compute-class" = "opensearch" })
     tags            = ["cluster", "node", "opensearch"]
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
 
@@ -383,6 +390,13 @@ resource "google_container_node_pool" "pools_opensearch" {
 
     taint {
       key    = "workload"
+      value  = "opensearch"
+      effect = "NO_SCHEDULE"
+    }
+
+    # Makes this pool the first priority of the "opensearch" ComputeClass (computeclasses.tf).
+    taint {
+      key    = "cloud.google.com/compute-class"
       value  = "opensearch"
       effect = "NO_SCHEDULE"
     }

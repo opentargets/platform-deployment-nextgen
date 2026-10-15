@@ -1,0 +1,16 @@
+prodColour: blue
+envPrefix: production
+product: ppp
+domain: opentargets.org
+dnsZone: opentargets-org
+gcpProject: open-targets-prod
+gcp:
+  enabled: true
+  # The router owns its DNSRecordSets, pointing at its own ComputeAddress.
+  dns: true
+# No preSharedCerts: GKE attaches the router's own ManagedCertificates through the Ingress's
+# pre-shared-cert annotation, which the router Application ignores (argocd/*-router.yaml).
+# Staging is off for node capacity; turning it on starts the idle colour.
+stagingEnabled: false
+frontend:
+  enabled: true

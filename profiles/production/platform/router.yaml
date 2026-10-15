@@ -1,0 +1,19 @@
+prodColour: green
+envPrefix: production
+product: platform
+domain: opentargets.org
+dnsZone: opentargets-org
+gcpProject: open-targets-prod
+gcp:
+  enabled: true
+  # The router owns its DNSRecordSets, pointing at its own ComputeAddress.
+  dns: true
+  # genetics.opentargets.org is a CNAME to platform.opentargets.org managed outside the
+  # chart, so it follows the platform record; never render an A record.
+  geneticsDns: false
+# No preSharedCerts: GKE attaches the router's own ManagedCertificates through the Ingress's
+# pre-shared-cert annotation, which the router Application ignores (argocd/*-router.yaml).
+# Staging is off for node capacity; turning it on starts the idle colour.
+stagingEnabled: false
+frontend:
+  enabled: true

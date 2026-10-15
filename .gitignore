@@ -4,3 +4,4 @@
 *.tfstate.backup
 private
 /helm/observability/charts
+/helm/argocd/charts

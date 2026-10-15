@@ -1,0 +1,9 @@
+apiVersion: v2
+name: argocd
+description: Helm chart wrapping ArgoCD, pinned to the devcluster ops node pool.
+type: application
+version: "0.1.0"
+dependencies:
+  - name: argo-cd
+    version: 10.3.2
+    repository: oci://ghcr.io/argoproj/argo-helm

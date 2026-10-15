@@ -1,9 +1,16 @@
 # Open Targets nextgen deployment
 
-Release process documentation:
+This the repo for managing the deployment of the Open Targets Platform and PPP to three kubernetes environments:
+- local (minikube)
+- dev (GKE)
+- production (GKE)
 
-https://opentargets.org/technical-knowledge-base/platform/release-process/
+There is a Makefile for most operations such as creating the kubernetes clusters. 
+Deployments are managed by ArgoCD. 
 
+TBC.
+
+Release process: https://opentargets.org/technical-knowledge-base/platform/release-process/
 
 ## Copyright
 
