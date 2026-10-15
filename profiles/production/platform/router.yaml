@@ -8,7 +8,7 @@ gcp:
   enabled: true
   # Off until the cutover: the new frontend is validated on its own IP first, then DNS moves.
   # See docs/production-cutover.md.
-  dns: false
+  dns: true
   # genetics.opentargets.org is a CNAME to platform.opentargets.org managed outside the
   # chart, so it follows the platform record through the cutover; never render an A record.
   geneticsDns: false
