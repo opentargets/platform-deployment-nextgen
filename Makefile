@@ -1,6 +1,7 @@
 .PHONY: deploy-cluster-dev destroy-cluster-dev deploy-cluster-prod \
 	bootstrap-argocd-dev deploy-argocd-dev-platform deploy-argocd-dev-platform-router deploy-argocd-dev-ppp \
 	bootstrap-argocd-prod deploy-argocd-prod-platform deploy-argocd-prod-platform-router deploy-argocd-prod-ppp deploy-argocd-prod-ppp-router \
+	invalidate-cdn-prod-platform invalidate-cdn-prod-ppp \
 	deploy-observability-dev deploy-observability-prod \
 	port-forward-prometheus port-forward-grafana port-forward-argocd \
 	create-cluster-local delete-cluster-local tunnel-local refresh-secrets-local \
@@ -23,8 +24,7 @@ help:
 	@echo "  deploy-argocd-prod-platform-router - ARGO — Apply platform router, show the diff, sync after typing confirm"
 	@echo "  deploy-argocd-prod-ppp             - ARGO — Apply ppp colours, show the diff, sync after typing confirm"
 	@echo "  deploy-argocd-prod-ppp-router      - ARGO — Apply ppp router, show the diff, sync after typing confirm"
-	@echo "    (legacy production-platform / production-ppp Helm releases are deployed from main until retired;"
-	@echo "     see docs/production-cutover.md)"
+	@echo "  invalidate-cdn-prod-{platform,ppp} - CDN  — Clear cached /config.js (run by the four targets above after a sync)"
 	@echo
 	@echo "  deploy-observability-dev   - HELM — Deploy observability stack to the development cluster using Helm"
 	@echo "  deploy-observability-prod  - HELM — Deploy observability stack to the production cluster using Helm"
@@ -134,7 +134,8 @@ define ARGOCD_PROD_COLOURS
 	read -p "confirm production $(1) colours sync: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
 		argocd app sync $$PROD --prune && argocd app wait $$PROD --sync --health --timeout 1800 && \
-		argocd app sync $$IDLE --prune && argocd app wait $$IDLE --sync --health --timeout 1800; \
+		argocd app sync $$IDLE --prune && argocd app wait $$IDLE --sync --health --timeout 1800 && \
+		$(MAKE) --no-print-directory invalidate-cdn-prod-$(1); \
 	else \
 		echo "sync cancelled"; \
 	fi
@@ -149,10 +150,24 @@ define ARGOCD_PROD_ROUTER
 	read -p "confirm production $(1) router sync: " confirm; \
 	if [ "$$confirm" = "confirm" ]; then \
 		argocd app sync production-$(1)-router --prune && \
-		argocd app wait production-$(1)-router --sync --health --timeout 900; \
+		argocd app wait production-$(1)-router --sync --health --timeout 900 && \
+		$(MAKE) --no-print-directory invalidate-cdn-prod-$(1); \
 	else \
 		echo "sync cancelled"; \
 	fi
+endef
+
+# $(1) = product, $(2) = its public hostname. The webapp backends sit behind Cloud CDN, and
+# /config.js carries each lane's API URLs and GTM id, so after a webapp release or a colour
+# swap the cached copy must go, for the live and the staging hostname alike.
+define INVALIDATE_CDN_PROD
+	@$(call CLUSTER_CONTEXT_CHECK,production)
+	@URLMAP=$$(kubectl get ingress production-$(1)-ingress -n production-$(1)-router -o jsonpath='{.metadata.annotations.ingress\.kubernetes\.io/url-map}') && \
+	test -n "$$URLMAP" && \
+	for host in $(2) staging.$(2); do \
+		gcloud compute url-maps invalidate-cdn-cache "$$URLMAP" --path "/config.js" --host "$$host" \
+			--global --async --project=open-targets-prod || exit 1; \
+	done
 endef
 
 deploy-argocd-prod-platform:
@@ -166,6 +181,12 @@ deploy-argocd-prod-ppp:
 
 deploy-argocd-prod-ppp-router:
 	$(call ARGOCD_PROD_ROUTER,ppp)
+
+invalidate-cdn-prod-platform:
+	$(call INVALIDATE_CDN_PROD,platform,platform.opentargets.org)
+
+invalidate-cdn-prod-ppp:
+	$(call INVALIDATE_CDN_PROD,ppp,partner-platform.opentargets.org)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Observability stack

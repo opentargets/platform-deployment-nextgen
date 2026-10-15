@@ -1,12 +1,16 @@
 # Open Targets nextgen deployment
 
-Moving an environment from its legacy Helm releases to ArgoCD (per-colour Applications
-plus a router per product) is done with a staged runbook. The new stack comes up beside
-the legacy release on its own IP, borrows the legacy certificates, and takes traffic by
-repointing DNS:
+This the repo for managing the deployment of the Open Targets Platform and PPP to three kubernetes environments:
+- local (minikube)
+- dev (GKE)
+- production (GKE)
 
-- [Devcluster platform cutover](docs/devcluster-platform-cutover.md)
-- [Production cutover](docs/production-cutover.md) (platform, then ppp)
+There is a Makefile for most operations such as creating the kubernetes clusters. 
+Deployments are managed by ArgoCD. 
+
+TBC.
+
+Release process: https://opentargets.org/technical-knowledge-base/platform/release-process/
 
 ## Copyright
 
