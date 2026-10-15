@@ -16,7 +16,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
-        targetRevision: argocd-rebase-observability
+        targetRevision: main
         path: helm/platform
         helm:
           valueFiles:

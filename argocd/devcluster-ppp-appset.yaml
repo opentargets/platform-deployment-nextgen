@@ -17,7 +17,7 @@ spec:
           # colours automatically know whether they're prod or idle staging.
           - git:
               repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
-              revision: argocd-rebase-observability
+              revision: main
               files:
                 - path: profiles/devcluster/ppp/router.yaml
   template:
@@ -29,7 +29,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
-        targetRevision: argocd-rebase-observability
+        targetRevision: main
         path: helm/platform
         helm:
           valueFiles:
@@ -45,8 +45,5 @@ spec:
         server: https://kubernetes.default.svc
         namespace: devcluster-{{ .colour }}-ppp
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
         syncOptions:
           - CreateNamespace=true
