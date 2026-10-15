@@ -1,16 +1,19 @@
 {{- if .Values.gcp.enabled }}
 {{- $prefix := printf "%s-%s" .Values.envPrefix .Values.product }}
+{{- range $lane := list "" "staging-" }}
 {{- range $cdn := list true false }}
 ---
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
-  name: {{ $prefix }}-backendconfig-{{ ternary "cdn" "no-cdn" $cdn }}
+  name: {{ $prefix }}-backendconfig-{{ $lane }}{{ ternary "cdn" "no-cdn" $cdn }}
   namespace: {{ include "router.namespace" $ }}
 spec:
-  # Exercise the upstream application, not nginx's process-only liveness check.
+  # Exercise the upstream application, not nginx's process-only liveness check. A paused
+  # staging colour has no upstream, so its proxies are checked on nginx alone; otherwise the
+  # NEG readiness gate never passes and replaced staging pods never become Ready.
   healthCheck:
-    requestPath: /health
+    requestPath: {{ ternary "/nginx-health" "/health" (and (eq $lane "staging-") (not $.Values.stagingEnabled)) }}
     port: 8080
     type: HTTP
   customResponseHeaders:
@@ -39,5 +42,6 @@ spec:
   securityPolicy:
     name: {{ $.Values.envPrefix }}-ppp
   {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}

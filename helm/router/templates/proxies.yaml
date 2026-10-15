@@ -6,14 +6,16 @@
 {{- $namespace := include "router.namespace" . }}
 {{- $cdnBackend := printf "%s-backendconfig-cdn" $routerNamespace }}
 {{- $noCdnBackend := printf "%s-backendconfig-no-cdn" $routerNamespace }}
+{{- $stagingCdnBackend := printf "%s-backendconfig-staging-cdn" $routerNamespace }}
+{{- $stagingNoCdnBackend := printf "%s-backendconfig-staging-no-cdn" $routerNamespace }}
 
 {{- range list
   (dict "name" "webapp-prod"    "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)       "backend" $cdnBackend)
   (dict "name" "api-prod"       "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)          "backend" $noCdnBackend "rejectNodeUserAgent" true)
-  (dict "name" "webapp-staging" "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace) "backend" $cdnBackend)
-  (dict "name" "api-staging"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)    "backend" $noCdnBackend "rejectNodeUserAgent" true)
+  (dict "name" "webapp-staging" "upstream" (printf "%s-webapp.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace) "backend" $stagingCdnBackend)
+  (dict "name" "api-staging"    "upstream" (printf "%s-api.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)    "backend" $stagingNoCdnBackend "rejectNodeUserAgent" true)
   (dict "name" "aiapi-prod"     "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $prodNamespace $prodNamespace)         "backend" $noCdnBackend "streaming" true)
-  (dict "name" "aiapi-staging"  "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)   "backend" $noCdnBackend "streaming" true)
+  (dict "name" "aiapi-staging"  "upstream" (printf "%s-aiapi.%s.svc.cluster.local:8080" $stagingNamespace $stagingNamespace)   "backend" $stagingNoCdnBackend "streaming" true)
 }}
 {{- $config := include "router.proxyConfig" (dict "upstream" .upstream "security" $.Values.security "streaming" (.streaming | default false) "rejectNodeUserAgent" (.rejectNodeUserAgent | default false)) }}
 ---
@@ -48,6 +50,18 @@ spec:
         app: {{ .name }}-proxy
         app.kubernetes.io/component: router-proxy
     spec:
+      # Keep replicas on different nodes. maxSkew 1 still lets a rollout surge onto a node
+      # that already has one; Honor stops tainted data-store nodes counting as empty.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app: {{ .name }}-proxy
       containers:
         - name: nginx
           image: nginx:alpine
