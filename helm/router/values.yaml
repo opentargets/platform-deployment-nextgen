@@ -36,3 +36,8 @@ preSharedCerts: []
 stagingEnabled: true
 security:
   rateLimiterWhitelist: []
+  # API proxies only: each listed User-Agent shares one 40r/s bucket across all IPs.
+  # Exact strings, or nginx regexes prefixed with ~ (case-sensitive) / ~* (insensitive).
+  rateLimitedUserAgents: []
+  # API proxies only: requests from these User-Agents get a 403. Same matching rules.
+  blockedUserAgents: []
