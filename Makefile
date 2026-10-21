@@ -41,15 +41,15 @@ help:
 # ----------------------------------------------------------------------------------------------------------------------
 # Terraform
 deploy-cluster-dev:
-	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && \
+	@terraform -chdir=./terraform init -reconfigure -backend-config="prefix=terraform/devcluster" && \
 	terraform -chdir=./terraform apply -var-file="../profiles/devcluster/variables.tfvars"
 
 destroy-cluster-dev:
-	@terraform -chdir=./terraform init -backend-config="prefix=terraform/devcluster" && \
+	@terraform -chdir=./terraform init -reconfigure -backend-config="prefix=terraform/devcluster" && \
 	terraform -chdir=./terraform destroy -var-file="../profiles/devcluster/variables.tfvars"
 
 deploy-cluster-prod:
-	@terraform -chdir=./terraform init -backend-config="prefix=terraform/production" && \
+	@terraform -chdir=./terraform init -reconfigure -backend-config="prefix=terraform/production" && \
 	terraform -chdir=./terraform apply -var-file="../profiles/production/variables.tfvars"
 
 define CLUSTER_CONTEXT_CHECK
