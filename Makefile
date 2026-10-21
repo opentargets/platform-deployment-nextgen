@@ -199,7 +199,7 @@ deploy-observability-dev:
 	argocd app wait observability --sync --health --timeout 900
 
 deploy-observability-prod:
-	@$(call CLUSTER_CONTEXT_CHECK,dev)
+	@$(call CLUSTER_CONTEXT_CHECK,production)
 	kubectl apply -f ./argocd/production-observability.yaml
 	kubectl wait -n argocd --for=create application/observability --timeout=120s
 	argocd app wait observability --operation --timeout 900
