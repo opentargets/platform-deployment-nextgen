@@ -1,5 +1,3 @@
-# Values match the legacy production-platform release's green colour as deployed on
-# 2026-10-14 (main, profiles/production-platform.yaml). Keep them in step until cutover.
 gcpProject: open-targets-prod
 prefix: production-green
 product: platform
