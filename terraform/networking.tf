@@ -61,7 +61,7 @@ resource "google_compute_subnetwork" "cluster" {
 
 # Import the PPP allowlist module.
 module "ppp" {
-  source = "git@github.com:opentargets/ppp-allowlist"
+  source = "git@github.com:opentargets/platform-access-control"
 }
 
 locals {
