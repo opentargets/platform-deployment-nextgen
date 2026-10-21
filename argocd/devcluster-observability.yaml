@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+    targetRevision: argocd-rebase-observability
+    path: helm/observability
+    helm:
+      valueFiles:
+        - /profiles/devcluster/observability.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
