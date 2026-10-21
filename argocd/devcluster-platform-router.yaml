@@ -5,13 +5,19 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
-    targetRevision: main
-    path: helm/router
-    helm:
-      valueFiles:
-        - /profiles/devcluster/platform/router.yaml
+  # The private repo supplies values that can't be public (rate-limited User-Agents);
+  # ArgoCD reads it with the deploy-key repository Secret (see docs/private-values.md).
+  sources:
+    - repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
+      targetRevision: main
+      path: helm/router
+      helm:
+        valueFiles:
+          - /profiles/devcluster/platform/router.yaml
+          - $private/user-agents.yaml
+    - repoURL: git@github.com:opentargets/platform-access-control.git
+      targetRevision: main
+      ref: private
   destination:
     server: https://kubernetes.default.svc
     namespace: devcluster-platform-router

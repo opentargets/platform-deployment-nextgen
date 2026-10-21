@@ -30,9 +30,11 @@ http {
     {{ . }} 0;
     {{- end }}
   }
+  # Google's load balancer appends "<client-ip>, <lb-ip>" to whatever X-Forwarded-For the
+  # client sent, so only the second-to-last entry can be trusted; earlier ones are spoofable.
   map $http_x_forwarded_for $real_client_ip {
-    ~^(\S+),\s  $1;
-    default     $http_x_forwarded_for;
+    ~([^,\s]+)\s*,\s*[^,\s]+\s*$  $1;
+    default     $remote_addr;
   }
   map $limit $limit_key {
     0 "";
@@ -43,11 +45,34 @@ http {
     "" $scheme;
   }
   limit_req_zone $limit_key zone=api_limit:10m rate=40r/s;
+  {{- if and .userAgentRules .security.blockedUserAgents }}
+  # Listed User-Agents (exact string, or ~/~* regex) are refused outright.
+  map $http_user_agent $blocked_user_agent {
+    default 0;
+    {{- range .security.blockedUserAgents }}
+    {{ . | quote }} 1;
+    {{- end }}
+  }
+  {{- end }}
+  {{- if and .userAgentRules .security.rateLimitedUserAgents }}
+  # Each listed User-Agent (exact string, or ~/~* regex) gets its own bucket across all
+  # client IPs; unlisted agents get an empty key and are only limited per IP.
+  map $http_user_agent $ua_key {
+    default "";
+    {{- range .security.rateLimitedUserAgents }}
+    {{ . | quote }} $http_user_agent;
+    {{- end }}
+  }
+  map $limit $ua_limit_key {
+    0 "";
+    1 $ua_key;
+  }
+  limit_req_zone $ua_limit_key zone=ua_limit:10m rate=40r/s;
+  {{- end }}
   server {
     listen 8080;
-    {{- if .rejectNodeUserAgent }}
-    # Carried over from the legacy API's nginx sidecar: block default Node.js HTTP clients.
-    if ($http_user_agent = "node") {
+    {{- if and .userAgentRules .security.blockedUserAgents }}
+    if ($blocked_user_agent) {
       return 403;
     }
     {{- end }}
@@ -58,6 +83,9 @@ http {
     }
     location / {
       limit_req zone=api_limit burst=80 nodelay;
+      {{- if and .userAgentRules .security.rateLimitedUserAgents }}
+      limit_req zone=ua_limit burst=80 nodelay;
+      {{- end }}
       limit_req_status 429;
       set $upstream {{ .upstream | quote }};
       proxy_pass http://$upstream;
