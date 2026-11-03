@@ -27,6 +27,7 @@ product: {{ .Values.product }}
 {{- define "ports.dns"                -}}53{{- end -}}
 {{- define "ports.apiproxy"           -}}8081{{- end -}}
 {{- define "ports.http"               -}}8080{{- end -}}
+{{- define "ports.api.metrics"        -}}9000{{- end -}}
 {{- define "ports.clickhouse"         -}}8123{{- end -}}
 {{- define "ports.clickhouse.native"  -}}9000{{- end -}}
 {{- define "ports.clickhouse.metrics" -}}9363{{- end -}}

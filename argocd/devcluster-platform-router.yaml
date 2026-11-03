@@ -9,14 +9,14 @@ spec:
   # ArgoCD reads it with the deploy-key repository Secret (see docs/private-values.md).
   sources:
     - repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
-      targetRevision: main
+      targetRevision: api-rewrite
       path: helm/router
       helm:
         valueFiles:
           - /profiles/devcluster/platform/router.yaml
           - $private/user-agents.yaml
     - repoURL: git@github.com:opentargets/platform-access-control.git
-      targetRevision: main
+      targetRevision: api-rewrite
       ref: private
   destination:
     server: https://kubernetes.default.svc

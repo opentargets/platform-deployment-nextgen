@@ -47,6 +47,7 @@ metadata:
     cloud.google.com/backend-config: '{"default": "{{ $namespace }}-backendconfig-no-cdn"}'
     {{- end }}
     prometheus.io/scrape: {{ if eq .Values.product "platform" }}"true"{{ else }}"false"{{ end }}
+    prometheus.io/port: {{ include "ports.api.metrics" . | quote }}
 spec:
   selector:
     app: api
