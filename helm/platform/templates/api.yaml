@@ -107,7 +107,7 @@ spec:
               app.kubernetes.io/name: prometheus
       ports:
         - protocol: TCP
-          port: {{ include "ports.http" . }}
+          port: {{ include "ports.api.metrics" . }}
 
 
 {{- if not $paused }}
@@ -212,25 +212,16 @@ spec:
           ports:
             - containerPort: {{ include "ports.http" . }}
               name: api
+            - containerPort: {{ include "ports.api.metrics" . }}
+              name: metrics
           env:
-            - name: SLICK_CLICKHOUSE_URL
-              value: jdbc:clickhouse://{{ $namespace }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" . }}
-            - name: ELASTICSEARCH_HOST
-              value: {{ $namespace }}-opensearch.{{ $namespace }}.svc.cluster.local
-            - name: META_DATA_RELEASE
-              value: {{ .Values.release | quote }}
-            - name: META_API_VERSION
-              value: {{ .Values.api.image | splitList ":" | last | quote }}
-            - name: META_PRODUCT_NAME
-              value: {{ .Values.product | quote }}
-            - name: JAVA_OPTS
-              value: >-
-                -XX:+UseContainerSupport
-                -XX:+UseG1GC
-                -XX:MaxGCPauseMillis=500
-                -XX:InitialRAMPercentage=35.0
-                -XX:MaxRAMPercentage=85.0
-                -XX:+UseTransparentHugePages
+            - name: PLATFORM_API_CLICKHOUSE_URL
+              value: http://{{ $namespace }}-clickhouse.{{ $namespace }}.svc.cluster.local:{{ include "ports.clickhouse" . }}
+            - name: PLATFORM_API_OPENSEARCH_URL
+              value: http://{{ $namespace }}-opensearch.{{ $namespace }}.svc.cluster.local:{{ include "ports.opensearch" . }}
+            # Quoted so the API's config loader keeps it a string rather than parsing 26.09 as a number.
+            - name: PLATFORM_API_DATA_RELEASE
+              value: {{ printf "%q" .Values.release | quote }}
           resources:
             requests:
               memory: {{ $resources.requests.memory }}
