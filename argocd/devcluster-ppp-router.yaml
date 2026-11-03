@@ -16,7 +16,7 @@ spec:
           - /profiles/devcluster/ppp/router.yaml
           - $private/user-agents.yaml
     - repoURL: git@github.com:opentargets/platform-access-control.git
-      targetRevision: api-rewrite
+      targetRevision: main
       ref: private
   destination:
     server: https://kubernetes.default.svc
