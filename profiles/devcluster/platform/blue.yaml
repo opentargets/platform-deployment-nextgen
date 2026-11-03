@@ -58,7 +58,7 @@ resources:
       cpu: 500m
   clickhouse:
     replicas: 1
-    storageSize: 150Gi
+    storageSize: 170Gi
     requests:
       memory: 2Gi
       cpu: 1000m
