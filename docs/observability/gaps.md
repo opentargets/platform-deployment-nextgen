@@ -1,0 +1,51 @@
+# Known gaps in the observability stack
+
+Defects and inconsistencies in the current configuration, with a proposed fix for each and a
+symptom you can use to spot the problem in a running cluster.
+
+Severity is the author's assessment, not a measured impact. The **Basis** column says what the
+severity is based on, so a reader can disagree with the ranking without it being opaque. Two
+entries — G5 and G6 — depend on runtime behaviour that cannot be confirmed from the repository
+alone, and are marked accordingly.
+
+| ID | Gap | Severity | Basis | Location | Proposed fix | Symptom |
+|---|---|---|---|---|---|---|
+| G1 | The Loki datasource is provisioned without a `uid`, but three dashboard panels reference the datasource by the hardcoded uid `P8E80F9AEF21F6940`. | High | User-visible now | `helm/observability/templates/secrets.yaml:21-28`; `helm/observability/dashboards/ot-dashboard.json:237,377,484,620,636,685` | Add `uid: lokidatasource` to the Loki datasource definition and update the three affected panel references to match. This mirrors the existing `uid: prometheusdatasource` on the Prometheus datasource. | Grafana shows "Datasource not found" on the **Requests source**, **Log level API** and **Top 5 Countries** panels. The other panels are unaffected. |
+| G2 | Alertmanager is disabled, but the Loki ruler's `alertmanager_url` points at `http://observability-alertmanagers.observability.svc:9093`, a service that is never created. | Medium | Latent trap | `helm/observability/values.yaml:2-3`; `helm/observability/values.yaml:496`; `profiles/devcluster/observability.yaml:2-3,469`; `profiles/production/observability.yaml:2-3,465` | Either enable Alertmanager and configure it, or remove the `alertmanager_url` key so the ruler does not attempt to deliver to a non-existent endpoint. | No immediate symptom — the ruler has no rules to deliver. It becomes a failure the moment alerting rules are added. |
+| G4 | The `kubernetes-services` scrape job rewrites the scrape address to `blackbox`, but no blackbox-exporter is deployed. The job is present and active in both profiles. | High | User-visible now (dead scrape job) | `helm/observability/values.yaml:248-270`; `profiles/devcluster/observability.yaml:263-285`; `profiles/production/observability.yaml:259-281` | Add `prometheus-blackbox-exporter` as a chart dependency of the `prometheus` subchart and deploy it, or remove the `kubernetes-services` job if HTTP probing is not wanted. | The job discovers targets and scrapes them, but every target fails to connect. Prometheus shows the job as up with no series, and the target list is full of connection errors. |
+| G5 | `helm/observability/values.yaml` is a near-complete copy of the devcluster profile rather than a thin base layer. It lacks the `node_environment` relabel rules and the `opensearch` scrape job that both profile files contain, and carries 13 Loki placement keys (`gateway`, `chunksCache`, `resultsCache`, `lokiCanary`) that no profile uses. | Medium | Latent trap | `helm/observability/values.yaml` vs `profiles/devcluster/observability.yaml` and `profiles/production/observability.yaml` | No fix proposed here — this is tracked separately. In the meantime, make changes in the **profile** files, not in `helm/observability/values.yaml`. | Editing the base file alone appears to have no effect, because ArgoCD passes the profile file as `valueFiles` and the profile overrides it. |
+| G6 | In the devcluster Alloy configuration, the two log pipelines use different values for the `cluster` label: `dev_cluster` for node logs and `gke_open-targets-eu-dev_europe-west1-b_devcluster` for pod logs. Production uses `production_cluster` for both. | Low | Inconsistency | `profiles/devcluster/observability.yaml` (`loki.process "node_logs"` and `loki.process "pod_logs"`) | Align the devcluster pod-logs `cluster` value with the node-logs value. | Queries filtering on `cluster="dev_cluster"` return node logs only; queries filtering on the GKE name return pod logs only. |
+
+## Not in this register
+
+A few things are absent from the stack but are not defects, so they are documented in
+[README.md](README.md) rather than tracked here:
+
+- **No alert rules.** The `alerting_rules.yml`, `recording_rules.yml`, `rules` and `alerts`
+  keys of the Prometheus ConfigMap all render empty. See
+  [Alerting](README.md#alerting).
+- **No tracing stack.** No Tempo, OpenTelemetry Collector or Jaeger. See
+  [Tracing](README.md#tracing).
+- **Single-replica Prometheus and Loki.** Both run one replica on the `ops` pool. Visible in
+  the [components table](README.md#components-at-a-glance).
+- **Base/profile drift (G5).** Tracked separately; the entry above records the current state
+  and the safe editing rule, but does not propose a refactor.
+
+## Fixing a gap
+
+The proposals above are **descriptions, not applied changes**. Nothing in this repository has
+been modified to address them.
+
+To apply one:
+
+1. Edit the relevant profile file — `profiles/devcluster/observability.yaml` or
+   `profiles/production/observability.yaml`. For G1 the change is to
+   `helm/observability/templates/secrets.yaml` and the dashboard JSON, which are shared
+   between environments.
+2. Validate:
+   ```bash
+   helm lint helm/observability -f profiles/production/observability.yaml
+   helm template observability helm/observability \
+     -f profiles/production/observability.yaml --namespace observability
+   ```
+3. Commit to `main`. Both ArgoCD Applications sync automatically.
