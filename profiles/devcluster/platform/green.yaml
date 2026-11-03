@@ -45,7 +45,7 @@ resources:
       memory: 4Gi
       cpu: 1000m
     limits:
-      memory: 20Gi
+      memory: 10Gi
       cpu: 7500m
   aiapi:
     minReplicas: 1
