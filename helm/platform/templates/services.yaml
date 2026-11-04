@@ -56,6 +56,10 @@ spec:
       targetPort: {{ include "ports.http" . }}
       protocol: TCP
       name: api
+    - port: {{ include "ports.api.metrics" . }}
+      targetPort: {{ include "ports.api.metrics" . }}
+      protocol: TCP
+      name: api-metrics
   type: NodePort
 {{- end }}
 
