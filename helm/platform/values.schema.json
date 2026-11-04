@@ -266,6 +266,11 @@
       "properties": {
         "image": {
           "$ref": "#/$defs/imageConfig"
+        },
+        "logLevel": {
+          "type": "string",
+          "enum": ["trace", "debug", "info", "warn", "error"],
+          "description": "API log level (PLATFORM_API_LOG_LEVEL)."
         }
       },
       "required": ["image"],
