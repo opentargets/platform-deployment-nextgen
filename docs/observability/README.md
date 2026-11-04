@@ -13,22 +13,21 @@ environment lives in `profiles/<environment>/observability.yaml`.
 
 ## Components at a glance
 
-| Component | Chart | Version | Deployment | Replicas | Placement |
-|---|---|---|---|---|---|
-| Prometheus | `prometheus` | 27.39.0 | Deployment (`observability-prometheus-server`) | 1 | `pool: ops` |
-| Grafana | `grafana` | 10.5.15 | Deployment (`observability-grafana`) | 1 | `pool: ops` |
-| Loki | `loki` | 7.0.0 | StatefulSet (`observability-loki`), `deploymentMode: SingleBinary` | 1 | `pool: ops` |
-| Loki gateway | `loki` (nginx) | 7.0.0 | Deployment (`observability-loki-gateway`) | 1 | `pool: ops` |
-| Grafana Alloy | `alloy` | 1.8.0 | DaemonSet (`observability-alloy`) | 1 per node | `pool NotIn [staging]` |
-| kube-state-metrics | `prometheus` (subchart) | 27.39.0 | Deployment (`observability-kube-state-metrics`) | 1 | `pool: ops` |
-| node-exporter | `prometheus` (subchart) | 27.39.0 | DaemonSet (`observability-prometheus-node-exporter`) | 1 per node | `pool NotIn [staging]` |
-| pushgateway | `prometheus` (subchart) | 27.39.0 | Deployment (`observability-prometheus-pushgateway`) | 1 | `pool: ops` |
-| Loki canary | `loki` (subchart) | 7.0.0 | DaemonSet (`loki-canary`) | 1 | `pool: ops` |
-| Loki chunks cache | `loki` (subchart) | 7.0.0 | StatefulSet (`observability-loki-chunks-cache`) | 1 | `pool: ops` |
-| Loki results cache | `loki` (subchart) | 7.0.0 | StatefulSet (`observability-loki-results-cache`) | 1 | `pool: ops` |
+The observability chart (`helm/observability/`) depends on four upstream charts. Each is
+pinned to an exact version in `helm/observability/Chart.yaml` and resolved through
+`Chart.lock`.
+
+| Chart        | Version | Repository                                           | Provides                                                                           |
+| ------------ | ------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `prometheus` | 27.39.0 | `https://prometheus-community.github.io/helm-charts` | Prometheus server, node-exporter, pushgateway, kube-state-metrics                  |
+| `grafana`    | 10.5.15 | `https://grafana.github.io/helm-charts`              | Grafana, with the dashboard and datasource sidecars                                |
+| `loki`       | 7.0.0   | `https://grafana.github.io/helm-charts`              | Loki in single-binary mode, the nginx gateway, the canary and the memcached caches |
+| `alloy`      | 1.8.0   | `https://grafana.github.io/helm-charts`              | Alloy, which collects and enriches logs                                            |
+
+TODO: Do we need the PVC information
 
 Prometheus and Loki each run a single replica. Their PVCs are `30Gi` and `12Gi` on the
-`hyperdisk-balanced` storage class respectively.
+`hyperdisk-balanced` storage class respectively. Loki's data is stored in buckets instead of the PVC.
 
 ## Architecture
 
@@ -47,9 +46,7 @@ flowchart LR
     PROM --> PROMQL[PromQL queries]
 ```
 
-Prometheus scrapes annotated Services and pods directly via `kubernetes_sd_configs`. There
-is no Prometheus Operator in this stack, so there are no `ServiceMonitor` / `PodMonitor` /
-`PrometheusRule` custom resources — discovery is driven by `prometheus.io/scrape` annotations
+Prometheus scrapes annotated Services and pods directly via `kubernetes_sd_configs`. For the Platform resources discovery is driven by `prometheus.io/scrape` annotations
 on the Services in `helm/platform/templates/services.yaml`.
 
 ### Logs
@@ -70,6 +67,8 @@ and the container log files of every pod on that node. It writes to the Loki **g
 reverse proxy), not to Loki directly — the gateway terminates the HTTP path and forwards to the
 single-binary Loki pod.
 
+The data uses the `geoip.mmdb` database to enrich the logs with locations based on IP addresses.
+
 ## Deployment and placement
 
 Every observability component runs on the dedicated `ops` GKE node pool.
@@ -85,26 +84,25 @@ toleration for `workload=ops:NoSchedule`. Alloy and node-exporter instead use `p
 [staging]`, so they run everywhere except the staging pool — they need per-node coverage, and
 the staging pool runs no platform workloads.
 
+TODO: Remove `staging` validations as they're not used anymore.
+
 The `ops` pool starts with a single node and autoscales between `var.ops_min_node_count` and
 `var.ops_max_node_count`. Those variables have no default in `terraform/variables.tf:81-89`, so
-the pool size is supplied outside the repository.
+the pool size is supplied in the `devculster` and `production` profiles.
 
 ## Delivery model
 
 Two ArgoCD `Application` resources manage the stack:
 
-| Application | File | Cluster | Values file |
-|---|---|---|---|
+| Application     | File                                   | Cluster                            | Values file                               |
+| --------------- | -------------------------------------- | ---------------------------------- | ----------------------------------------- |
 | `observability` | `argocd/devcluster-observability.yaml` | devcluster (`open-targets-eu-dev`) | `/profiles/devcluster/observability.yaml` |
-| `observability` | `argocd/production-observability.yaml` | production (`open-targets-prod`) | `/profiles/production/observability.yaml` |
+| `observability` | `argocd/production-observability.yaml` | production (`open-targets-prod`)   | `/profiles/production/observability.yaml` |
 
 Both point at `path: helm/observability` with `targetRevision: main`. Neither defines a
 `syncPolicy` block, so both inherit ArgoCD's default of automated sync with pruning and
 self-healing. A merge to `main` is therefore applied to the cluster without an explicit
 `argocd app sync`.
-
-There is no CI pipeline in this repository. The `Makefile` targets in
-[runbook.md](runbook.md) apply the ArgoCD `Application` resources; ArgoCD does the rest.
 
 ## Metrics pipeline
 
@@ -114,19 +112,19 @@ Configured under `prometheus.serverFiles.prometheus.yml.scrape_configs`. The bas
 `helm/observability/values.yaml:98-369` defines ten jobs; both profile files add an
 `opensearch` job.
 
-| Job | What it scrapes |
-|---|---|
-| `prometheus` | Prometheus itself |
-| `kubernetes-apiservers` | The kube-apiserver `/metrics` endpoint |
-| `kubernetes-nodes` | node-exporter on each node |
-| `kubernetes-nodes-cadvisor` | The kubelet's cadvisor endpoint on each node |
-| `kubernetes-service-endpoints` | Every annotated Service endpoint, at a short interval |
-| `kubernetes-service-endpoints-slow` | The same endpoints, at a longer interval |
-| `prometheus-pushgateway` | The pushgateway |
-| `kubernetes-services` | HTTP probes of annotated Services via `blackbox-exporter` |
-| `kubernetes-pods` | Every annotated pod, at a short interval |
-| `kubernetes-pods-slow` | The same pods, at a longer interval |
-| `opensearch` | OpenSearch's `/_prometheus/metrics` endpoint (profiles only) |
+| Job                                 | What it scrapes                                              |
+| ----------------------------------- | ------------------------------------------------------------ |
+| `prometheus`                        | Prometheus itself                                            |
+| `kubernetes-apiservers`             | The kube-apiserver `/metrics` endpoint                       |
+| `kubernetes-nodes`                  | node-exporter on each node                                   |
+| `kubernetes-nodes-cadvisor`         | The kubelet's cadvisor endpoint on each node                 |
+| `kubernetes-service-endpoints`      | Every annotated Service endpoint, at a short interval        |
+| `kubernetes-service-endpoints-slow` | The same endpoints, at a longer interval                     |
+| `prometheus-pushgateway`            | The pushgateway                                              |
+| `kubernetes-services`               | HTTP probes of annotated Services via `blackbox-exporter`    |
+| `kubernetes-pods`                   | Every annotated pod, at a short interval                     |
+| `kubernetes-pods-slow`              | The same pods, at a longer interval                          |
+| `opensearch`                        | OpenSearch's `/_prometheus/metrics` endpoint (profiles only) |
 
 The `-slow` variants exist to reduce scrape volume: the fast jobs sample frequently for
 short-lived workloads, the slow jobs provide a lower-resolution history for the same targets.
@@ -139,7 +137,7 @@ plainly:
 
 - **Staging is excluded.** A `drop` rule matches `.*staging.*` against the service, pod and
   node names, so staging workloads never enter production's metrics. The same exclusion
-  appears as a `metric_relabel_configs` drop on `^staging$` for the `environment` label.
+  appears as a `metric_relabel_configs` drop on `^staging$` for the `environment` label. TODO: Remove the node filters as staging nodes are no longer procured.
 - **PPP is excluded from the platform metrics.** The `opensearch` and ClickHouse endpoints
   drop the partner-platform traffic.
 - **`node_environment` is derived from the GKE node name.** The relabel rules extract
@@ -148,22 +146,6 @@ plainly:
   `node_environment="production"`, because the cluster also hosts staging nodes.
 - **`honor_labels: true`** is set on the endpoint and pod jobs, so a target's own labels win
   over the labels Prometheus would otherwise attach.
-
-### Metrics labels
-
-| Label | Set by | Example |
-|---|---|---|
-| `job` | The scrape job name | `kubernetes-pods` |
-| `instance` | The scrape target address | `10.0.1.14:8080` |
-| `namespace` | Kubernetes namespace of the target | `platform` |
-| `pod` | Pod name | `platform-api-7d9f8c4b6-x2k9p` |
-| `node` / `nodename` | Node name | `gke-open-targets-prod-ops-1` |
-| `service` | Kubernetes service name | `platform-api` |
-| `container` | Container name | `api` |
-| `node_environment` | Derived from the node name by relabel rules | `production` |
-| `query_name` | Emitted by the API's GraphQL instrumentation | `targetsByIds` |
-| `database` | Emitted by the API's database instrumentation | `clickhouse` |
-| `area` | JVM metrics, where `area="heap"` selects heap usage | `heap` |
 
 ## Logs pipeline
 
@@ -197,40 +179,20 @@ An init container (`geoip-init`) downloads the MaxMind database from
 image and retries up to five times. The file is mounted into the Alloy container via
 `alloy.mounts.extra`.
 
-### Log labels
-
-| Label | Set by | Example |
-|---|---|---|
-| `namespace` | `discovery.relabel` from the pod's namespace | `platform` |
-| `pod` | `discovery.relabel` from the pod name | `platform-api-7d9f8c4b6-x2k9p` |
-| `container` | `discovery.relabel` from the container name | `api` |
-| `job` | `discovery.relabel`, `namespace/container` | `platform/api` |
-| `cluster` | `stage.static_labels` | `production_cluster` |
-| `log_source` | `stage.static_labels`, node logs only | `node_logs` |
-| `container_runtime` | `discovery.relabel` from the pod container ID | `containerd` |
-| `detected_level` | Loki's pattern ingester, not Alloy | `error` |
-
-> The platform API's container is named `api`, so `{container="api"}` is the selector to use
-> for API logs. The `app` label is populated from the pod's `app.kubernetes.io/name` label,
-> which platform workloads do not set, so it is empty for them.
-
-`detected_level` is Loki's own structured metadata, produced by the pattern ingester. It is
-enabled in both profiles (`pattern_ingester.enabled: true`) and is queryable as a pipeline
-filter, e.g. `| detected_level != ""`. It is not a stream label, so it cannot be used in the
-`{...}` selector.
+This database is generated using the tool [platform-deployment-ipdb-transformer](https://github.com/opentargets/platform-deployment-ipdb-transformer). This tool is being runned manually using github actions, in the future it could be automatically runned every week or so.
 
 ## Loki storage
 
-| Setting | Value |
-|---|---|
-| Schema | TSDB, `v13` |
-| Object store | GCS |
-| Index prefix | `loki_index_` |
-| Index period | `24h` |
-| Schema start date | `2024-04-01` |
-| Chunks bucket | `devcluster-loki-gcp-chunks` / `production-loki-gcp-chunks` |
-| Ruler bucket | `devcluster-loki-gcp-ruler` / `production-loki-gcp-ruler` |
-| Replication factor | `1` |
+| Setting            | Value                                                       |
+| ------------------ | ----------------------------------------------------------- |
+| Schema             | TSDB, `v13`                                                 |
+| Object store       | GCS                                                         |
+| Index prefix       | `loki_index_`                                               |
+| Index period       | `24h`                                                       |
+| Schema start date  | `2024-04-01`                                                |
+| Chunks bucket      | `devcluster-loki-gcp-chunks` / `production-loki-gcp-chunks` |
+| Ruler bucket       | `devcluster-loki-gcp-ruler` / `production-loki-gcp-ruler`   |
+| Replication factor | `1`                                                         |
 
 The buckets are created in Terraform (`terraform/main.tf:437-473`) with a 30-day lifecycle
 delete rule, and are exposed as outputs in `terraform/outputs.tf:2-13`.
@@ -244,8 +206,9 @@ production project (`count = var.project_id == "open-targets-prod" ? 1 : 0`).
 
 ## Dashboards
 
-A single dashboard is deployed: **`OT Dash`**, uid `dde21982-294c-47be-b5ee-032de07f75a6`,
-in `helm/observability/dashboards/ot-dashboard.json`.
+### OT Dash
+
+The dashboard is defined in the file `helm/observability/dashboards/ot-dashboard.json`. The dashboard uid `dde21982-294c-47be-b5ee-032de07f75a6`.
 
 It is provisioned by sidecar rather than by a Grafana provisioning file:
 
@@ -258,38 +221,40 @@ It is provisioned by sidecar rather than by a Grafana provisioning file:
 
 Two datasources are defined:
 
-| Name | Type | UID | URL |
-|---|---|---|---|
-| Prometheus | `prometheus` | `prometheusdatasource` | `http://observability-prometheus-server.observability.svc:80` |
-| Loki | `loki` | *(none)* | `http://observability-loki-gateway.observability.svc.cluster.local` |
+| Name       | Type         | UID                    | URL                                                                 |
+| ---------- | ------------ | ---------------------- | ------------------------------------------------------------------- |
+| Prometheus | `prometheus` | `prometheusdatasource` | `http://observability-prometheus-server.observability.svc:80`       |
+| Loki       | `loki`       | _(none)_               | `http://observability-loki-gateway.observability.svc.cluster.local` |
 
 The Loki datasource sends `X-Scope-OrgID: default` on every request.
 
+TODO: Document how to access and how are the passwords generated
+
 ### Panels
 
-| Panel | Source | Question it answers |
-|---|---|---|
-| Node status | Prometheus | Which nodes are up? |
-| CPU usage | Prometheus | How loaded are the nodes? |
-| Memory usage | Prometheus | How much memory is in use? |
-| Requests source | Loki | Where do API requests come from geographically? |
-| Top 10 queries Increase | Prometheus | Which GraphQL queries are most used? |
-| Log level API | Loki | How many API log lines at each level? |
-| Top 5 Countries | Loki | Which countries send the most API requests? |
-| *Row: API* | | |
-| Heap memory usage | Prometheus | How much of the JVM heap is used? |
-| Max Heap Memory | Prometheus | What is the heap ceiling? |
-| CPU load | Prometheus | How much CPU is the API consuming? |
-| JVM heap | Prometheus | Heap usage over time |
-| GraphQL requests | Prometheus | Request rate per instance |
-| DB requests | Prometheus | Database query rate per database |
-| Cache hit per query name | Prometheus | Which queries miss the cache most? |
-| Cache hit rate | Prometheus | Overall cache effectiveness |
-| *Row: k8s nodes* | | |
-| CPU usage | Prometheus | Per-node CPU |
-| Memory usage | Prometheus | Per-node memory |
-| Network activity | Prometheus | Per-node receive/transmit rates |
-| Traffic drop | Prometheus | Per-node dropped packets |
+| Panel                    | Source     | Question it answers                                                  |
+| ------------------------ | ---------- | -------------------------------------------------------------------- |
+| Node status              | Prometheus | Which nodes are up?                                                  |
+| CPU usage                | Prometheus | How loaded are the nodes?                                            |
+| Memory usage             | Prometheus | How much memory is in use?                                           |
+| Requests source          | Loki       | Map visualisation of where do API requests come from geographically? |
+| Top 10 queries Increase  | Prometheus | Which GraphQL queries are most used?                                 |
+| Log level API            | Loki       | How many API log lines at each level (Ex. ERROR, DEBUG,...)?         |
+| Top 5 Countries          | Loki       | Which countries send the most API requests?                          |
+| _Row: API_               |            |                                                                      |
+| Heap memory usage        | Prometheus | How much of the JVM heap is being used?                              |
+| Max Heap Memory          | Prometheus | What is the heap ceiling?                                            |
+| CPU load                 | Prometheus | How much CPU is the API consuming?                                   |
+| JVM heap                 | Prometheus | Heap usage over time                                                 |
+| GraphQL requests         | Prometheus | Request rate per instance                                            |
+| DB requests              | Prometheus | Database query rate per database                                     |
+| Cache hit per query name | Prometheus | Which queries miss the cache most?                                   |
+| Cache hit rate           | Prometheus | Overall cache effectiveness                                          |
+| _Row: k8s nodes_         |            |                                                                      |
+| CPU usage                | Prometheus | Per-node CPU                                                         |
+| Memory usage             | Prometheus | Per-node memory                                                      |
+| Network activity         | Prometheus | Per-node receive/transmit rates                                      |
+| Traffic drop             | Prometheus | Per-node dropped packets                                             |
 
 The dashboard has no template variables, so there is no environment or cluster selector — it
 always shows the cluster it is deployed in.
@@ -304,32 +269,18 @@ ConfigMap all render empty.
 The Loki ruler is enabled and points at an Alertmanager that is not deployed — see
 [G2 in gaps.md](gaps.md). There are no ruler rules either.
 
-## Tracing
-
-There is **no tracing stack**. There is no Tempo, no OpenTelemetry Collector, no Jaeger, and
-no OTLP receiver anywhere in the repository. The only trace-adjacent setting is ClickHouse's
-`<trace_log>` TTL in `helm/platform/files/clickhouse/config.xml:47-49`.
-
-Adding tracing would require:
-
-1. A Tempo deployment, or a Loki 3.x deployment using the Loki native OTLP ingest path.
-2. An OpenTelemetry Collector to receive OTLP from the applications and export to the trace
-   backend.
-3. An `otelcol.receiver` in the Alloy configuration, or a separate Collector deployment.
-4. Instrumentation in the platform API to emit spans.
-
 ## Environment differences
 
 The devcluster and production values files differ in the following ways. Everything else is
 identical.
 
-| Setting | devcluster | production |
-|---|---|---|
-| Loki chunks bucket | `devcluster-loki-gcp-chunks` | `production-loki-gcp-chunks` |
-| Loki ruler bucket | `devcluster-loki-gcp-ruler` | `production-loki-gcp-ruler` |
-| Workload Identity GSA | `devcluster-node@open-targets-eu-dev.iam.gserviceaccount.com` | `production-node@open-targets-prod.iam.gserviceaccount.com` |
-| `cluster` label (node logs) | `dev_cluster` | `production_cluster` |
-| `cluster` label (pod logs) | `gke_open-targets-eu-dev_europe-west1-b_devcluster` | `production_cluster` |
+| Setting                     | devcluster                                                    | production                                                  |
+| --------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| Loki chunks bucket          | `devcluster-loki-gcp-chunks`                                  | `production-loki-gcp-chunks`                                |
+| Loki ruler bucket           | `devcluster-loki-gcp-ruler`                                   | `production-loki-gcp-ruler`                                 |
+| Workload Identity GSA       | `devcluster-node@open-targets-eu-dev.iam.gserviceaccount.com` | `production-node@open-targets-prod.iam.gserviceaccount.com` |
+| `cluster` label (node logs) | `dev_cluster`                                                 | `production_cluster`                                        |
+| `cluster` label (pod logs)  | `gke_open-targets-eu-dev_europe-west1-b_devcluster`           | `production_cluster`                                        |
 
 The `cluster` label difference in devcluster is an inconsistency between the two Alloy
 pipelines — see [G6 in gaps.md](gaps.md).
@@ -337,45 +288,10 @@ pipelines — see [G6 in gaps.md](gaps.md).
 The `local` (minikube) environment has **no** observability deployment. There is no
 `profiles/local/observability.yaml` and no ArgoCD Application for it.
 
-## Component versions
-
-| Chart | Version | Repository |
-|---|---|---|
-| `prometheus` | 27.39.0 | `prometheus-community` |
-| `grafana` | 10.5.15 | `grafana` |
-| `loki` | 7.0.0 | `grafana` |
-| `alloy` | 1.8.0 | `grafana` |
-
-`helm/observability/Chart.lock` pins these to digest
-`sha256:c3dadb54656a78cfbcee469adf94f6b2bdbfc1a420e27152c679f7b18ea9f2d6`
-(generated 2026-08-25). The fetched chart archives under `helm/observability/charts/` are
-gitignored and rebuilt with `helm dependency build`.
-
-Container images are not pinned by the observability values; they come from each subchart's
-defaults. Currently rendered: Prometheus `v3.6.0`, Grafana `12.3.1`, Loki `3.6.7`,
-Loki canary `3.6.7`, Alloy `v1.16.0`, nginx gateway `1.29-alpine`, node-exporter `v1.9.1`,
-pushgateway `v1.11.1`, kube-state-metrics `v2.17.0`.
-
-## Values schema
-
-`helm/observability/values.schema.json` validates the values files. It defines reusable
-`$defs` for scrape configs and relabel configs:
-
-- `scrapeConfig` — requires `job_name`; constrains `scheme` to `http`/`https` and
-  `scrape_interval`/`scrape_timeout` to a duration pattern; enumerates the allowed
-  `kubernetes_sd_configs` roles.
-- `relabelConfig` — sets `additionalProperties: false`, so an unrecognised key in a relabel
-  rule is rejected. `action` is restricted to `replace`, `keep`, `drop`, `hashmod`,
-  `labelmap`, `labeldrop` and `labelkeep`.
-
-Both `.vscode/settings.json` and `.zed/settings.json` map the schema to the values files, so
-editors validate them inline.
-
 ## Editing the stack
 
 1. Edit the **profile** file — `profiles/devcluster/observability.yaml` or
-   `profiles/production/observability.yaml` — not `helm/observability/values.yaml`. See the
-   note in [gaps.md](gaps.md) about how the base file relates to the profiles.
+   `profiles/production/observability.yaml` — not `helm/observability/values.yaml`.
 2. Validate locally:
    ```bash
    helm lint helm/observability -f profiles/production/observability.yaml
@@ -388,10 +304,4 @@ editors validate them inline.
 
 This document covers the observability stack only. It does not cover:
 
-- The platform application's own logging and metrics instrumentation — that lives in the
-  platform API repository.
 - Terraform provisioning of the GKE clusters, node pools and GCS buckets.
-- CI/CD — this repository has no pipeline; ArgoCD performs the deployment.
-- Grafana user, organisation and permission management.
-- Long-term metric storage. Prometheus retains metrics for `30d` on a `30Gi` PVC and there is
-  no remote-write target or long-term store, so queries older than 30 days return nothing.
