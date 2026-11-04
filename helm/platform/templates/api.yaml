@@ -222,6 +222,8 @@ spec:
             # Quoted so the API's config loader keeps it a string rather than parsing 26.09 as a number.
             - name: PLATFORM_API_DATA_RELEASE
               value: {{ printf "%q" .Values.release | quote }}
+            - name: PLATFORM_API_LOG_LEVEL
+              value: {{ .Values.api.logLevel | quote }}
           resources:
             requests:
               memory: {{ $resources.requests.memory }}
