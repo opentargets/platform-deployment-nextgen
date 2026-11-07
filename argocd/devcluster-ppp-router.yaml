@@ -14,8 +14,8 @@ spec:
       helm:
         valueFiles:
           - /profiles/devcluster/ppp/router.yaml
-          - $private/user-agents.yaml
-    - repoURL: git@github.com:opentargets/platform-access-control.git
+          - $private/platform/router/user-agents.yaml
+    - repoURL: git@github.com:opentargets/cloud-ops.git
       targetRevision: main
       ref: private
   destination:
