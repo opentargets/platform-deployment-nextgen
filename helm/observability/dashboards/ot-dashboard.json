@@ -789,7 +789,7 @@
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percentunit"
         },
         "overrides": []
       },
@@ -818,7 +818,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "label_replace(\n    irate(\n        process_cpu_seconds_total{app=\"api\",node_environment=\"production\"}[5m]) / on() group_left() count(node_cpu_seconds_total{mode=\"idle\",node_environment=\"production\"}\n    ) * 100,\n    \"instance_no_port\",\n    \"$1\",\n    \"instance\",\n    \"([^:]+):.*\"\n)",
+          "expr": "sum by (cluster, namespace, pod) (\n  rate(container_cpu_usage_seconds_total{container!=\"\", container!=\"POD\", pod =~\".*platform-api-.*\"}[5m])\n)",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
