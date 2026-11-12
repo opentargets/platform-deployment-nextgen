@@ -172,6 +172,8 @@ Pod logs additionally pass through:
 - `stage.geoip`, resolving `client_ip` to a country using the GeoIP database
 - `stage.structured_metadata`, attaching the resolved GeoIP fields
 
+The geolocation information is passed as structured metadata in order to avoid un necessary increases in the cardinality of the logs.
+
 ### GeoIP database
 
 An init container (`geoip-init`) downloads the MaxMind database from
@@ -302,6 +304,4 @@ The `local` (minikube) environment has **no** observability deployment. There is
 
 ## Out of scope
 
-This document covers the observability stack only. It does not cover:
-
-- Terraform provisioning of the GKE clusters, node pools and GCS buckets.
+This document covers the observability stack only. It does not cover Terraform provisioning of the GKE clusters, node pools and GCS buckets.
