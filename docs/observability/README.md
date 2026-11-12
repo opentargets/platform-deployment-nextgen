@@ -24,8 +24,6 @@ pinned to an exact version in `helm/observability/Chart.yaml` and resolved throu
 | `loki`       | 7.0.0   | `https://grafana.github.io/helm-charts`              | Loki in single-binary mode, the nginx gateway, the canary and the memcached caches |
 | `alloy`      | 1.8.0   | `https://grafana.github.io/helm-charts`              | Alloy, which collects and enriches logs                                            |
 
-TODO: Do we need the PVC information
-
 Prometheus and Loki each run a single replica. Their PVCs are `30Gi` and `12Gi` on the
 `hyperdisk-balanced` storage class respectively. Loki's data is stored in buckets instead of the PVC.
 
@@ -84,8 +82,6 @@ toleration for `workload=ops:NoSchedule`. Alloy and node-exporter instead use `p
 [staging]`, so they run everywhere except the staging pool — they need per-node coverage, and
 the staging pool runs no platform workloads.
 
-TODO: Remove `staging` validations as they're not used anymore.
-
 The `ops` pool starts with a single node and autoscales between `var.ops_min_node_count` and
 `var.ops_max_node_count`. Those variables have no default in `terraform/variables.tf:81-89`, so
 the pool size is supplied in the `devculster` and `production` profiles.
@@ -137,7 +133,7 @@ plainly:
 
 - **Staging is excluded.** A `drop` rule matches `.*staging.*` against the service, pod and
   node names, so staging workloads never enter production's metrics. The same exclusion
-  appears as a `metric_relabel_configs` drop on `^staging$` for the `environment` label. TODO: Remove the node filters as staging nodes are no longer procured.
+  appears as a `metric_relabel_configs` drop on `^staging$` for the `environment` label.
 - **PPP is excluded from the platform metrics.** The `opensearch` and ClickHouse endpoints
   drop the partner-platform traffic.
 - **`node_environment` is derived from the GKE node name.** The relabel rules extract
@@ -230,7 +226,11 @@ Two datasources are defined:
 
 The Loki datasource sends `X-Scope-OrgID: default` on every request.
 
-TODO: Document how to access and how are the passwords generated
+The grafana password can be obtained at any time by using:
+
+``` bash
+make get-password-grafana
+```
 
 ### Panels
 
@@ -244,10 +244,7 @@ TODO: Document how to access and how are the passwords generated
 | Log level API            | Loki       | How many API log lines at each level (Ex. ERROR, DEBUG,...)?         |
 | Top 5 Countries          | Loki       | Which countries send the most API requests?                          |
 | _Row: API_               |            |                                                                      |
-| Heap memory usage        | Prometheus | How much of the JVM heap is being used?                              |
-| Max Heap Memory          | Prometheus | What is the heap ceiling?                                            |
 | CPU load                 | Prometheus | How much CPU is the API consuming?                                   |
-| JVM heap                 | Prometheus | Heap usage over time                                                 |
 | GraphQL requests         | Prometheus | Request rate per instance                                            |
 | DB requests              | Prometheus | Database query rate per database                                     |
 | Cache hit per query name | Prometheus | Which queries miss the cache most?                                   |

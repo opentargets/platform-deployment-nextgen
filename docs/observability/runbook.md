@@ -57,8 +57,7 @@ Grafana admin password:
 To read the password at any given point run:
 
 ```bash
-kubectl get secret -n observability observability-grafana \
-  -o jsonpath="{.data.admin-password}" | base64 --decode
+make get-password-grafana
 ```
 
 ### Prometheus

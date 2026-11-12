@@ -218,6 +218,10 @@ port-forward-grafana:
 	echo "Port-forwarding to Grafana pod: $$GRAFANA_POD"; \
 	kubectl port-forward --namespace observability $$GRAFANA_POD 3000:3000
 
+get-password-grafana:
+	echo "Grafana admin password:"
+	@kubectl get secret --namespace observability observability-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
 port-forward-argocd:
 	@echo "ArgoCD admin password:"
 	@kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode; echo

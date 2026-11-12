@@ -186,8 +186,7 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: node
-            - source_labels:
-                [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_node_name, __meta_kubernetes_pod_node_name]
+            - source_labels: [__meta_kubernetes_service_name]
               regex: .*staging.*
               action: drop
         - job_name: kubernetes-service-endpoints-slow
