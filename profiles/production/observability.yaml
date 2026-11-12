@@ -255,30 +255,6 @@ prometheus:
               action: keep
               regex: pushgateway
 
-        - job_name: kubernetes-services
-          honor_labels: true
-          metrics_path: /probe
-          params:
-            module: [http_2xx]
-          kubernetes_sd_configs:
-            - role: service
-          relabel_configs:
-            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
-              action: keep
-              regex: true
-            - source_labels: [__address__]
-              target_label: __param_target
-            - target_label: __address__
-              replacement: blackbox
-            - source_labels: [__param_target]
-              target_label: instance
-            - action: labelmap
-              regex: __meta_kubernetes_service_label_(.+)
-            - source_labels: [__meta_kubernetes_namespace]
-              target_label: namespace
-            - source_labels: [__meta_kubernetes_service_name]
-              target_label: service
-
         - job_name: kubernetes-pods
           honor_labels: true
           kubernetes_sd_configs:
@@ -443,7 +419,7 @@ loki:
             period: 24h
     storage_config:
       gcs:
-        bucket_name: production-loki-gcp-chunks # Your actual gcs bucket name, for example, loki-gcp-chunks
+        bucket_name: production-loki-gcp-chunks
     pattern_ingester:
       enabled: true
     limits_config:
@@ -459,14 +435,13 @@ loki:
       storage_config:
       type: gcs
       gcs_storage_config:
-        region: europe-west1 # The GCS region, for example europe-west4
-        bucketnames: production-loki-gcp-ruler # Your actual gcs bucket name, for example, loki-gcp-ruler
-      alertmanager_url: http://observability-alertmanagers.observability.svc:9093 # The URL of the Alertmanager to send alerts (Prometheus, Mimir, etc.)
+        region: europe-west1
+        bucketnames: production-loki-gcp-ruler
     storage:
       type: gcs
       bucketNames:
-        chunks: production-loki-gcp-chunks # Your actual gcs bucket name, for example, loki-gcp-chunks
-        ruler: production-loki-gcp-ruler # Your actual gcs bucket name, for example, loki-gcp-ruler
+        chunks: production-loki-gcp-chunks
+        ruler: production-loki-gcp-ruler
   serviceAccount:
     create: true
     name: loki-sa
@@ -586,7 +561,7 @@ alloy:
               __path__  = "/var/log/syslog",
               job       = "node/syslog",
               node_name = sys.env("HOSTNAME"),
-              cluster   = "production_cluster",
+              cluster   = "production",
           }]
         }
 
@@ -611,7 +586,7 @@ alloy:
 
           stage.static_labels {
               values = {
-                cluster = "production_cluster",
+                cluster = "production",
                 log_source = "node_logs",
               }
           }
@@ -715,7 +690,7 @@ alloy:
 
           stage.static_labels {
               values = {
-                cluster = "production_cluster",
+                cluster = "production",
               }
           }
 
