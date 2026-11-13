@@ -15,7 +15,7 @@ release: '26.09'
 webapp:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.12-dev.2
 api:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api-nextgen/platform-api-nextgen:0.0.1-dev.13
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api-nextgen/platform-api-nextgen:26.12.0-dev.1
 aiapi:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
   gcpServiceAccount: devcluster-platform-aiapi
