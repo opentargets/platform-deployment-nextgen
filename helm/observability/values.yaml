@@ -592,7 +592,7 @@ alloy:
               __path__  = "/var/log/syslog",
               job       = "node/syslog",
               node_name = sys.env("HOSTNAME"),
-              cluster   = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
+              cluster   = "devcluster",
           }]
         }
 
@@ -617,7 +617,7 @@ alloy:
 
           stage.static_labels {
               values = {
-                cluster = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
+                cluster = "devcluster",
                 log_source = "node_logs",
               }
           }
@@ -721,7 +721,7 @@ alloy:
 
           stage.static_labels {
               values = {
-                cluster = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
+                cluster = "devcluster",
               }
           }
 
