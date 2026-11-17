@@ -3,8 +3,7 @@
 Commands for deploying the observability stack, checking that it is healthy, and diagnosing
 problems.
 
-See also [README.md](README.md) for how the stack is put together and
-[gaps.md](gaps.md) for known issues.
+See also [README.md](README.md) for how the stack is put together.
 
 ## Deployment
 
@@ -19,7 +18,7 @@ running these.
 make deploy-observability-dev
 ```
 
-Applies `argocd/devcluster-observability.yaml`, waits for the `observability` Application to
+Applies `argocd/devcluster-observability.yaml`, waits for the `observability` argo Application to
 be created, waits for the operation to finish, syncs with `--prune`, then waits for the
 Application to become healthy.
 
@@ -91,7 +90,7 @@ kubectl get pods -n observability -o wide | grep Pending
 ```
 
 Pods stuck `Pending` on the `ops` pool usually mean the `workload=ops:NoSchedule` taint is
-not being tolerated — check `nodeSelector` and `tolerations` in the profile file.
+not being tolerated — check `nodeSelector` and `tolerations` in `helm/observability/values.yaml`.
 
 ### Are logs being ingested?
 
@@ -116,11 +115,15 @@ applied in the production project (`terraform/security.tf:127-133`).
 
 ### Are metrics being scraped?
 
-List the scrape targets and their health:
+Forward the prometheus port:
 
 ```bash
-kubectl port-forward -n observability \
-  svc/observability-prometheus-server 9090:80
+make port-forward-prometheus
+```
+
+List the scrape targets and their health:
+
+``` bash
 curl -s 'http://localhost:9090/api/v1/targets' | jq '.data.activeTargets[] | {job: .labels.job, health, lastError}'
 ```
 

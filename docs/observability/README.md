@@ -3,13 +3,12 @@
 Reference documentation for the Open Targets observability stack: what runs, how data
 flows through it, and where to change things.
 
-- **[gaps.md](gaps.md)** — known issues in the current configuration, with severity and
-  proposed fixes.
 - **[runbook.md](runbook.md)** — deployment commands, diagnostics, and a symptom-to-cause
   triage table.
 
-The stack is deployed by ArgoCD from `helm/observability/`. Every value that differs per
-environment lives in `profiles/<environment>/observability.yaml`.
+The stack is deployed by ArgoCD from `helm/observability/`. The shared configuration lives in
+`helm/observability/values.yaml`; every value that differs per environment lives in
+`profiles/<environment>/observability.yaml`.
 
 ## Components at a glance
 
@@ -105,8 +104,8 @@ self-healing. A merge to `main` is therefore applied to the cluster without an e
 ### Scrape jobs
 
 Configured under `prometheus.serverFiles.prometheus.yml.scrape_configs`. The base file
-`helm/observability/values.yaml:98-369` defines ten jobs; both profile files add an
-`opensearch` job.
+`helm/observability/values.yaml` defines all ten jobs; the profile files do not redefine
+the list, because Helm replaces lists wholesale rather than merging them element by element.
 
 | Job                                 | What it scrapes                                              |
 | ----------------------------------- | ------------------------------------------------------------ |
@@ -120,7 +119,7 @@ Configured under `prometheus.serverFiles.prometheus.yml.scrape_configs`. The bas
 | `kubernetes-services`               | HTTP probes of annotated Services via `blackbox-exporter`    |
 | `kubernetes-pods`                   | Every annotated pod, at a short interval                     |
 | `kubernetes-pods-slow`              | The same pods, at a longer interval                          |
-| `opensearch`                        | OpenSearch's `/_prometheus/metrics` endpoint (profiles only) |
+| `opensearch`                        | OpenSearch's `/_prometheus/metrics` endpoint                 |
 
 The `-slow` variants exist to reduce scrape volume: the fast jobs sample frequently for
 short-lived workloads, the slow jobs provide a lower-resolution history for the same targets.
@@ -197,7 +196,7 @@ delete rule, and are exposed as outputs in `terraform/outputs.tf:2-13`.
 
 Loki accesses GCS through Workload Identity rather than static keys. The `loki-sa` service
 account is annotated with the GKE service account for the environment
-(`profiles/production/observability.yaml:471-475`), and the IAM binding granting
+(`profiles/production/observability.yaml`), and the IAM binding granting
 `roles/storage.objectViewer` on the `open-targets-ops` bucket to the node service account
 is defined in `terraform/security.tf:127-133`. That binding is applied only in the
 production project (`count = var.project_id == "open-targets-prod" ? 1 : 0`).
@@ -260,44 +259,42 @@ always shows the cluster it is deployed in.
 
 ## Alerting
 
-The stack currently has **no alerting**. Alertmanager is disabled
-(`alertmanager.enabled: false` in all three values files), and there are no alert rules: the
-`alerting_rules.yml`, `recording_rules.yml`, `rules` and `alerts` keys of the Prometheus
-ConfigMap all render empty.
-
-The Loki ruler is enabled and points at an Alertmanager that is not deployed — see
-[G2 in gaps.md](gaps.md). There are no ruler rules either.
+TODO: This is going to be handled by grafana alerts
 
 ## Environment differences
 
-The devcluster and production values files differ in the following ways. Everything else is
-identical.
+The shared configuration lives in `helm/observability/values.yaml` and is identical for both
+environments. The profile files override only the following values.
 
-| Setting                     | devcluster                                                    | production                                                  |
-| --------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
-| Loki chunks bucket          | `devcluster-loki-gcp-chunks`                                  | `production-loki-gcp-chunks`                                |
-| Loki ruler bucket           | `devcluster-loki-gcp-ruler`                                   | `production-loki-gcp-ruler`                                 |
-| Workload Identity GSA       | `devcluster-node@open-targets-eu-dev.iam.gserviceaccount.com` | `production-node@open-targets-prod.iam.gserviceaccount.com` |
-| `cluster` label (node logs) | `dev_cluster`                                                 | `production_cluster`                                        |
-| `cluster` label (pod logs)  | `gke_open-targets-eu-dev_europe-west1-b_devcluster`           | `production_cluster`                                        |
+| Setting                        | devcluster                                                    | production                                                  |
+| ------------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| Loki chunks bucket             | `devcluster-loki-gcp-chunks`                                  | `production-loki-gcp-chunks`                                |
+| Loki ruler bucket              | `devcluster-loki-gcp-ruler`                                   | `production-loki-gcp-ruler`                                 |
+| Workload Identity GSA          | `devcluster-node@open-targets-eu-dev.iam.gserviceaccount.com` | `production-node@open-targets-prod.iam.gserviceaccount.com` |
+| `cluster` label (node logs)    | `dev_cluster`                                                 | `production`                                                |
+| `cluster` label (pod logs)     | `devcluster`                                                  | `production`                                                |
 
-The `cluster` label difference in devcluster is an inconsistency between the two Alloy
-pipelines — see [G6 in gaps.md](gaps.md).
+The two `cluster` labels are set through `global.cluster` and `global.nodeLogsCluster` in the
+profile, and are substituted into the Alloy configuration in the base file.
 
 The `local` (minikube) environment has **no** observability deployment. There is no
 `profiles/local/observability.yaml` and no ArgoCD Application for it.
 
 ## Editing the stack
 
-1. Edit the **profile** file — `profiles/devcluster/observability.yaml` or
-   `profiles/production/observability.yaml` — not `helm/observability/values.yaml`.
-2. Validate locally:
+1. Edit `helm/observability/values.yaml` if the change applies to **every** environment. Edit
+   the **profile** file — `profiles/devcluster/observability.yaml` or
+   `profiles/production/observability.yaml` — if it applies to one environment only.
+2. Keep lists whole. Helm replaces a list instead of merging it element by element, so a
+   profile that redefines `prometheus.serverFiles.prometheus.yml.scrape_configs` loses the
+   shared list rather than adding to it. The same applies to `tolerations` and `affinity`.
+3. Validate locally:
    ```bash
    helm lint helm/observability -f profiles/production/observability.yaml
    helm template observability helm/observability \
      -f profiles/production/observability.yaml --namespace observability
    ```
-3. Commit and merge to `main`. ArgoCD syncs both environments automatically.
+4. Commit and merge to `main`. ArgoCD syncs both environments automatically.
 
 ## Out of scope
 
