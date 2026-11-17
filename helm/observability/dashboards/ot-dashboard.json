@@ -234,7 +234,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "uid": "lokidatasource"
       },
       "description": "Gives a broad vision of where the requests are being done ",
       "fieldConfig": {
@@ -374,7 +374,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "uid": "lokidatasource"
           },
           "direction": "backward",
           "editorMode": "code",
@@ -481,7 +481,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "uid": "lokidatasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -617,7 +617,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "uid": "lokidatasource"
           },
           "direction": "backward",
           "editorMode": "code",
@@ -633,7 +633,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "uid": "lokidatasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -682,7 +682,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "uid": "lokidatasource"
           },
           "direction": "backward",
           "editorMode": "code",
