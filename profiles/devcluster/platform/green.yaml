@@ -23,10 +23,10 @@ aiapi:
     openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
 clickhouse:
   image: clickhouse/clickhouse-server:26.8.2.7
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2612-ch-1
+  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2612-ch-3
 opensearch:
   image: opensearchproject/opensearch:3.5.0
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2612-os-1
+  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2612-os-3
 
 resources:
   webapp:
