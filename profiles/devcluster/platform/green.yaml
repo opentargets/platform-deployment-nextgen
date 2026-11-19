@@ -13,9 +13,9 @@ gcp:
 
 release: '26.12'
 webapp:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.12-dev.2
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.12-dev.4
 api:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api-nextgen/platform-api-nextgen:26.12.0-2612.1
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api-nextgen/platform-api-nextgen:26.12.0-2612.2
 aiapi:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
   gcpServiceAccount: devcluster-platform-aiapi
@@ -23,10 +23,10 @@ aiapi:
     openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
 clickhouse:
   image: clickhouse/clickhouse-server:26.8.2.7
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2612-ch-3
+  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2612-ch-4
 opensearch:
   image: opensearchproject/opensearch:3.5.0
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2612-os-3
+  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2612-os-4
 
 resources:
   webapp:
