@@ -4,6 +4,38 @@
   "title": "Observability Helm Chart Values Schema",
   "description": "Schema for Observability Helm chart values configuration",
   "properties": {
+    "global": {
+      "type": "object",
+      "description": "Values shared with the subcharts, used to parameterise the Alloy configuration",
+      "properties": {
+        "cluster": {
+          "type": "string",
+          "description": "Cluster label attached to the logs shipped by Alloy"
+        },
+        "nodeLogsCluster": {
+          "type": "string",
+          "description": "Cluster label attached to the node logs read directly from the syslog file"
+        }
+      },
+      "additionalProperties": true
+    },
+    "alerting": {
+      "type": "object",
+      "required": ["secrets"],
+      "properties": {
+        "secrets": {
+          "type": "object",
+          "required": ["slack-token"],
+          "properties": {
+            "slack-token": {
+              "type": "string",
+              "description": "GCP Secret Manager resource name without a version; never the Slack token value",
+              "pattern": "^projects/[^/]+/secrets/[^/]+$"
+            }
+          }
+        }
+      }
+    },
     "grafana": {
       "type": "object",
       "description": "Custom configuration for Grafana Helm chart",

@@ -1,3 +1,29 @@
+# Shared base layer for the observability stack.
+#
+# Everything in this file is identical for every environment. Environment-specific
+# values (bucket names, Workload Identity accounts, cluster labels, volume sizes)
+# live in `profiles/<environment>/observability.yaml`, which ArgoCD passes to Helm
+# as `valueFiles` and which therefore overrides this file.
+#
+# Precedence: chart default < this file < profile file.
+#
+# Note on lists: Helm replaces lists wholesale rather than merging them element by
+# element, so any list that differs between environments must be kept whole in the
+# profile file rather than partially overridden here.
+
+global:
+  # Cluster label attached to the logs shipped by Alloy.
+  cluster: ''
+  # Cluster label attached to the node logs read directly from the syslog file.
+  # Kept separate from `global.cluster` because it differs in devcluster.
+  nodeLogsCluster: ''
+
+alerting:
+  secrets:
+    # Shared by both clusters. This is a resource name, never the token itself.
+    slack-token: projects/open-targets-eu-dev/secrets/slack-token
+  enabled: true
+
 prometheus:
   alertmanager:
     enabled: false
@@ -151,6 +177,12 @@ prometheus:
           kubernetes_sd_configs:
             - role: endpoints
           relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_app]
+              action: drop
+              regex: opensearch
+            - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_port_number]
+              action: drop
+              regex: 'clickhouse;(8123|9000)'
             - source_labels: [__meta_kubernetes_endpoint_node_name]
               target_label: nodename
             - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
@@ -186,8 +218,12 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: node
-            - source_labels:
-                [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_node_name, __meta_kubernetes_pod_node_name]
+            - source_labels: [nodename]
+              action: replace
+              target_label: node_environment
+              regex: gke-[^-]+-[^-]+-([^-]+)-.*
+              replacement: $1
+            - source_labels: [__meta_kubernetes_service_name]
               regex: .*staging.*
               action: drop
         - job_name: kubernetes-service-endpoints-slow
@@ -245,30 +281,6 @@ prometheus:
               action: keep
               regex: pushgateway
 
-        - job_name: kubernetes-services
-          honor_labels: true
-          metrics_path: /probe
-          params:
-            module: [http_2xx]
-          kubernetes_sd_configs:
-            - role: service
-          relabel_configs:
-            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
-              action: keep
-              regex: true
-            - source_labels: [__address__]
-              target_label: __param_target
-            - target_label: __address__
-              replacement: blackbox
-            - source_labels: [__param_target]
-              target_label: instance
-            - action: labelmap
-              regex: __meta_kubernetes_service_label_(.+)
-            - source_labels: [__meta_kubernetes_namespace]
-              target_label: namespace
-            - source_labels: [__meta_kubernetes_service_name]
-              target_label: service
-
         - job_name: kubernetes-pods
           honor_labels: true
           kubernetes_sd_configs:
@@ -282,8 +294,8 @@ prometheus:
               regex: true
             - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
               action: replace
-              regex: (https?)
               target_label: __scheme__
+              regex: (https?)
             - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
@@ -331,8 +343,8 @@ prometheus:
               regex: true
             - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
               action: replace
-              regex: (https?)
               target_label: __scheme__
+              regex: (https?)
             - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
               action: replace
               target_label: __metrics_path__
@@ -367,8 +379,37 @@ prometheus:
             - source_labels: [__meta_kubernetes_pod_name]
               regex: .*staging.*
               action: drop
+        - job_name: opensearch
+          honor_labels: true
+          metrics_path: /_prometheus/metrics
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_app]
+              action: keep
+              regex: opensearch
+            - source_labels: [__meta_kubernetes_pod_ip]
+              action: replace
+              target_label: __address__
+              replacement: $1:9200
+            - source_labels: [__meta_kubernetes_namespace]
+              action: replace
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: replace
+              target_label: pod
+            - source_labels: [__meta_kubernetes_pod_label_color]
+              action: replace
+              target_label: color
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              action: replace
+              target_label: node
 
 grafana:
+  serviceAccount:
+    create: true
+    # Must match the Workload Identity principal in terraform/security.tf.
+    name: grafana-sa
   tolerations:
     - key: 'workload'
       operator: 'Equal'
@@ -393,7 +434,94 @@ grafana:
       enabled: true
       label: grafana_datasource
 
+  extraVolumes:
+    - name: slack-token
+      csi:
+        driver: secrets-store-gke.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: slack-token
+  extraVolumeMounts:
+    - name: slack-token
+      mountPath: /mnt/secrets/slack
+      readOnly: true
+  # Alerting provisioning expands environment variables. Load the CSI-mounted
+  # token before running Grafana's normal entrypoint; restart after rotation.
+  command:
+    - /bin/sh
+    - -ec
+    - |
+      slack_token="$(cat /mnt/secrets/slack/slack_token)"
+      if [ -z "$slack_token" ]; then
+        echo "Slack token file is empty" >&2
+        exit 1
+      fi
+      export slack_token
+      exec /run.sh
+
+  alerting:
+    contactpoints.yaml:
+      apiVersion: 1
+      contactPoints:
+        - orgId: 1
+          name: OT Slack
+          receivers:
+            - uid: bg59bkcvuwfeoc
+              type: slack
+              settings:
+                recipient: "ot-k8s-cluster-alerts"
+                token: "$slack_token"
+              disableResolveMessage: false
+
 loki:
+  loki:
+    commonConfig:
+      replication_factor: 1
+    schemaConfig:
+      configs:
+        - from: '2024-04-01'
+          store: tsdb
+          object_store: gcs
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    storage_config:
+      gcs:
+        bucket_name: ''
+    pattern_ingester:
+      enabled: true
+    limits_config:
+      allow_structured_metadata: true
+      volume_enabled: true
+    tolerations:
+      - key: 'workload'
+        operator: 'Equal'
+        value: 'ops'
+        effect: 'NoSchedule'
+    ruler:
+      enable_api: true
+      storage_config:
+      type: gcs
+      gcs_storage_config:
+        region: europe-west1
+        bucketnames: ''
+    storage:
+      type: gcs
+      bucketNames:
+        chunks: ''
+        ruler: ''
+  serviceAccount:
+    create: true
+    name: loki-sa
+    annotations:
+      iam.gke.io/gcp-service-account: ''
+
+  minio:
+    enabled: false
+
+  # The gateway, the memcached caches and the canary are separate deployments in
+  # the Loki chart, so each needs its own placement rules.
   gateway:
     tolerations:
       - key: 'workload'
@@ -461,52 +589,6 @@ loki:
                   operator: In
                   values:
                     - ops
-  loki:
-    commonConfig:
-      replication_factor: 1
-    schemaConfig:
-      configs:
-        - from: '2024-04-01'
-          store: tsdb
-          object_store: gcs
-          schema: v13
-          index:
-            prefix: loki_index_
-            period: 24h
-    storage_config:
-      gcs:
-        bucket_name: devcluster-loki-gcp-chunks # Your actual gcs bucket name, for example, loki-gcp-chunks
-    pattern_ingester:
-      enabled: true
-    limits_config:
-      allow_structured_metadata: true
-      volume_enabled: true
-    tolerations:
-      - key: 'workload'
-        operator: 'Equal'
-        value: 'ops'
-        effect: 'NoSchedule'
-    ruler:
-      enable_api: true
-      storage_config:
-      type: gcs
-      gcs_storage_config:
-        region: europe-west1 # The GCS region, for example europe-west4
-        bucketnames: devcluster-loki-gcp-ruler # Your actual gcs bucket name, for example, loki-gcp-ruler
-      alertmanager_url: http://observability-alertmanagers.observability.svc:9093 # The URL of the Alertmanager to send alerts (Prometheus, Mimir, etc.)
-    storage:
-      type: gcs
-      bucketNames:
-        chunks: devcluster-loki-gcp-chunks # Your actual gcs bucket name, for example, loki-gcp-chunks
-        ruler: devcluster-loki-gcp-ruler # Your actual gcs bucket name, for example, loki-gcp-ruler
-  serviceAccount:
-    create: true
-    name: loki-sa
-    annotations:
-      iam.gke.io/gcp-service-account: devcluster-node@open-targets-eu-dev.iam.gserviceaccount.com
-
-  minio:
-    enabled: false
 
   deploymentMode: SingleBinary
 
@@ -514,6 +596,7 @@ loki:
     replicas: 1
     persistence:
       storageClass: hyperdisk-balanced
+      size: 12Gi
     tolerations:
       - key: 'workload'
         operator: 'Equal'
@@ -555,13 +638,12 @@ loki:
     replicas: 0
   bloomGateway:
     replicas: 0
-
 alloy:
   serviceAccount:
     create: true
     name: alloy-sa
     annotations:
-      iam.gke.io/gcp-service-account: devcluster-node@open-targets-eu-dev.iam.gserviceaccount.com
+      iam.gke.io/gcp-service-account: ''
   controller:
     nodeSelector:
       kubernetes.io/os: linux
@@ -618,7 +700,7 @@ alloy:
               __path__  = "/var/log/syslog",
               job       = "node/syslog",
               node_name = sys.env("HOSTNAME"),
-              cluster   = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
+              cluster   = "{{ .Values.global.nodeLogsCluster }}",
           }]
         }
 
@@ -643,7 +725,7 @@ alloy:
 
           stage.static_labels {
               values = {
-                cluster = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
+                cluster = "{{ .Values.global.cluster }}",
                 log_source = "node_logs",
               }
           }
@@ -747,7 +829,7 @@ alloy:
 
           stage.static_labels {
               values = {
-                cluster = "gke_open-targets-eu-dev_europe-west1-b_devcluster",
+                cluster = "{{ .Values.global.cluster }}",
               }
           }
 
@@ -763,7 +845,6 @@ alloy:
 
           stage.structured_metadata {
               values = {
-                  client_ip              = "",
                   geoip_country_name     = "",
                   geoip_country_code     = "",
                   geoip_continent_name   = "",

@@ -13,9 +13,9 @@ gcp:
 
 release: '26.09'
 webapp:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.9.1
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-webapp/platform-webapp:26.12-dev.4
 api:
-  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:26.9.0
+  image: europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api-nextgen/platform-api-nextgen:26.12.0-dev.6
 aiapi:
   image: europe-west1-docker.pkg.dev/open-targets-eu-dev/ot-ai-api/ot-ai-api:0.0.13
   gcpServiceAccount: devcluster-platform-aiapi
@@ -23,10 +23,10 @@ aiapi:
     openai: projects/open-targets-eu-dev/locations/europe-west1/secrets/openai-token
 clickhouse:
   image: clickhouse/clickhouse-server:26.8.2.7
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2609b-ch
+  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2609-ch-rs8
 opensearch:
   image: opensearchproject/opensearch:3.5.0
-  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2609-os
+  snapshot: projects/open-targets-eu-dev/global/snapshots/platform-2609-os-rs1
 
 resources:
   webapp:
@@ -45,7 +45,7 @@ resources:
       memory: 4Gi
       cpu: 1000m
     limits:
-      memory: 20Gi
+      memory: 10Gi
       cpu: 7500m
   aiapi:
     minReplicas: 1
@@ -58,7 +58,7 @@ resources:
       cpu: 500m
   clickhouse:
     replicas: 1
-    storageSize: 150Gi
+    storageSize: 170Gi
     requests:
       memory: 2Gi
       cpu: 1000m

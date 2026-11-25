@@ -14,6 +14,6 @@ gcp:
 # No preSharedCerts: GKE attaches the router's own ManagedCertificates through the Ingress's
 # pre-shared-cert annotation, which the router Application ignores (argocd/*-router.yaml).
 # Keep both colours available for validation and rollback during migration.
-stagingEnabled: false
+stagingEnabled: true
 frontend:
   enabled: true

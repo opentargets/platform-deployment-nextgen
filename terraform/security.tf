@@ -124,6 +124,15 @@ resource "google_service_account_iam_member" "alloy_workload_identity_binding" {
   member             = "serviceAccount:${var.project_id}.svc.id.goog[observability/alloy-sa]"
 }
 
+# Both clusters read the shared Slack token from eu-dev through the GKE CSI
+# add-on. Grant the Grafana Kubernetes identity access to this secret only.
+resource "google_secret_manager_secret_iam_member" "grafana_slack_token" {
+  project   = "open-targets-eu-dev"
+  secret_id = "slack-token"
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "principal://iam.googleapis.com/projects/${data.google_project.cluster.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/observability/sa/grafana-sa"
+}
+
 resource "google_storage_bucket_iam_member" "bucket_access" {
   count = var.project_id == "open-targets-prod" ? 1 : 0
 
