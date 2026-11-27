@@ -8,7 +8,22 @@ This the repo for managing the deployment of the Open Targets Platform and PPP t
 There is a Makefile for most operations such as creating the kubernetes clusters. 
 Deployments are managed by ArgoCD. 
 
-TBC.
+## Repository layout
+
+- `helm/` — Helm charts: `platform` (the Open Targets Platform workloads), `router` (the
+  edge nginx router), `argocd`, and `observability`.
+- `profiles/` — per-environment values files. `devcluster`, `production` and `local`.
+- `argocd/` — ArgoCD `Application` and `ApplicationSet` resources.
+- `terraform/` — GKE clusters, node pools, IAM and GCS buckets.
+- `docs/` — documentation.
+
+## Observability
+
+The observability stack (Prometheus, Grafana, Loki, Alloy) is documented in
+[docs/observability/](docs/observability/):
+[reference](docs/observability/README.md),
+[known gaps](docs/observability/gaps.md),
+[runbook](docs/observability/runbook.md).
 
 Release process: https://opentargets.org/technical-knowledge-base/platform/release-process/
 

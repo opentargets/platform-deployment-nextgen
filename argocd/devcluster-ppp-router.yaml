@@ -9,7 +9,7 @@ spec:
   # ArgoCD reads it with the deploy-key repository Secret (see docs/private-values.md).
   sources:
     - repoURL: https://github.com/opentargets/platform-deployment-nextgen.git
-      targetRevision: main
+      targetRevision: api-rewrite
       path: helm/router
       helm:
         valueFiles:

@@ -47,6 +47,7 @@ metadata:
     cloud.google.com/backend-config: '{"default": "{{ $namespace }}-backendconfig-no-cdn"}'
     {{- end }}
     prometheus.io/scrape: {{ if eq .Values.product "platform" }}"true"{{ else }}"false"{{ end }}
+    prometheus.io/port: {{ include "ports.api.metrics" . | quote }}
 spec:
   selector:
     app: api
@@ -55,6 +56,10 @@ spec:
       targetPort: {{ include "ports.http" . }}
       protocol: TCP
       name: api
+    - port: {{ include "ports.api.metrics" . }}
+      targetPort: {{ include "ports.api.metrics" . }}
+      protocol: TCP
+      name: api-metrics
   type: NodePort
 {{- end }}
 
