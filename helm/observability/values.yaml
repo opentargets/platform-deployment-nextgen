@@ -565,7 +565,7 @@ grafana:
                       conditions:
                           - evaluator:
                               params:
-                                  - 0.0008
+                                  - 0.005
                               type: gt
                             operator:
                               type: and
@@ -586,7 +586,7 @@ grafana:
                       type: threshold
                 noDataState: NoData
                 execErrState: Error
-                for: 5m
+                for: 10m
                 labels:
                   source: node
                 isPaused: false
